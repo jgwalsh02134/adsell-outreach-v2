@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Loader - AdSell.ai Outreach Tracker</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+        .info-box {
+            background: #dbeafe;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button.secondary {
+            background: white;
+            color: #0f172a;
+            border: 1px solid #e2e8f0;
+        }
+        button.secondary:hover {
+            background: #f8fafc;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        #status.success {
+            background: #d1fae5;
+            color: #065f46;
+            display: block;
+        }
+        #status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            display: block;
+        }
+        .file-input {
+            margin: 20px 0;
+        }
+        input[type="file"] {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            border: 2px dashed #e2e8f0;
+            border-radius: 6px;
+            width: 100%;
+        }
+        .actions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AdSell.ai Outreach Tracker</h1>
+        <p class="subtitle">Data Loader Utility</p>
+
+        <div class="info-box">
+            <strong>📋 Purpose:</strong> This utility helps you load your existing contact data into the Outreach Tracker app.
+        </div>
+
+        <div class="warning-box">
+            <strong>⚠️ Warning:</strong> This will replace any existing data in the app. Make sure to backup first if you have data you want to keep.
+        </div>
+
+        <h2>Step 1: Select CSV File</h2>
+        <div class="file-input">
+            <label for="csv-file"><strong>Choose your CSV file:</strong></label>
+            <input type="file" id="csv-file" accept=".csv">
+            <p style="font-size: 14px; color: #64748b; margin-top: 10px;">
+                Supported files: AdsellAI_Outreach_Tracker_Populated.csv or albany_ski_expo_vendor_contacts_UPDATED.csv
+            </p>
+        </div>
+
+        <h2>Step 2: Load Data</h2>
+        <div class="actions">
+            <button onclick="loadData()">Load Data into App</button>
+            <button class="secondary" onclick="clearData()">Clear All Data</button>
+            <button class="secondary" onclick="goToApp()">Open Outreach Tracker</button>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        function loadData() {
+            const fileInput = document.getElementById('csv-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showStatus('Please select a CSV file first!', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const csv = e.target.result;
+                    const contacts = parseCSV(csv);
+                    
+                    if (contacts.length === 0) {
+                        showStatus('No valid contacts found in file!', 'error');
+                        return;
+                    }
+
+                    // Save to localStorage
+                    localStorage.setItem('adsell_contacts', JSON.stringify(contacts));
+                    
+                    showStatus(`✅ Successfully loaded ${contacts.length} contacts! You can now open the Outreach Tracker.`, 'success');
+                } catch (error) {
+                    showStatus(`Error loading file: ${error.message}`, 'error');
+                }
+            };
+
+            reader.readAsText(file);
+        }
+
+        function parseCSV(csv) {
+            const lines = csv.split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const contacts = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                const values = parseCSVLine(line);
+                const contact = {
+                    id: Date.now().toString(36) + Math.random().toString(36).substr(2) + i,
+                    vendorName: '',
+                    contactName: '',
+                    email: '',
+                    phone: '',
+                    website: '',
+                    category: '',
+                    segment: '',
+                    status: 'Not Started',
+                    notes: '',
+                    createdAt: new Date().toISOString(),
+                    lastContact: null,
+                    followUpDate: null,
+                    promoCode: 'WINTER25',
+                    utmSource: 'expo_warm',
+                    utmMedium: 'email',
+                    utmCampaign: 'winter25_trial'
+                };
+
+                headers.forEach((header, index) => {
+                    const value = values[index] ? values[index].trim() : '';
+                    const headerLower = header.toLowerCase();
+                    
+                    if (headerLower.includes('vendor')) {
+                        contact.vendorName = value;
+                    } else if (headerLower.includes('contact') && headerLower.includes('name')) {
+                        contact.contactName = value;
+                    } else if (headerLower.includes('email')) {
+                        contact.email = value;
+                    } else if (headerLower.includes('phone')) {
+                        contact.phone = value;
+                    } else if (headerLower.includes('website') || headerLower.includes('web')) {
+                        contact.website = value;
+                    } else if (headerLower.includes('category')) {
+                        contact.category = value;
+                    } else if (headerLower.includes('segment')) {
+                        contact.segment = value;
+                    } else if (headerLower.includes('status')) {
+                        contact.status = value || 'Not Started';
+                    } else if (headerLower.includes('note')) {
+                        contact.notes = value;
+                    } else if (headerLower.includes('promo')) {
+                        contact.promoCode = value;
+                    } else if (headerLower.includes('utm') && headerLower.includes('source')) {
+                        contact.utmSource = value;
+                    } else if (headerLower.includes('utm') && headerLower.includes('medium')) {
+                        contact.utmMedium = value;
+                    } else if (headerLower.includes('utm') && headerLower.includes('campaign')) {
+                        contact.utmCampaign = value;
+                    }
+                });
+
+                // Only add if we have at least a vendor name or email
+                if (contact.vendorName || contact.email) {
+                    // If no email, try to use a placeholder
+                    if (!contact.email && contact.vendorName) {
+                        contact.email = contact.vendorName.toLowerCase().replace(/[^a-z0-9]/g, '') + '@example.com';
+                    }
+                    contacts.push(contact);
+                }
+            }
+
+            return contacts;
+        }
+
+        function parseCSVLine(line) {
+            const values = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    values.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            values.push(current);
+
+            return values.map(v => v.replace(/^"|"$/g, ''));
+        }
+
+        function clearData() {
+            if (confirm('Are you sure you want to clear all data? This cannot be undone!')) {
+                localStorage.removeItem('adsell_contacts');
+                localStorage.removeItem('adsell_activities');
+                localStorage.removeItem('adsell_scripts');
+                showStatus('✅ All data cleared!', 'success');
+            }
+        }
+
+        function goToApp() {
+            window.location.href = 'index.html';
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = type;
+        }
+
+        // Check if data already exists
+        window.onload = function() {
+            const existingContacts = localStorage.getItem('adsell_contacts');
+            if (existingContacts) {
+                const contacts = JSON.parse(existingContacts);
+                if (contacts.length > 0) {
+                    showStatus(`ℹ️ You currently have ${contacts.length} contacts in the system.`, 'success');
+                }
+            }
+        };
+    </script>
+</body>
+</html>

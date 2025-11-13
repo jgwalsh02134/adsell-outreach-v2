@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdSell.ai Outreach Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h1>AdSell.ai</h1>
+                <span class="nav-subtitle">Outreach Tracker</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#" class="nav-link active" data-page="dashboard">Dashboard</a></li>
+                <li><a href="#" class="nav-link" data-page="contacts">Contacts</a></li>
+                <li><a href="#" class="nav-link" data-page="scripts">Scripts</a></li>
+                <li><a href="#" class="nav-link" data-page="upload">Import CSV</a></li>
+                <li><a href="#" class="nav-link" data-page="analytics">Analytics</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Dashboard Page -->
+        <div id="dashboard-page" class="page active">
+            <div class="page-header">
+                <h2>Dashboard</h2>
+                <button class="btn btn-primary" onclick="app.showAddContactModal()">+ Add Contact</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-label">Total Contacts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-not-started">0</div>
+                    <div class="stat-label">Not Started</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-in-progress">0</div>
+                    <div class="stat-label">In Progress</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-responded">0</div>
+                    <div class="stat-label">Responded</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-signed-up">0</div>
+                    <div class="stat-label">Signed Up</div>
+                </div>
+            </div>
+
+            <div class="recent-activity">
+                <h3>Recent Activity</h3>
+                <div id="recent-activity-list" class="activity-list">
+                    <p class="empty-state">No recent activity</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contacts Page -->
+        <div id="contacts-page" class="page">
+            <div class="page-header">
+                <h2>All Contacts</h2>
+                <button class="btn btn-primary" onclick="app.showAddContactModal()">+ Add Contact</button>
+            </div>
+
+            <div class="filters-bar">
+                <input type="text" id="search-input" placeholder="Search by name, email, phone..." class="search-input">
+                <select id="status-filter" class="filter-select">
+                    <option value="">All Statuses</option>
+                    <option value="Not Started">Not Started</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Responded">Responded</option>
+                    <option value="Signed Up">Signed Up</option>
+                </select>
+                <select id="category-filter" class="filter-select">
+                    <option value="">All Categories</option>
+                    <option value="Ski Resort">Ski Resort</option>
+                    <option value="Ski Club">Ski Club</option>
+                    <option value="Outdoor Gear Shop">Outdoor Gear Shop</option>
+                    <option value="Ski/Bike Shop">Ski/Bike Shop</option>
+                    <option value="Equipment Manufacturer">Equipment Manufacturer</option>
+                    <option value="Nordic Ski Center">Nordic Ski Center</option>
+                    <option value="Other">Other</option>
+                </select>
+                <select id="segment-filter" class="filter-select">
+                    <option value="">All Segments</option>
+                    <option value="Expo">Expo</option>
+                    <option value="NE">Northeast</option>
+                    <option value="Club">Club</option>
+                </select>
+            </div>
+
+            <div class="table-container">
+                <table class="contacts-table">
+                    <thead>
+                        <tr>
+                            <th>Vendor Name</th>
+                            <th>Contact</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Last Contact</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contacts-table-body">
+                        <tr>
+                            <td colspan="8" class="empty-state">No contacts found</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Contact Detail Page -->
+        <div id="contact-detail-page" class="page">
+            <div class="page-header">
+                <button class="btn btn-secondary" onclick="app.showPage('contacts')">← Back to Contacts</button>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="app.editContact()">Edit</button>
+                    <button class="btn btn-danger" onclick="app.deleteContact()">Delete</button>
+                </div>
+            </div>
+
+            <div id="contact-detail-content"></div>
+        </div>
+
+        <!-- Scripts Page -->
+        <div id="scripts-page" class="page">
+            <div class="page-header">
+                <h2>Email & Call Scripts</h2>
+                <button class="btn btn-primary" onclick="app.showAddScriptModal()">+ Add Script</button>
+            </div>
+
+            <div class="scripts-grid" id="scripts-grid">
+                <p class="empty-state">No scripts available</p>
+            </div>
+        </div>
+
+        <!-- Upload Page -->
+        <div id="upload-page" class="page">
+            <div class="page-header">
+                <h2>Import Contacts from CSV</h2>
+            </div>
+
+            <div class="upload-container">
+                <div class="upload-box">
+                    <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
+                    <button class="btn btn-primary btn-large" onclick="document.getElementById('csv-file-input').click()">
+                        Choose CSV File
+                    </button>
+                    <p class="upload-help">Upload a CSV file with contact information</p>
+                    <div class="csv-format-help">
+                        <h4>Expected CSV Format:</h4>
+                        <p>Vendor Name, Contact Name, Email, Phone, Website, Category, Segment, Status, Notes</p>
+                    </div>
+                </div>
+
+                <div id="upload-preview" class="upload-preview" style="display: none;">
+                    <h3>Preview (<span id="preview-count">0</span> contacts)</h3>
+                    <div id="preview-content"></div>
+                    <div class="upload-actions">
+                        <button class="btn btn-primary" onclick="app.confirmImport()">Import Contacts</button>
+                        <button class="btn btn-secondary" onclick="app.cancelImport()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Page -->
+        <div id="analytics-page" class="page">
+            <div class="page-header">
+                <h2>Analytics & Reports</h2>
+            </div>
+
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h3>Outreach Performance</h3>
+                    <div id="outreach-chart"></div>
+                </div>
+                <div class="analytics-card">
+                    <h3>Status Breakdown</h3>
+                    <div id="status-chart"></div>
+                </div>
+                <div class="analytics-card">
+                    <h3>Category Distribution</h3>
+                    <div id="category-chart"></div>
+                </div>
+                <div class="analytics-card">
+                    <h3>Follow-Up Queue</h3>
+                    <div id="followup-list"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Contact Modal -->
+    <div id="contact-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add Contact</h3>
+                <button class="modal-close" onclick="app.closeContactModal()">&times;</button>
+            </div>
+            <form id="contact-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Vendor Name *</label>
+                        <input type="text" name="vendorName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Name</label>
+                        <input type="text" name="contactName">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="tel" name="phone">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Website</label>
+                        <input type="url" name="website">
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select name="category">
+                            <option value="">Select Category</option>
+                            <option value="Ski Resort">Ski Resort</option>
+                            <option value="Ski Club">Ski Club</option>
+                            <option value="Outdoor Gear Shop">Outdoor Gear Shop</option>
+                            <option value="Ski/Bike Shop">Ski/Bike Shop</option>
+                            <option value="Equipment Manufacturer">Equipment Manufacturer</option>
+                            <option value="Nordic Ski Center">Nordic Ski Center</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Segment</label>
+                        <select name="segment">
+                            <option value="">Select Segment</option>
+                            <option value="Expo">Expo</option>
+                            <option value="NE">Northeast</option>
+                            <option value="Club">Club</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="status">
+                            <option value="Not Started">Not Started</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Responded">Responded</option>
+                            <option value="Signed Up">Signed Up</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea name="notes" rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="app.closeContactModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Contact</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Activity Modal -->
+    <div id="activity-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Log Activity</h3>
+                <button class="modal-close" onclick="app.closeActivityModal()">&times;</button>
+            </div>
+            <form id="activity-form">
+                <div class="form-group">
+                    <label>Activity Type *</label>
+                    <select name="type" required>
+                        <option value="">Select Type</option>
+                        <option value="Email Sent">Email Sent</option>
+                        <option value="Phone Call">Phone Call</option>
+                        <option value="LinkedIn Message">LinkedIn Message</option>
+                        <option value="Follow-up">Follow-up</option>
+                        <option value="Meeting">Meeting</option>
+                        <option value="Note">Note</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Notes *</label>
+                    <textarea name="notes" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Follow-up Date</label>
+                    <input type="date" name="followUpDate">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="app.closeActivityModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Log Activity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Modal -->
+    <div id="script-modal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="script-modal-title">Add Script</h3>
+                <button class="modal-close" onclick="app.closeScriptModal()">&times;</button>
+            </div>
+            <form id="script-form">
+                <div class="form-group">
+                    <label>Script Title *</label>
+                    <input type="text" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label>Script Type *</label>
+                    <select name="type" required>
+                        <option value="">Select Type</option>
+                        <option value="Email">Email</option>
+                        <option value="Phone Call">Phone Call</option>
+                        <option value="LinkedIn">LinkedIn Message</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Subject Line (for emails)</label>
+                    <input type="text" name="subject">
+                </div>
+                <div class="form-group">
+                    <label>Script Content *</label>
+                    <textarea name="content" rows="10" required></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="app.closeScriptModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Script</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
