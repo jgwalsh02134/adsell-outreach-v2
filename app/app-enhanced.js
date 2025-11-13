@@ -92,6 +92,20 @@ class OutreachTracker {
             });
         });
 
+        // AI modal close handlers
+        const aiClose = document.getElementById('ai-modal-close');
+        if (aiClose) {
+            aiClose.onclick = hideAIModal;
+        }
+        const aiClose2 = document.getElementById('ai-modal-close-2');
+        if (aiClose2) {
+            aiClose2.onclick = hideAIModal;
+        }
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('ai-modal');
+            if (e.target === modal) hideAIModal();
+        });
+
         // Column chooser
         const columnsChooser = document.getElementById('columns-chooser');
         if (columnsChooser) {
@@ -294,11 +308,14 @@ Make it concise, clear, and tailored to ski / outdoor advertising with AdSell.ai
 `;
                 if (notesEl) notesEl.value = 'Generating...';
                 try {
-                    const result = await callAI(prompt);
-                    if (notesEl) notesEl.value = result || '';
+                    const raw = await callAI(prompt);
+                    if (notesEl) notesEl.value = raw || '';
+                    const html = (typeof marked !== 'undefined') ? marked.parse(raw) : raw;
+                    showAIModal(html);
                 } catch (e) {
                     console.error(e);
                     if (notesEl) notesEl.value = 'AI error: failed to generate follow-up email.';
+                    showAIModal('<p>AI error: failed to generate follow-up email.</p>');
                 }
             });
         }
@@ -323,11 +340,14 @@ Return:
 `;
                 if (notesEl) notesEl.value = 'Summarizing...';
                 try {
-                    const result = await callAI(prompt);
-                    if (notesEl) notesEl.value = result || '';
+                    const raw = await callAI(prompt);
+                    if (notesEl) notesEl.value = raw || '';
+                    const html = (typeof marked !== 'undefined') ? marked.parse(raw) : raw;
+                    showAIModal(html);
                 } catch (e) {
                     console.error(e);
                     if (notesEl) notesEl.value = 'AI error: failed to summarize call.';
+                    showAIModal('<p>AI error: failed to summarize call.</p>');
                 }
             });
         }
@@ -1198,13 +1218,14 @@ Return:
 3) A short follow-up email.
 4) A phone call script.
 `;
-                this.showAIResult('AI Outreach Script', 'Generating...');
+                showAIModal('<p class="text-muted">Generating...</p>');
                 try {
-                    const result = await callAI(prompt);
-                    this.showAIResult('AI Outreach Script', result);
+                    const raw = await callAI(prompt);
+                    const html = (typeof marked !== 'undefined') ? marked.parse(raw) : raw;
+                    showAIModal(html);
                 } catch (e) {
                     console.error(e);
-                    this.showAIResult('AI Outreach Script', 'AI error: failed to generate outreach.');
+                    showAIModal('<p>AI error: failed to generate outreach.</p>');
                 }
             });
         }
@@ -1226,13 +1247,14 @@ Give me:
 4) 3 likely objections and strong responses.
 5) A short suggested outreach angle (1 paragraph).
 `;
-                this.showAIResult('AI Company Research', 'Generating...');
+                showAIModal('<p class="text-muted">Generating...</p>');
                 try {
-                    const result = await callAI(prompt);
-                    this.showAIResult('AI Company Research', result);
+                    const raw = await callAI(prompt);
+                    const html = (typeof marked !== 'undefined') ? marked.parse(raw) : raw;
+                    showAIModal(html);
                 } catch (e) {
                     console.error(e);
-                    this.showAIResult('AI Company Research', 'AI error: failed to generate research.');
+                    showAIModal('<p>AI error: failed to generate research.</p>');
                 }
             });
         }
