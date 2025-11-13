@@ -2152,6 +2152,7 @@ OutreachTracker.prototype.aiOutreach = async function () {
     const c = this.currentContact || {};
     const businessName = c.companyName || c.vendorName || '';
     const prompt = `Generate an outreach script for ${businessName}. Include opener, email, follow-up, phone script.`;
+    this.showAIModal('<p class="text-muted">Generating...</p>');
     const result = await callAI(prompt);
     this.showAIModal(result);
 };
@@ -2160,6 +2161,7 @@ OutreachTracker.prototype.aiCompanyResearch = async function () {
     const c = this.currentContact || {};
     const businessName = c.companyName || c.vendorName || '';
     const prompt = `Research this company: ${businessName}, website ${c.website || ''}. Provide summary, marketing priorities, value props, objections, outreach angle.`;
+    this.showAIModal('<p class="text-muted">Generating...</p>');
     const result = await callAI(prompt);
     this.showAIModal(result);
 };
@@ -2168,6 +2170,7 @@ OutreachTracker.prototype.aiFollowupEmail = async function () {
     const notesEl = document.getElementById("activity-notes") || document.querySelector('#activity-form textarea[name="notes"]');
     const notes = notesEl ? notesEl.value : '';
     const prompt = `Write a follow-up email based on these notes:\n${notes}`;
+    this.showAIModal('<p class="text-muted">Generating...</p>');
     const result = await callAI(prompt);
     if (notesEl) notesEl.value = result;
     this.showAIModal(result);
@@ -2177,6 +2180,7 @@ OutreachTracker.prototype.aiSummarizeCall = async function () {
     const notesEl = document.getElementById("activity-notes") || document.querySelector('#activity-form textarea[name="notes"]');
     const notes = notesEl ? notesEl.value : '';
     const prompt = `Summarize this call: ${notes}. Include next steps and qualification score.`;
+    this.showAIModal('<p class="text-muted">Generating...</p>');
     const result = await callAI(prompt);
     if (notesEl) notesEl.value = result;
     this.showAIModal(result);
@@ -2187,6 +2191,7 @@ OutreachTracker.prototype.aiCleanCSV = async function () {
     const outputEl = document.getElementById("ai-csv-output");
     const input = inputEl ? inputEl.value : '';
     const prompt = `Clean this CSV:\n${input}\nNormalize emails, phones, business names, headers. Return cleaned CSV only.`;
+    this.showAIModal('<p class="text-muted">Generating...</p>');
     const result = await callAI(prompt);
     if (outputEl) outputEl.value = result;
     this.showAIModal("```\n" + result + "\n```");
