@@ -1107,83 +1107,12 @@ class OutreachTracker {
                             </div>
                         ` : '<p class="empty-state">No activity logged yet</p>'}
                     </div>
-                <!-- AI Tools -->
-                <div class="detail-section">
-                    <h3>AI Tools</h3>
-                    <div>
-                        <button id="ai-outreach-script" class="btn btn-ai" type="button">AI Outreach Script</button>
-                        <button id="ai-company-research" class="btn btn-ai" type="button">AI Company Research</button>
-                    </div>
-                </div>
                 </div>
             </div>
         `;
 
         document.getElementById('contact-detail-content').innerHTML = content;
         this.showPage('contact-detail');
-
-        // Wire AI buttons for this contact view
-        const outreachBtn = document.getElementById('ai-outreach-script');
-        if (outreachBtn) {
-            outreachBtn.addEventListener('click', async () => {
-                const c = this.currentContact || {};
-                const tagNames = Array.isArray(c.tags) ? c.tags.map(id => (this.tags.find(t => t.id === id)?.name) || id) : [];
-                const prompt = `
-You are a sales rep doing outbound to local ski and outdoor businesses.
-Generate an outreach package for this contact:
-Name: ${c.contactName || ""}
-Business: ${c.vendorName || c.companyName || ""}
-Category / Type: ${c.category || ""}
-Status / Stage: ${c.status || ""}${c.dealStage ? " / " + c.dealStage : ""}
-Next steps: ${c.nextSteps || ""}
-Notes: ${c.notes || ""}
-Tags: ${tagNames.join(", ")}
-Return:
-1) A 1-sentence opener.
-2) A full email outreach message.
-3) A short follow-up email.
-4) A phone call script.
-`;
-                showAIModal('<p class="text-muted">Generating...</p>');
-                try {
-                    const raw = await callAI(prompt);
-                    const html = (typeof marked !== 'undefined') ? marked.parse(raw) : raw;
-                    showAIModal(html);
-                } catch (e) {
-                    console.error(e);
-                    showAIModal('<p>AI error: failed to generate outreach.</p>');
-                }
-            });
-        }
-
-        const researchBtn = document.getElementById('ai-company-research');
-        if (researchBtn) {
-            researchBtn.addEventListener('click', async () => {
-                const c = this.currentContact || {};
-                const prompt = `
-You are researching a local business for an advertising pitch.
-Business name: ${c.vendorName || c.companyName || ""}
-Website: ${c.website || "unknown"}
-Category / type: ${c.category || ""}
-Location: ${c.city || ""} ${c.state || ""}
-Give me:
-1) A short company summary.
-2) What they likely care about in marketing.
-3) 3 tailored value propositions for AdSell.ai ski / travel advertising.
-4) 3 likely objections and strong responses.
-5) A short suggested outreach angle (1 paragraph).
-`;
-                showAIModal('<p class="text-muted">Generating...</p>');
-                try {
-                    const raw = await callAI(prompt);
-                    const html = (typeof marked !== 'undefined') ? marked.parse(raw) : raw;
-                    showAIModal(html);
-                } catch (e) {
-                    console.error(e);
-                    showAIModal('<p>AI error: failed to generate research.</p>');
-                }
-            });
-        }
     }
 
     editContact() {
@@ -2066,8 +1995,25 @@ OutreachTracker.prototype.showAIModal = function (html) {
 
 OutreachTracker.prototype.aiOutreach = async function () {
     const c = this.currentContact || {};
-    const businessName = c.companyName || c.vendorName || '';
-    const prompt = `Generate an outreach script for ${businessName}. Include opener, email, follow-up, phone script.`;
+    const businessName = c.companyName || c.vendorName || "";
+    const prompt = `
+You are a sales rep doing outbound to local ski and outdoor businesses.
+
+Generate an outreach package for this contact:
+
+Name: ${c.contactName || ""}
+Business: ${businessName}
+Category / Type: ${c.category || ""}
+Status / Stage: ${c.status || ""}${c.dealStage ? " / " + c.dealStage : ""}
+Next steps: ${c.nextSteps || ""}
+Notes: ${c.notes || ""}
+Tags: ${(Array.isArray(c.tags) ? c.tags : []).join(", ")}
+Return:
+1) A 1-sentence opener.
+2) A full email outreach message.
+3) A short follow-up email.
+4) A phone call script.
+`;
     this.showAIModal('<p class="text-muted">Generating...</p>');
     const result = await callAI(prompt);
     this.showAIModal(result);
@@ -2075,28 +2021,74 @@ OutreachTracker.prototype.aiOutreach = async function () {
 
 OutreachTracker.prototype.aiCompanyResearch = async function () {
     const c = this.currentContact || {};
-    const businessName = c.companyName || c.vendorName || '';
-    const prompt = `Research this company: ${businessName}, website ${c.website || ''}. Provide summary, marketing priorities, value props, objections, outreach angle.`;
+    const businessName = c.vendorName || c.companyName || "";
+    const prompt = `
+You are researching a local business for an advertising pitch.
+
+Business name: ${businessName}
+Website: ${c.website || "unknown"}
+Category / type: ${c.category || ""}
+Location: ${c.city || ""} ${c.state || ""}
+
+Give me:
+1) A short company summary.
+2) What they likely care about in marketing.
+3) 3 tailored value propositions for AdSell.ai ski / travel advertising.
+4) 3 likely objections and strong responses.
+5) A short suggested outreach angle (1 paragraph).
+`;
     this.showAIModal('<p class="text-muted">Generating...</p>');
     const result = await callAI(prompt);
     this.showAIModal(result);
 };
 
 OutreachTracker.prototype.aiFollowupEmail = async function () {
-    const notesEl = document.getElementById("activity-notes") || document.querySelector('#activity-form textarea[name="notes"]');
-    const notes = notesEl ? notesEl.value : '';
-    const prompt = `Write a follow-up email based on these notes:\n${notes}`;
-    this.showAIModal('<p class="text-muted">Generating...</p>');
+    const notesEl = document.getElementById("activity-notes") ||
+                    document.querySelector('#activity-form textarea[name="notes"]');
+    const notes = notesEl ? notesEl.value : "";
+    const c = this.currentContact || {};
+
+    const prompt = `
+Write a friendly but professional follow-up email for this sales scenario.
+
+Contact:
+Name: ${c.contactName || ""}
+Business: ${c.vendorName || c.companyName || ""}
+Stage: ${c.status || ""}
+
+My rough notes / context:
+${notes || "(no extra notes)"}
+
+Keep it concise, clear, and tailored to ski / outdoor advertising with AdSell.ai.
+`;
+    if (notesEl) notesEl.value = "Generating follow-up email with AI...";
     const result = await callAI(prompt);
     if (notesEl) notesEl.value = result;
     this.showAIModal(result);
 };
 
 OutreachTracker.prototype.aiSummarizeCall = async function () {
-    const notesEl = document.getElementById("activity-notes") || document.querySelector('#activity-form textarea[name="notes"]');
-    const notes = notesEl ? notesEl.value : '';
-    const prompt = `Summarize this call: ${notes}. Include next steps and qualification score.`;
-    this.showAIModal('<p class="text-muted">Generating...</p>');
+    const notesEl = document.getElementById("activity-notes") ||
+                    document.querySelector('#activity-form textarea[name="notes"]');
+    const rawNotes = notesEl ? notesEl.value : "";
+    if (!rawNotes) {
+        alert("Paste or type call notes first.");
+        return;
+    }
+
+    const prompt = `
+Take these rough call notes and turn them into a clean sales call summary.
+
+Notes:
+${rawNotes}
+
+Provide:
+- A 3–5 sentence summary of the call.
+- Bullet list of agreed next steps.
+- A 0–100 qualification score with 1–2 lines on why.
+- A recommended next outreach touch (channel + timing).
+`;
+    if (notesEl) notesEl.value = "Summarizing with AI...";
     const result = await callAI(prompt);
     if (notesEl) notesEl.value = result;
     this.showAIModal(result);
@@ -2105,10 +2097,31 @@ OutreachTracker.prototype.aiSummarizeCall = async function () {
 OutreachTracker.prototype.aiCleanCSV = async function () {
     const inputEl = document.getElementById("ai-csv-input");
     const outputEl = document.getElementById("ai-csv-output");
-    const input = inputEl ? inputEl.value : '';
-    const prompt = `Clean this CSV:\n${input}\nNormalize emails, phones, business names, headers. Return cleaned CSV only.`;
-    this.showAIModal('<p class="text-muted">Generating...</p>');
+    if (!inputEl || !outputEl) return;
+
+    const rawCsv = inputEl.value.trim();
+    if (!rawCsv) {
+        outputEl.value = "Paste CSV above first.";
+        return;
+    }
+
+    const prompt = `
+You are a data cleaner preparing CSVs for import into a CRM.
+
+Clean and normalize this CSV:
+- Fix capitalization (business names, cities, states).
+- Normalize phone formats.
+- Trim whitespace.
+- Make sure header names are simple: name, email, phone, businessName, contactType, status, city, state, website where possible.
+- Keep it valid CSV.
+
+Return ONLY the cleaned CSV, no explanation.
+
+Raw CSV:
+${rawCsv}
+`;
+    outputEl.value = "Cleaning CSV with AI...";
     const result = await callAI(prompt);
-    if (outputEl) outputEl.value = result;
+    outputEl.value = result;
     this.showAIModal("```\n" + result + "\n```");
 };
