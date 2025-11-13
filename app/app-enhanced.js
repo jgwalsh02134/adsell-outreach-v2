@@ -1,4 +1,30 @@
 // AdSell.ai Outreach Tracker - Enhanced with Profile Builder
+
+// Shared AI helper (OpenAI proxy via Cloudflare Worker)
+async function callAI(prompt) {
+    const response = await fetch("https://adsell-openai-proxy.jgregorywalsh.workers.dev/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: prompt })
+    });
+    let data;
+    try {
+        data = await response.json();
+    } catch (e) {
+        console.error("Failed to parse AI response JSON:", e);
+        return "AI error: invalid JSON response.";
+    }
+    try {
+        const text =
+            data?.output?.[0]?.content?.[0]?.text ??
+            data?.output_text ??
+            JSON.stringify(data);
+        return text;
+    } catch (e) {
+        console.error("Failed to extract AI text:", e);
+        return "AI error: could not extract text.";
+    }
+}
 class OutreachTracker {
     constructor() {
         this.contacts = [];
@@ -132,6 +158,41 @@ class OutreachTracker {
             exportActivitiesCsvBtn.addEventListener('click', () => this.exportActivitiesCSV());
         }
 
+        // AI CSV cleanup
+        const aiCleanCsvBtn = document.getElementById('ai-clean-csv');
+        if (aiCleanCsvBtn) {
+            aiCleanCsvBtn.addEventListener('click', async () => {
+                const input = document.getElementById('ai-csv-input');
+                const output = document.getElementById('ai-csv-output');
+                if (!input || !output) return;
+                const rawCsv = input.value.trim();
+                if (!rawCsv) {
+                    alert('Paste raw CSV first.');
+                    return;
+                }
+                const prompt = `
+You are a data cleaner preparing CSVs for import into a CRM.
+Clean and normalize this CSV:
+- Fix capitalization (business names, cities, states).
+- Normalize phone formats.
+- Trim whitespace.
+- Make sure header names are consistent and simple: name, email, phone, businessName, contactType, status, city, state, website where possible.
+- Keep it valid CSV.
+Return ONLY the cleaned CSV, no explanation.
+Raw CSV:
+${rawCsv}
+`;
+                output.value = 'Generating...';
+                try {
+                    const result = await callAI(prompt);
+                    output.value = result || 'AI returned empty result.';
+                } catch (e) {
+                    console.error(e);
+                    output.value = 'AI error: failed to generate cleaned CSV.';
+                }
+            });
+        }
+
         // Advanced filters actions (delegation within details)
         const advDetails = document.getElementById('advanced-filters');
         if (advDetails) {
@@ -207,6 +268,64 @@ class OutreachTracker {
             e.preventDefault();
             this.saveScript(e.target);
         });
+
+        // AI buttons inside Activity modal
+        const followupBtn = document.getElementById('ai-followup-email');
+        if (followupBtn) {
+            followupBtn.addEventListener('click', async () => {
+                const notesEl = document.querySelector('#activity-form textarea[name="notes"]');
+                const notes = notesEl ? notesEl.value : '';
+                const c = this.currentContact || {};
+                const prompt = `
+Write a friendly but professional follow-up email for this sales scenario.
+Contact:
+Name: ${c.contactName || ""}
+Business: ${c.vendorName || c.companyName || ""}
+Stage: ${c.status || ""}
+Next steps: ${c.nextSteps || ""}
+My rough notes / context:
+${notes || "(no extra notes)"}
+Make it concise, clear, and tailored to ski / outdoor advertising with AdSell.ai.
+`;
+                if (notesEl) notesEl.value = 'Generating...';
+                try {
+                    const result = await callAI(prompt);
+                    if (notesEl) notesEl.value = result || '';
+                } catch (e) {
+                    console.error(e);
+                    if (notesEl) notesEl.value = 'AI error: failed to generate follow-up email.';
+                }
+            });
+        }
+        const summaryBtn = document.getElementById('ai-call-summary');
+        if (summaryBtn) {
+            summaryBtn.addEventListener('click', async () => {
+                const notesEl = document.querySelector('#activity-form textarea[name="notes"]');
+                const rawNotes = notesEl ? notesEl.value : '';
+                if (!rawNotes) {
+                    alert('Paste or type call notes first.');
+                    return;
+                }
+                const prompt = `
+Take these rough call notes and turn them into a clean sales call summary.
+Notes:
+${rawNotes}
+Return:
+- A 3–5 sentence summary of the call.
+- Bullet list of agreed next steps.
+- A 0–100 qualification score with 1–2 lines on why.
+- A recommended next outreach touch (channel + timing).
+`;
+                if (notesEl) notesEl.value = 'Summarizing...';
+                try {
+                    const result = await callAI(prompt);
+                    if (notesEl) notesEl.value = result || '';
+                } catch (e) {
+                    console.error(e);
+                    if (notesEl) notesEl.value = 'AI error: failed to summarize call.';
+                }
+            });
+        }
 
         // Search and filters
         document.getElementById('search-input').addEventListener('input', () => this.filterContacts());
@@ -1043,6 +1162,67 @@ class OutreachTracker {
 
         document.getElementById('contact-detail-content').innerHTML = content;
         this.showPage('contact-detail');
+
+        // Wire AI buttons for this contact view
+        const outreachBtn = document.getElementById('ai-generate-outreach');
+        if (outreachBtn) {
+            outreachBtn.addEventListener('click', async () => {
+                const c = this.currentContact || {};
+                const tagNames = Array.isArray(c.tags) ? c.tags.map(id => (this.tags.find(t => t.id === id)?.name) || id) : [];
+                const prompt = `
+You are a sales rep doing outbound to local ski and outdoor businesses.
+Generate an outreach package for this contact:
+Name: ${c.contactName || ""}
+Business: ${c.vendorName || c.companyName || ""}
+Category / Type: ${c.category || ""}
+Status / Stage: ${c.status || ""}${c.dealStage ? " / " + c.dealStage : ""}
+Next steps: ${c.nextSteps || ""}
+Notes: ${c.notes || ""}
+Tags: ${tagNames.join(", ")}
+Return:
+1) A 1-sentence opener.
+2) A full email outreach message.
+3) A short follow-up email.
+4) A phone call script.
+`;
+                this.showAIResult('AI Outreach Script', 'Generating...');
+                try {
+                    const result = await callAI(prompt);
+                    this.showAIResult('AI Outreach Script', result);
+                } catch (e) {
+                    console.error(e);
+                    this.showAIResult('AI Outreach Script', 'AI error: failed to generate outreach.');
+                }
+            });
+        }
+
+        const researchBtn = document.getElementById('ai-research-company');
+        if (researchBtn) {
+            researchBtn.addEventListener('click', async () => {
+                const c = this.currentContact || {};
+                const prompt = `
+You are researching a local business for an advertising pitch.
+Business name: ${c.vendorName || c.companyName || ""}
+Website: ${c.website || "unknown"}
+Category / type: ${c.category || ""}
+Location: ${c.city || ""} ${c.state || ""}
+Give me:
+1) A short company summary.
+2) What they likely care about in marketing.
+3) 3 tailored value propositions for AdSell.ai ski / travel advertising.
+4) 3 likely objections and strong responses.
+5) A short suggested outreach angle (1 paragraph).
+`;
+                this.showAIResult('AI Company Research', 'Generating...');
+                try {
+                    const result = await callAI(prompt);
+                    this.showAIResult('AI Company Research', result);
+                } catch (e) {
+                    console.error(e);
+                    this.showAIResult('AI Company Research', 'AI error: failed to generate research.');
+                }
+            });
+        }
     }
 
     editContact() {
@@ -1810,6 +1990,20 @@ AdSell.ai`,
             toast.style.animation = 'slideOut 0.3s ease-out';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
+    }
+
+    // Show AI result modal helper
+    showAIResult(title, text) {
+        const modal = document.getElementById('ai-modal');
+        const titleEl = document.getElementById('ai-modal-title');
+        const output = document.getElementById('ai-modal-output');
+        if (!modal || !titleEl || !output) {
+            alert(text);
+            return;
+        }
+        titleEl.textContent = title || 'AI Result';
+        output.value = text || '';
+        modal.classList.add('active');
     }
 
     // Pipeline

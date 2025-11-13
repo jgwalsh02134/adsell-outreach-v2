@@ -729,6 +729,29 @@ body {
     justify-content: center;
 }
 
+/* AI Buttons & CSV helper */
+.btn-ai {
+    background: #4361ee;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-top: 0.35rem;
+    margin-right: 0.35rem;
+}
+
+.btn-ai:hover {
+    background: #3650c7;
+}
+
+.ai-csv-helper textarea {
+    width: 100%;
+    margin-top: 0.35rem;
+    font-family: var(--font-mono, monospace);
+}
+
 /* Analytics */
 .analytics-grid {
     display: grid;
