@@ -2,11 +2,15 @@
 
 // Shared AI helper (OpenAI proxy via Cloudflare Worker)
 async function callAI(prompt) {
-    const response = await fetch("https://adsell-openai-proxy.jgregorywalsh.workers.dev/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: prompt })
-    });
+    const response = await fetch(
+        "https://adsell-openai-proxy.jgregorywalsh.workers.dev/",
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ input: prompt })
+        }
+    );
+
     let data;
     try {
         data = await response.json();
@@ -14,12 +18,13 @@ async function callAI(prompt) {
         console.error("Failed to parse AI response JSON:", e);
         return "AI error: invalid JSON response.";
     }
+
     try {
-        const text =
-            data?.output?.[0]?.content?.[0]?.text ??
-            data?.output_text ??
-            JSON.stringify(data);
-        return text;
+        return (
+            (data && data.output && data.output[0] && data.output[0].content && data.output[0].content[0] && data.output[0].content[0].text) ||
+            data?.output_text ||
+            JSON.stringify(data)
+        );
     } catch (e) {
         console.error("Failed to extract AI text:", e);
         return "AI error: could not extract text.";
@@ -297,7 +302,7 @@ Make it concise, clear, and tailored to ski / outdoor advertising with AdSell.ai
                 }
             });
         }
-        const summaryBtn = document.getElementById('ai-call-summary');
+        const summaryBtn = document.getElementById('ai-summarize-call');
         if (summaryBtn) {
             summaryBtn.addEventListener('click', async () => {
                 const notesEl = document.querySelector('#activity-form textarea[name="notes"]');
@@ -1156,6 +1161,14 @@ Return:
                             </div>
                         ` : '<p class="empty-state">No activity logged yet</p>'}
                     </div>
+                <!-- AI Tools -->
+                <div class="detail-section">
+                    <h3>AI Tools</h3>
+                    <div>
+                        <button id="ai-outreach-script" class="btn btn-ai" type="button">AI Outreach Script</button>
+                        <button id="ai-company-research" class="btn btn-ai" type="button">AI Company Research</button>
+                    </div>
+                </div>
                 </div>
             </div>
         `;
@@ -1164,7 +1177,7 @@ Return:
         this.showPage('contact-detail');
 
         // Wire AI buttons for this contact view
-        const outreachBtn = document.getElementById('ai-generate-outreach');
+        const outreachBtn = document.getElementById('ai-outreach-script');
         if (outreachBtn) {
             outreachBtn.addEventListener('click', async () => {
                 const c = this.currentContact || {};
@@ -1196,7 +1209,7 @@ Return:
             });
         }
 
-        const researchBtn = document.getElementById('ai-research-company');
+        const researchBtn = document.getElementById('ai-company-research');
         if (researchBtn) {
             researchBtn.addEventListener('click', async () => {
                 const c = this.currentContact || {};

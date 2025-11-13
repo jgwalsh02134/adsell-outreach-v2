@@ -732,18 +732,15 @@ body {
 /* AI Buttons & CSV helper */
 .btn-ai {
     background: #4361ee;
-    color: #fff;
-    border: none;
+    color: white;
+    padding: 6px 12px;
     border-radius: 6px;
-    padding: 0.35rem 0.75rem;
-    font-size: 0.9rem;
     cursor: pointer;
-    margin-top: 0.35rem;
-    margin-right: 0.35rem;
+    margin: 4px 0;
 }
 
 .btn-ai:hover {
-    background: #3650c7;
+    background: #3453d3;
 }
 
 .ai-csv-helper textarea {
