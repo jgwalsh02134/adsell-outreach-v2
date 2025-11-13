@@ -13,25 +13,35 @@ async function callAI(prompt) {
         );
 
         if (!response.ok) {
+            console.error("AI HTTP error:", response.status, await response.text());
             return "AI error: HTTP " + response.status;
         }
 
+        const text = await response.text();
+
+        // Try JSON first
         let data;
         try {
-            data = await response.json();
-        } catch (err) {
-            console.error("JSON parse error:", err);
-            return "AI error: invalid JSON.";
+            data = JSON.parse(text);
+        } catch {
+            // Worker may already be returning plain text
+            return text;
         }
 
-        return (
-            data?.output?.[0]?.content?.[0]?.text ||
-            data?.output_text ||
-            JSON.stringify(data)
-        );
+        // OpenAI Responses API shape
+        try {
+            return (
+                data?.output?.[0]?.content?.[0]?.text ||
+                data?.output_text ||
+                text
+            );
+        } catch (err) {
+            console.error("AI text extraction error:", err);
+            return text;
+        }
     } catch (err) {
-        console.error("Fetch error:", err);
-        return "AI error: worker unreachable.";
+        console.error("AI fetch failed:", err);
+        return "AI error: worker unreachable or network error.";
     }
 }
 class OutreachTracker {
@@ -188,40 +198,7 @@ class OutreachTracker {
             exportActivitiesCsvBtn.addEventListener('click', () => this.exportActivitiesCSV());
         }
 
-        // AI CSV cleanup
-        const aiCleanCsvBtn = document.getElementById('ai-clean-csv');
-        if (aiCleanCsvBtn) {
-            aiCleanCsvBtn.addEventListener('click', async () => {
-                const input = document.getElementById('ai-csv-input');
-                const output = document.getElementById('ai-csv-output');
-                if (!input || !output) return;
-                const rawCsv = input.value.trim();
-                if (!rawCsv) {
-                    alert('Paste raw CSV first.');
-                    return;
-                }
-                const prompt = `
-You are a data cleaner preparing CSVs for import into a CRM.
-Clean and normalize this CSV:
-- Fix capitalization (business names, cities, states).
-- Normalize phone formats.
-- Trim whitespace.
-- Make sure header names are consistent and simple: name, email, phone, businessName, contactType, status, city, state, website where possible.
-- Keep it valid CSV.
-Return ONLY the cleaned CSV, no explanation.
-Raw CSV:
-${rawCsv}
-`;
-                output.value = 'Generating...';
-                try {
-                    const result = await callAI(prompt);
-                    output.value = result || 'AI returned empty result.';
-                } catch (e) {
-                    console.error(e);
-                    output.value = 'AI error: failed to generate cleaned CSV.';
-                }
-            });
-        }
+        // (AI CSV cleanup handled via init() aiCleanCSV binding)
 
         // Advanced filters actions (delegation within details)
         const advDetails = document.getElementById('advanced-filters');
@@ -299,69 +276,7 @@ ${rawCsv}
             this.saveScript(e.target);
         });
 
-        // AI buttons inside Activity modal
-        const followupBtn = document.getElementById('ai-followup-email');
-        if (followupBtn) {
-            followupBtn.addEventListener('click', async () => {
-                const notesEl = document.querySelector('#activity-form textarea[name="notes"]');
-                const notes = notesEl ? notesEl.value : '';
-                const c = this.currentContact || {};
-                const prompt = `
-Write a friendly but professional follow-up email for this sales scenario.
-Contact:
-Name: ${c.contactName || ""}
-Business: ${c.vendorName || c.companyName || ""}
-Stage: ${c.status || ""}
-Next steps: ${c.nextSteps || ""}
-My rough notes / context:
-${notes || "(no extra notes)"}
-Make it concise, clear, and tailored to ski / outdoor advertising with AdSell.ai.
-`;
-                if (notesEl) notesEl.value = 'Generating...';
-                try {
-                    const raw = await callAI(prompt);
-                    if (notesEl) notesEl.value = raw || '';
-                    const html = (typeof marked !== 'undefined') ? marked.parse(raw) : raw;
-                    showAIModal(html);
-                } catch (e) {
-                    console.error(e);
-                    if (notesEl) notesEl.value = 'AI error: failed to generate follow-up email.';
-                    showAIModal('<p>AI error: failed to generate follow-up email.</p>');
-                }
-            });
-        }
-        const summaryBtn = document.getElementById('ai-summarize-call');
-        if (summaryBtn) {
-            summaryBtn.addEventListener('click', async () => {
-                const notesEl = document.querySelector('#activity-form textarea[name="notes"]');
-                const rawNotes = notesEl ? notesEl.value : '';
-                if (!rawNotes) {
-                    alert('Paste or type call notes first.');
-                    return;
-                }
-                const prompt = `
-Take these rough call notes and turn them into a clean sales call summary.
-Notes:
-${rawNotes}
-Return:
-- A 3–5 sentence summary of the call.
-- Bullet list of agreed next steps.
-- A 0–100 qualification score with 1–2 lines on why.
-- A recommended next outreach touch (channel + timing).
-`;
-                if (notesEl) notesEl.value = 'Summarizing...';
-                try {
-                    const raw = await callAI(prompt);
-                    if (notesEl) notesEl.value = raw || '';
-                    const html = (typeof marked !== 'undefined') ? marked.parse(raw) : raw;
-                    showAIModal(html);
-                } catch (e) {
-                    console.error(e);
-                    if (notesEl) notesEl.value = 'AI error: failed to summarize call.';
-                    showAIModal('<p>AI error: failed to summarize call.</p>');
-                }
-            });
-        }
+        // (AI modal buttons use init() aiFollowupEmail/aiSummarizeCall bindings)
 
         // Search and filters
         document.getElementById('search-input').addEventListener('input', () => this.filterContacts());
@@ -2131,7 +2046,8 @@ function showAIModal(html) {
         alert(typeof html === 'string' ? html : 'AI result ready.');
         return;
     }
-    body.innerHTML = html;
+    const rendered = (typeof marked !== 'undefined') ? marked.parse(html) : html;
+    body.innerHTML = rendered;
     modal.classList.add('active');
 }
 
@@ -2145,7 +2061,7 @@ const app = new OutreachTracker();
 
 // Class prototype AI helpers (delegating to callAI and modal)
 OutreachTracker.prototype.showAIModal = function (html) {
-    showAIModal(typeof marked !== 'undefined' ? marked.parse(html) : html);
+    showAIModal(html);
 };
 
 OutreachTracker.prototype.aiOutreach = async function () {
