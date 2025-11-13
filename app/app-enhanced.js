@@ -2,32 +2,36 @@
 
 // Shared AI helper (OpenAI proxy via Cloudflare Worker)
 async function callAI(prompt) {
-    const response = await fetch(
-        "https://adsell-openai-proxy.jgregorywalsh.workers.dev/",
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ input: prompt })
+    try {
+        const response = await fetch(
+            "https://adsell-openai-proxy.jgregorywalsh.workers.dev/",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ input: prompt })
+            }
+        );
+
+        if (!response.ok) {
+            return "AI error: HTTP " + response.status;
         }
-    );
 
-    let data;
-    try {
-        data = await response.json();
-    } catch (e) {
-        console.error("Failed to parse AI response JSON:", e);
-        return "AI error: invalid JSON response.";
-    }
+        let data;
+        try {
+            data = await response.json();
+        } catch (err) {
+            console.error("JSON parse error:", err);
+            return "AI error: invalid JSON.";
+        }
 
-    try {
         return (
-            (data && data.output && data.output[0] && data.output[0].content && data.output[0].content[0] && data.output[0].content[0].text) ||
+            data?.output?.[0]?.content?.[0]?.text ||
             data?.output_text ||
             JSON.stringify(data)
         );
-    } catch (e) {
-        console.error("Failed to extract AI text:", e);
-        return "AI error: could not extract text.";
+    } catch (err) {
+        console.error("Fetch error:", err);
+        return "AI error: worker unreachable.";
     }
 }
 class OutreachTracker {
@@ -65,6 +69,13 @@ class OutreachTracker {
         
         // Setup event listeners
         this.setupEventListeners();
+
+        // Wire AI buttons if present at load
+        document.getElementById("ai-outreach-script")?.addEventListener("click", () => this.aiOutreach());
+        document.getElementById("ai-company-research")?.addEventListener("click", () => this.aiCompanyResearch());
+        document.getElementById("ai-followup-email")?.addEventListener("click", () => this.aiFollowupEmail());
+        document.getElementById("ai-summarize-call")?.addEventListener("click", () => this.aiSummarizeCall());
+        document.getElementById("ai-clean-csv")?.addEventListener("click", () => this.aiCleanCSV());
         
         // Render initial page
         this.showPage('dashboard');
@@ -2131,3 +2142,52 @@ function hideAIModal() {
 
 // Initialize app
 const app = new OutreachTracker();
+
+// Class prototype AI helpers (delegating to callAI and modal)
+OutreachTracker.prototype.showAIModal = function (html) {
+    showAIModal(typeof marked !== 'undefined' ? marked.parse(html) : html);
+};
+
+OutreachTracker.prototype.aiOutreach = async function () {
+    const c = this.currentContact || {};
+    const businessName = c.companyName || c.vendorName || '';
+    const prompt = `Generate an outreach script for ${businessName}. Include opener, email, follow-up, phone script.`;
+    const result = await callAI(prompt);
+    this.showAIModal(result);
+};
+
+OutreachTracker.prototype.aiCompanyResearch = async function () {
+    const c = this.currentContact || {};
+    const businessName = c.companyName || c.vendorName || '';
+    const prompt = `Research this company: ${businessName}, website ${c.website || ''}. Provide summary, marketing priorities, value props, objections, outreach angle.`;
+    const result = await callAI(prompt);
+    this.showAIModal(result);
+};
+
+OutreachTracker.prototype.aiFollowupEmail = async function () {
+    const notesEl = document.getElementById("activity-notes") || document.querySelector('#activity-form textarea[name="notes"]');
+    const notes = notesEl ? notesEl.value : '';
+    const prompt = `Write a follow-up email based on these notes:\n${notes}`;
+    const result = await callAI(prompt);
+    if (notesEl) notesEl.value = result;
+    this.showAIModal(result);
+};
+
+OutreachTracker.prototype.aiSummarizeCall = async function () {
+    const notesEl = document.getElementById("activity-notes") || document.querySelector('#activity-form textarea[name="notes"]');
+    const notes = notesEl ? notesEl.value : '';
+    const prompt = `Summarize this call: ${notes}. Include next steps and qualification score.`;
+    const result = await callAI(prompt);
+    if (notesEl) notesEl.value = result;
+    this.showAIModal(result);
+};
+
+OutreachTracker.prototype.aiCleanCSV = async function () {
+    const inputEl = document.getElementById("ai-csv-input");
+    const outputEl = document.getElementById("ai-csv-output");
+    const input = inputEl ? inputEl.value : '';
+    const prompt = `Clean this CSV:\n${input}\nNormalize emails, phones, business names, headers. Return cleaned CSV only.`;
+    const result = await callAI(prompt);
+    if (outputEl) outputEl.value = result;
+    this.showAIModal("```\n" + result + "\n```");
+};
