@@ -113,6 +113,15 @@ class OutreachTracker {
             });
         });
 
+        // Mobile nav toggle
+        const navToggle = document.querySelector('.nav-toggle');
+        const navContainer = document.querySelector('.nav-container');
+        if (navToggle && navContainer) {
+            navToggle.addEventListener('click', () => {
+                navContainer.classList.toggle('nav-open');
+            });
+        }
+
         // AI modal close handlers
         const aiClose = document.getElementById('ai-modal-close');
         if (aiClose) {
@@ -541,7 +550,7 @@ class OutreachTracker {
 
             return `
             <tr>
-                <td data-col="vendor">
+                <td data-col="vendor" data-label="Vendor">
                     <label class="row-select-wrap">
                         <input type="checkbox" class="row-select" data-id="${contact.id}" ${this.selectedContactIds.has(contact.id) ? 'checked' : ''}>
                         <div>
@@ -550,13 +559,13 @@ class OutreachTracker {
                         </div>
                     </label>
                 </td>
-                <td data-col="contact">${contact.contactName || '—'}</td>
-                <td data-col="email">${contact.email}</td>
-                <td data-col="phone">${contact.phone || '—'}</td>
-                <td data-col="category">${contact.category || '—'}</td>
-                <td data-col="status"><span class="status-badge status-${this.slugify(contact.status)}">${contact.status}</span></td>
-                <td data-col="lastContact">${contact.lastContact ? this.formatDate(contact.lastContact) : '—'}</td>
-                <td data-col="actions">
+                <td data-col="contact" data-label="Contact">${contact.contactName || '—'}</td>
+                <td data-col="email" data-label="Email">${contact.email}</td>
+                <td data-col="phone" data-label="Phone">${contact.phone || '—'}</td>
+                <td data-col="category" data-label="Category">${contact.category || '—'}</td>
+                <td data-col="status" data-label="Status"><span class="status-badge status-${this.slugify(contact.status)}">${contact.status}</span></td>
+                <td data-col="lastContact" data-label="Last Contact">${contact.lastContact ? this.formatDate(contact.lastContact) : '—'}</td>
+                <td data-col="actions" data-label="Actions">
                     <button class="btn btn-secondary action-btn" onclick="app.viewContact('${contact.id}')">View</button>
                     <button class="btn btn-secondary action-btn" onclick="app.logActivity('${contact.id}')">Log Activity</button>
                 </td>
