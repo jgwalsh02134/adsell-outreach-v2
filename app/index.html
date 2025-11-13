@@ -367,6 +367,11 @@
                 </div>
             </div>
 
+            <div style="margin-bottom: 0.75rem;">
+                <button id="ai-outreach-script" class="btn btn-ai" type="button">AI Outreach Script</button>
+                <button id="ai-company-research" class="btn btn-ai" type="button">AI Company Research</button>
+            </div>
+
             <div id="contact-detail-content"></div>
         </div>
 
@@ -403,7 +408,7 @@
 
                 <section class="ai-csv-helper" style="margin-top: 1.5rem;">
                     <h3>AI CSV Cleanup (Optional)</h3>
-                    <p>Paste messy CSV below, click “AI Clean CSV”, and copy the cleaned version back into a file for import.</p>
+                    <p>Paste messy CSV below, click "AI Clean CSV", and copy the cleaned version back into a file for import.</p>
                     <textarea id="ai-csv-input" rows="6" placeholder="Paste raw CSV here"></textarea>
                     <button id="ai-clean-csv" class="btn btn-ai" type="button">AI Clean CSV</button>
                     <textarea id="ai-csv-output" rows="6" placeholder="Cleaned CSV will appear here"></textarea>
@@ -736,7 +741,7 @@
                 </div>
                 <div class="form-group">
                     <label>Notes *</label>
-                    <textarea name="notes" rows="4" required placeholder="What happened? What was discussed?"></textarea>
+                    <textarea id="activity-notes" name="notes" rows="4" required placeholder="What happened? What was discussed?"></textarea>
                     <div style="margin-top: 0.5rem;">
                         <button id="ai-followup-email" class="btn btn-ai" type="button">AI Follow-up Email</button>
                         <button id="ai-summarize-call" class="btn btn-ai" type="button">AI Summarize Call</button>
@@ -808,17 +813,16 @@
         <div class="modal-content modal-large">
             <div class="modal-header">
                 <h3 id="ai-modal-title">AI Result</h3>
-                <button class="modal-close" onclick="document.getElementById('ai-modal').classList.remove('active')">&times;</button>
+                <button id="ai-modal-close" class="modal-close">&times;</button>
             </div>
-            <div style="padding: 1rem;">
-                <textarea id="ai-modal-output" rows="16" style="width: 100%; font-family: var(--font-mono, monospace);" readonly></textarea>
-            </div>
+            <div id="ai-modal-body" class="markdown-output" style="padding: 1rem;"></div>
             <div class="modal-actions" style="padding: 1rem;">
-                <button class="btn btn-secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('ai-modal-output').value)">Copy</button>
-                <button class="btn btn-primary" type="button" onclick="document.getElementById('ai-modal').classList.remove('active')">Close</button>
+                <button class="btn btn-secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('ai-modal-body').innerText)">Copy</button>
+                <button class="btn btn-primary" type="button" id="ai-modal-close-2">Close</button>
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="app-enhanced.js"></script>
 </body>
 </html>
