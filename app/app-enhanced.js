@@ -2112,5 +2112,22 @@ AdSell.ai`,
     }
 }
 
+// Markdown AI modal helpers
+function showAIModal(html) {
+    const modal = document.getElementById('ai-modal');
+    const body = document.getElementById('ai-modal-body');
+    if (!modal || !body) {
+        alert(typeof html === 'string' ? html : 'AI result ready.');
+        return;
+    }
+    body.innerHTML = html;
+    modal.classList.add('active');
+}
+
+function hideAIModal() {
+    const modal = document.getElementById('ai-modal');
+    if (modal) modal.classList.remove('active');
+}
+
 // Initialize app
 const app = new OutreachTracker();

@@ -749,6 +749,31 @@ body {
     font-family: var(--font-mono, monospace);
 }
 
+/* Markdown output styling for AI modal */
+.markdown-output {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.5;
+    overflow-y: auto;
+    max-height: 70vh;
+}
+
+.markdown-output h1,
+.markdown-output h2,
+.markdown-output h3 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.markdown-output pre {
+    background: #f4f4f4;
+    padding: 10px;
+    border-radius: 6px;
+    overflow-x: auto;
+}
+
+.markdown-output ul {
+    margin-left: 1.2rem;
+}
 /* Analytics */
 .analytics-grid {
     display: grid;
