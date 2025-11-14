@@ -1,14 +1,14 @@
 // AdSell.ai Outreach Tracker - Enhanced with Profile Builder
 
 // Shared AI helper (OpenAI proxy via Cloudflare Worker)
-async function callAI(prompt) {
+async function callAI(prompt, mode = "default") {
     try {
         const response = await fetch(
             "https://adsell-openai-proxy.jgregorywalsh.workers.dev/",
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ input: prompt })
+                body: JSON.stringify({ input: prompt, mode })
             }
         );
 
@@ -2228,7 +2228,7 @@ If the business clearly appears to be ski/outdoor-related (e.g., ski resort, sno
 `;
 
     this.showAIModal('<p class="text-muted">Generating...</p>');
-    const result = await callAI(prompt);
+    const result = await callAI(prompt, "research");
     this.showAIModal(result);
 };
 
