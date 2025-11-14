@@ -92,9 +92,9 @@ class OutreachTracker {
         this.init();
     }
 
-    init() {
-        // Load data from localStorage
-        this.loadData();
+    async init() {
+        // Load data from API (with localStorage fallback)
+        await this.loadData();
         this.loadColumnPreferences();
         this.loadAdvancedFilters();
         
@@ -330,12 +330,38 @@ class OutreachTracker {
     }
 
     // Data Management
-    loadData() {
-        this.contacts = JSON.parse(localStorage.getItem('adsell_contacts')) || [];
-        this.activities = JSON.parse(localStorage.getItem('adsell_activities')) || [];
-        this.scripts = JSON.parse(localStorage.getItem('adsell_scripts')) || [];
-        this.tags = JSON.parse(localStorage.getItem('adsell_tags')) || [];
-        this.customFields = JSON.parse(localStorage.getItem('adsell_custom_fields')) || [];
+    async loadData() {
+        try {
+            const res = await fetch("https://adsell-openai-proxy.jgregorywalsh.workers.dev/contacts", {
+                method: "GET"
+            });
+
+            if (!res.ok) {
+                throw new Error("Failed to load shared contacts");
+            }
+
+            const data = await res.json();
+
+            this.contacts = Array.isArray(data.contacts) ? data.contacts : [];
+            this.activities = Array.isArray(data.activities) ? data.activities : [];
+            this.scripts = Array.isArray(data.scripts) ? data.scripts : [];
+            this.tags = Array.isArray(data.tags) ? data.tags : [];
+            this.customFields = Array.isArray(data.customFields) ? data.customFields : [];
+
+            // cache locally as backup
+            localStorage.setItem('adsell_contacts', JSON.stringify(this.contacts));
+            localStorage.setItem('adsell_activities', JSON.stringify(this.activities));
+            localStorage.setItem('adsell_scripts', JSON.stringify(this.scripts));
+            localStorage.setItem('adsell_tags', JSON.stringify(this.tags));
+            localStorage.setItem('adsell_custom_fields', JSON.stringify(this.customFields));
+        } catch (err) {
+            console.error("Failed to load from shared API, falling back to localStorage:", err);
+            this.contacts = JSON.parse(localStorage.getItem('adsell_contacts')) || [];
+            this.activities = JSON.parse(localStorage.getItem('adsell_activities')) || [];
+            this.scripts = JSON.parse(localStorage.getItem('adsell_scripts')) || [];
+            this.tags = JSON.parse(localStorage.getItem('adsell_tags')) || [];
+            this.customFields = JSON.parse(localStorage.getItem('adsell_custom_fields')) || [];
+        }
     }
 
     loadColumnPreferences() {
@@ -361,12 +387,30 @@ class OutreachTracker {
         localStorage.setItem('adsell_visible_columns', JSON.stringify(this.visibleColumns));
     }
 
-    saveData() {
+    async saveData() {
+        // keep local cache
         localStorage.setItem('adsell_contacts', JSON.stringify(this.contacts));
         localStorage.setItem('adsell_activities', JSON.stringify(this.activities));
         localStorage.setItem('adsell_scripts', JSON.stringify(this.scripts));
         localStorage.setItem('adsell_tags', JSON.stringify(this.tags));
         localStorage.setItem('adsell_custom_fields', JSON.stringify(this.customFields));
+
+        // push to shared API
+        try {
+            await fetch("https://adsell-openai-proxy.jgregorywalsh.workers.dev/contacts/import", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contacts: this.contacts,
+                    activities: this.activities,
+                    scripts: this.scripts,
+                    tags: this.tags,
+                    customFields: this.customFields
+                })
+            });
+        } catch (err) {
+            console.error("Failed to sync to shared contacts API:", err);
+        }
     }
 
     initializeDefaultTags() {
@@ -753,7 +797,7 @@ class OutreachTracker {
         this.updateBulkUI();
     }
 
-    bulkUpdateStatus() {
+    async bulkUpdateStatus() {
         const status = document.getElementById('bulk-status').value;
         if (!status) {
             alert('Choose a status to set.');
@@ -764,14 +808,14 @@ class OutreachTracker {
                 c.status = status;
             }
         });
-        this.saveData();
+        await this.saveData();
         this.renderContacts();
         this.applyColumnVisibility();
         this.updateStats();
         this.showNotification('Status updated for selected contacts');
     }
 
-    bulkAddTag() {
+    async bulkAddTag() {
         const tagId = document.getElementById('bulk-tag').value;
         if (!tagId) {
             alert('Choose a tag to add.');
@@ -783,13 +827,13 @@ class OutreachTracker {
                 if (!c.tags.includes(tagId)) c.tags.push(tagId);
             }
         });
-        this.saveData();
+        await this.saveData();
         this.renderContacts();
         this.applyColumnVisibility();
         this.showNotification('Tag added to selected contacts');
     }
 
-    bulkRemoveTag() {
+    async bulkRemoveTag() {
         const tagId = document.getElementById('bulk-tag').value;
         if (!tagId) {
             alert('Choose a tag to remove.');
@@ -800,20 +844,20 @@ class OutreachTracker {
                 c.tags = c.tags.filter(tid => tid !== tagId);
             }
         });
-        this.saveData();
+        await this.saveData();
         this.renderContacts();
         this.applyColumnVisibility();
         this.showNotification('Tag removed from selected contacts');
     }
 
-    bulkDelete() {
+    async bulkDelete() {
         if (this.selectedContactIds.size === 0) return;
         if (!confirm(`Delete ${this.selectedContactIds.size} selected contact(s)? This cannot be undone.`)) return;
         const selectedIds = new Set(this.selectedContactIds);
         this.contacts = this.contacts.filter(c => !selectedIds.has(c.id));
         this.activities = this.activities.filter(a => !selectedIds.has(a.contactId));
         this.selectedContactIds.clear();
-        this.saveData();
+        await this.saveData();
         this.renderContacts();
         this.applyColumnVisibility();
         this.updateStats();
@@ -849,7 +893,7 @@ class OutreachTracker {
         `).join('');
     }
 
-    saveContact(form) {
+    async saveContact(form) {
         const formData = new FormData(form);
         
         // Get selected tags
@@ -929,7 +973,7 @@ class OutreachTracker {
             this.contacts.push(contact);
         }
 
-        this.saveData();
+        await this.saveData();
         this.closeContactModal();
         this.renderContacts();
         this.updateStats();
@@ -1206,13 +1250,13 @@ class OutreachTracker {
         document.getElementById('contact-modal').classList.add('active');
     }
 
-    deleteContact() {
+    async deleteContact() {
         if (!this.currentContact) return;
         
         if (confirm(`Are you sure you want to delete ${this.currentContact.vendorName}?`)) {
             this.contacts = this.contacts.filter(c => c.id !== this.currentContact.id);
             this.activities = this.activities.filter(a => a.contactId !== this.currentContact.id);
-            this.saveData();
+            await this.saveData();
             this.showPage('contacts');
             this.updateStats();
             this.showNotification('Contact deleted successfully!');
@@ -1230,7 +1274,7 @@ class OutreachTracker {
         document.getElementById('activity-modal').classList.remove('active');
     }
 
-    saveActivity(form) {
+    async saveActivity(form) {
         if (!this.currentContact) return;
 
         const formData = new FormData(form);
@@ -1258,7 +1302,7 @@ class OutreachTracker {
             }
         }
 
-        this.saveData();
+        await this.saveData();
         this.closeActivityModal();
         this.viewContact(this.currentContact.id);
         this.renderRecentActivity();
@@ -1303,7 +1347,7 @@ class OutreachTracker {
         this.editingScriptId = null;
     }
 
-    saveScript(form) {
+    async saveScript(form) {
         const formData = new FormData(form);
         const script = {
             id: this.editingScriptId || this.generateId(),
@@ -1323,7 +1367,7 @@ class OutreachTracker {
             this.scripts.push(script);
         }
 
-        this.saveData();
+        await this.saveData();
         this.closeScriptModal();
         this.renderScripts();
         
@@ -1370,10 +1414,10 @@ class OutreachTracker {
         });
     }
 
-    deleteScript(id) {
+    async deleteScript(id) {
         if (confirm('Are you sure you want to delete this script?')) {
             this.scripts = this.scripts.filter(s => s.id !== id);
-            this.saveData();
+            await this.saveData();
             this.renderScripts();
             this.showNotification('Script deleted successfully!');
         }
@@ -1775,17 +1819,20 @@ AdSell.ai`,
         document.getElementById('upload-preview').style.display = 'block';
     }
 
-    confirmImport() {
+    async confirmImport() {
         if (!this.pendingImport) return;
 
         const count = this.pendingImport.length;
         this.contacts.push(...this.pendingImport);
-        this.saveData();
         this.pendingImport = null;
+        
+        await this.saveData();
         
         this.cancelImport();
         this.showPage('contacts');
         this.updateStats();
+        this.renderContacts();
+        this.applyColumnVisibility();
         
         this.showNotification(`${count} contacts imported successfully!`);
     }
