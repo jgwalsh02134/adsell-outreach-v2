@@ -2332,7 +2332,7 @@ OutreachTracker.prototype.aiOutreach = async function () {
     const businessName = c.vendorName || c.companyName || "";
     const category = c.category || "";
     const segment = c.segment || "";
-    const location = [c.city, c.state].filter(Boolean).join(", ");
+    const location = (c.city || "") + " " + (c.state || "");
     const contactName = c.contactName || "";
     const status = c.status || "";
     const notes = c.notes || "";
@@ -2342,61 +2342,59 @@ OutreachTracker.prototype.aiOutreach = async function () {
     const prompt = `
 You are an SDR for AdSell.ai.
 
-AdSell.ai is an AI-powered platform that helps businesses buy PRINT advertising directly in newspapers and magazines, without going through agencies. It:
-- recommends relevant print publications and placements,
+AdSell.ai is an AI-powered platform that helps businesses buy PRINT ads directly in newspapers and magazines. It:
+- recommends relevant print publications and sections,
 - simplifies ad creation and submission,
-- makes print significantly more affordable than traditional agency/direct print,
-- helps businesses reach audiences they miss with digital-only campaigns.
+- is usually cheaper than traditional agency/direct print buys,
+- complements digital campaigns by reaching audiences they might miss.
 
-You are reaching out to this account:
+You are writing outreach for this prospect:
 
-- Business: ${businessName || "(unknown name)"}
+- Business: ${businessName || "(unknown)"}
 - Contact: ${contactName || "(unknown contact)"}
-- Category / vertical: ${category || "(not specified)"}
-- Segment / region: ${segment || "(not specified)"}
+- Category: ${category || "(not specified)"}
+- Segment / Region: ${segment || "(not specified)"}
 - Location: ${location || "(not specified)"}
 - Website: ${website || "(unknown)"}
-- CRM status: ${status || "(not set)"}
-- CRM notes: ${notes || "(no notes)"}
-- CRM next steps: ${nextSteps || "(none recorded)"}
+- CRM Status: ${status || "(not set)"}
+- CRM Notes: ${notes || "(none)"}
+- CRM Next Steps: ${nextSteps || "(none)"}
 
-First, infer what this business likely does and what vertical/industry it belongs to (for example: ski resort, outdoor retailer, healthcare clinic, SaaS company, B2B services, local restaurant, tourism board, etc.).
+TASK:
+Write a complete outreach package in **Markdown** with the following sections and formatting:
 
-Then, write a structured outreach package in Markdown with the following sections:
+## Email Subject
 
-1. "Vertical / Context"
-   - One short paragraph describing:
-     - what this business likely is,
-     - who their customers are,
-     - what they are probably trying to achieve with marketing.
+- Provide 2–3 subject line options tailored to ${businessName}.
 
-2. "Email Subject Lines"
-   - 2–3 subject line options tailored to ${businessName}, taking into account the inferred vertical and goals.
+## Initial Email
 
-3. "Initial Outreach Email"
-   - A concise, friendly email that:
-     - acknowledges who they are and what they care about,
-     - explains AdSell.ai and the value of smart, targeted print advertising,
-     - connects print specifically to their likely goals (based on the inferred vertical),
-     - highlights: direct access to print, AI recommendations, lower cost, ease of execution,
-     - includes a clear but low-friction CTA (for example: a short call, quick demo, or account walkthrough).
+Write a short, friendly outreach email that:
+- acknowledges who they are and what they likely care about,
+- explains AdSell.ai in clear, practical language,
+- connects PRINT advertising to their likely goals (more customers, bookings, leads, awareness),
+- ends with a clear, low-friction CTA (short call or quick demo).
 
-4. "Phone Call Script"
-   - A short talk track that includes:
-     - opener,
-     - a few discovery questions customized to their vertical,
-     - a focused AdSell.ai value pitch,
-     - 2–3 objection responses (budget, "we only do digital", "print is dead", "no time").
+Use normal Markdown line breaks and paragraphs.
 
-5. "Follow-Up Emails"
-   - 2 short follow-up email variants:
-     - one for "no response yet",
-     - one for "they showed some interest but stalled".
+## Phone Call Script
 
-IMPORTANT:
-- Adapt your examples and language to the inferred vertical.
-- If (and only if) the business appears to be in the ski, snow sports, mountain resort, or outdoor recreation world (for example, category/notes/segment strongly suggests that), you may mention that AdSell.ai is currently running a special free-trial opportunity for ski/outdoor businesses and reference that as an additional reason to talk.
-- For all other verticals, do NOT mention the ski/outdoor free trial. Instead, focus on AdSell.ai's general value (targeting, affordability, simplicity).
+Write a simple phone script using bullet points:
+
+- **Opening:** one or two opening lines.
+- **Discovery Questions:** 3–5 questions tailored to this type of business.
+- **AdSell.ai Pitch:** 3–5 bullet points summarizing why AdSell.ai is a good fit (focused on print).
+- **Objection Handling:** 2–3 common objections (budget, "we only do digital", "print doesn’t work") and short responses.
+- **Close:** one call-to-action to move them to a next step.
+
+## Follow-Up Email
+
+Write a short follow-up email for when there has been no response yet. Keep it 4–6 sentences and refer back to the original outreach.
+
+Formatting rules:
+- Use Markdown headings exactly as above.
+- Use bullet lists where appropriate.
+- Do not add extra introductory text outside of these headings.
 `;
 
     this.showAIModal('<p class="text-muted">Generating...</p>');
