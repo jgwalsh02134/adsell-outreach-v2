@@ -63,6 +63,23 @@ body {
     color: var(--text-secondary);
 }
 
+.brand-link {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+}
+
+.brand-link h1,
+.brand-link .nav-subtitle {
+    margin: 0;
+}
+
 .nav-menu {
     display: flex;
     list-style: none;
@@ -231,6 +248,23 @@ body {
     border-radius: 0.75rem;
     box-shadow: var(--shadow);
     border: 1px solid var(--border);
+}
+
+.stat-card.dashboard-link {
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
+}
+
+.stat-card.dashboard-link:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+    background-color: rgba(148, 163, 184, 0.05);
+}
+
+.stat-card.dashboard-link:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow);
+    background-color: rgba(148, 163, 184, 0.12);
 }
 
 .stat-value {
@@ -1286,6 +1320,10 @@ form {
 
     .calendar-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-card {
+        padding: 1rem 1rem;
     }
 }
 

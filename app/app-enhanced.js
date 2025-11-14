@@ -183,6 +183,25 @@ class OutreachTracker {
             });
         });
 
+        // Brand logo click → dashboard
+        const brandButton = document.querySelector('.brand-link');
+        if (brandButton) {
+            brandButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showPage('dashboard');
+
+                // Close mobile nav if open
+                if (navContainer && navContainer.classList.contains('nav-open')) {
+                    navContainer.classList.remove('nav-open');
+                }
+
+                // Sync mobile tabbar active state to dashboard
+                const dashboardTab = document.querySelector('.mobile-tabbar .tab-link[data-page="dashboard"]');
+                const allTabs = document.querySelectorAll('.mobile-tabbar .tab-link');
+                allTabs.forEach(t => t.classList.toggle('active', t === dashboardTab));
+            });
+        }
+
         // AI modal close handlers
         const aiClose = document.getElementById('ai-modal-close');
         if (aiClose) {
