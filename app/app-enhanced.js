@@ -30,11 +30,32 @@ async function callAI(prompt, mode = "default") {
 
         // OpenAI Responses API shape
         try {
-            return (
-                data?.output?.[0]?.content?.[0]?.text ||
-                data?.output_text ||
-                text
-            );
+            let resultText = "";
+
+            if (Array.isArray(data?.output)) {
+                for (const item of data.output) {
+                    if (
+                        item &&
+                        item.type === "message" &&
+                        item.content &&
+                        item.content[0] &&
+                        typeof item.content[0].text === "string"
+                    ) {
+                        resultText = item.content[0].text;
+                        break;
+                    }
+                }
+            }
+
+            if (!resultText && typeof data.output_text === "string") {
+                resultText = data.output_text;
+            }
+
+            if (!resultText) {
+                resultText = text;
+            }
+
+            return resultText;
         } catch (err) {
             console.error("AI text extraction error:", err);
             return text;
