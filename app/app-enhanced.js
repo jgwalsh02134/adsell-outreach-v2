@@ -112,6 +112,12 @@ class OutreachTracker {
         this.showPage('dashboard');
         this.updateStats();
         this.renderRecentActivity();
+
+        // Set default active tab in mobile tabbar
+        const defaultTab = document.querySelector('.mobile-tabbar .tab-link[data-page="dashboard"]');
+        if (defaultTab) {
+            defaultTab.classList.add('active');
+        }
         
         // Add default scripts if none exist
         if (this.scripts.length === 0) {
@@ -128,7 +134,7 @@ class OutreachTracker {
         const navContainer = document.querySelector('.nav-container');
         const navToggle = document.querySelector('.nav-toggle');
 
-        // Navigation
+        // Top navigation links
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -141,15 +147,41 @@ class OutreachTracker {
                 if (navContainer && navContainer.classList.contains('nav-open')) {
                     navContainer.classList.remove('nav-open');
                 }
+
+                // Sync mobile tabbar active state
+                const tabLinks = document.querySelectorAll('.mobile-tabbar .tab-link');
+                tabLinks.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.page === page);
+                });
             });
         });
 
-        // Mobile nav toggle
+        // Mobile nav toggle (hamburger)
         if (navToggle && navContainer) {
             navToggle.addEventListener('click', () => {
                 navContainer.classList.toggle('nav-open');
             });
         }
+
+        // Bottom mobile tab bar
+        const tabLinks = document.querySelectorAll('.mobile-tabbar .tab-link');
+        tabLinks.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = btn.dataset.page;
+                if (!page) return;
+
+                this.showPage(page);
+
+                // Update active state on tabbar
+                tabLinks.forEach(b => b.classList.toggle('active', b === btn));
+
+                // Also close the hamburger menu if it's open
+                if (navContainer && navContainer.classList.contains('nav-open')) {
+                    navContainer.classList.remove('nav-open');
+                }
+            });
+        });
 
         // AI modal close handlers
         const aiClose = document.getElementById('ai-modal-close');

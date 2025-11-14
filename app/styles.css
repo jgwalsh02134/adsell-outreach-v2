@@ -188,6 +188,35 @@ body {
     color: var(--text-primary);
 }
 
+/* Mobile bottom tab bar */
+.mobile-tabbar {
+    display: none; /* shown only in mobile media query */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 8px rgba(15, 23, 42, 0.08);
+    z-index: 40;
+}
+
+.mobile-tabbar .tab-link {
+    flex: 1;
+    padding: 0.6rem 0.2rem;
+    border: none;
+    background: transparent;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-align: center;
+    cursor: pointer;
+}
+
+.mobile-tabbar .tab-link.active {
+    color: var(--primary-color);
+}
+
 /* Stats Grid */
 .stats-grid {
     display: grid;
@@ -1111,6 +1140,14 @@ form {
         background: var(--background);
     }
 
+    .mobile-tabbar {
+        display: flex;
+    }
+
+    .container {
+        padding-bottom: 4rem; /* space for bottom tab bar */
+    }
+
     .filters-bar {
         flex-direction: column;
         align-items: stretch;
@@ -1249,5 +1286,11 @@ form {
 
     .calendar-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-tabbar {
+        display: none;
     }
 }
