@@ -2186,48 +2186,64 @@ OutreachTracker.prototype.aiCompanyResearch = async function () {
     const location = [c.city, c.state].filter(Boolean).join(", ");
     const website = c.website || "";
     const notes = c.notes || "";
+    const leadSource = c.leadSource || "";
 
     const prompt = `
 You are an SDR strategist for AdSell.ai.
 
-AdSell.ai is an AI-powered platform that helps businesses buy PRINT ads directly in newspapers and magazines:
-- AI suggests relevant publications and placements,
-- campaigns are easier to execute than traditional print,
-- costs are typically lower than old-school agency or direct print buys,
-- print complements digital and reaches different audiences.
+AdSell.ai is an AI-powered platform that helps businesses buy PRINT ads directly in newspapers and magazines. It:
+- recommends relevant newspapers, magazines, and sections for a given business and audience,
+- simplifies creative submission and campaign management,
+- is typically more affordable than traditional agency/direct print buys,
+- complements digital campaigns by reaching audiences that digital alone may not reach.
 
-Analyze this account for outreach planning:
+You have this CRM information:
 
-- Business: ${businessName || "(unknown name)"}
-- Category / vertical: ${category || "(not specified)"}
-- Segment / region: ${segment || "(not specified)"}
-- Location: ${location || "(not specified)"}
-- Website: ${website || "(not known)"}
-- CRM notes: ${notes || "(no notes)"}
+- Business: ${businessName || "(not provided)"}
+- Category: ${category || "(not provided)"}
+- Segment / Region: ${segment || "(not provided)"}
+- Location: ${location || "(not provided)"}
+- Website: ${website || "(not provided)"}
+- Lead Source: ${leadSource || "(not provided)"}
+- CRM Notes: ${notes || "(none)"}
 
-Tasks:
+You have access to web search via the OpenAI tools. Use web search to:
+- Look up the business (and its website if provided),
+- Confirm what the business does and who it serves,
+- Find a small amount of publicly available context (for example: description, services, location, audience).
 
-1. "Inferred Vertical and Customers"
-   - Describe what this business likely does and who its customers are, based on the information given.
+Do not invent details you cannot confirm. If something is not clear from the CRM data or web search, keep it generic instead of guessing.
 
-2. "Likely Marketing Goals"
-   - List 3–5 likely marketing priorities or goals for this business (e.g., filling seats, selling products, increasing bookings, driving leads, building awareness), tailored to the inferred vertical.
+Also, if the business name/category/notes/website clearly indicate it is a ski resort, mountain destination, snow-sports shop, or outdoor recreation organization, then it is part of the ski/outdoor vertical and eligible for a special AdSell.ai ski/outdoor free-trial/pilot campaign. If not, do not mention ski/outdoor offers at all.
 
-3. "How AdSell.ai Can Help"
-   - List 3–5 specific ways AdSell.ai's print advertising capabilities can support those goals:
-     - tie each point to their vertical and customer base,
-     - mention examples of print channels (local papers, regional magazines, etc.) that would make sense for this kind of business.
+Return your findings in Markdown with this structure:
 
-4. "Objections and Responses"
-   - Provide 3–5 likely objections (e.g., budget, "we only do digital", "print doesn't work", "no time") and concise, strong responses framed around AdSell.ai's strengths.
+## Confirmed Company Summary
+- Briefly state what this business is and does, based on its website and any clearly relevant search results.
+- Mention the type of customers or audience it appears to serve.
+- Include 1–2 direct URLs or citation-style references to pages you used (for example: home page, about page, or key listing).
 
-5. "Recommended Outreach Angle"
-   - Suggest one or two outreach themes or angles an SDR should use when contacting this account (for example, emphasizing local reach, seasonal campaigns, event promotion, etc.), tailored to the inferred vertical.
+## Marketing Context
+- List 3–5 realistic marketing priorities for this kind of business, based on what you saw (e.g., drive bookings, increase event attendance, grow memberships, increase store traffic, generate leads).
+- Phrase them as practical statements, not wild guesses.
 
-If the business clearly appears to be ski/outdoor-related (e.g., ski resort, snow sports shop, mountain tourism), you may optionally mention that AdSell.ai currently has a special ski/outdoor-focused initiative or free-trial program. Otherwise, do not mention ski/outdoor promotions; keep the plan general and industry-appropriate.
+## How AdSell.ai Can Help
+- Provide 3–5 specific ways AdSell.ai's print advertising platform can help THIS business.
+- Tie each bullet to what you saw on the site (events, products, services, locations, audiences).
+- Emphasize: direct access to print, AI recommendations, lower cost, complement to digital.
+
+## Ski / Outdoor Free-Trial (only if clearly applicable)
+- Include this section ONLY if it is clearly a ski/outdoor business.
+- In that case, add a short paragraph suggesting how to position a special ski/outdoor free-trial / pilot offer for this business (for example, seasonal campaigns, regional outdoor publications, etc.).
+- If it is NOT ski/outdoor, skip this section entirely.
+
+## Suggested Outreach Angles
+- List 2–3 concise outreach angles or themes an SDR could use in emails or calls when talking to this account.
+- Each angle should connect AdSell.ai's print capabilities to something concrete you observed about the business.
 `;
 
     this.showAIModal('<p class="text-muted">Generating...</p>');
+    // IMPORTANT: use research mode so the Worker turns web search on
     const result = await callAI(prompt, "research");
     this.showAIModal(result);
 };
