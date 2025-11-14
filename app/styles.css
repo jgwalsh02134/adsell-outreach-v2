@@ -1095,6 +1095,12 @@ form {
 
     .filters-bar {
         flex-direction: column;
+        align-items: stretch;
+        margin-top: 0.5rem;
+    }
+
+    .filters-bar > * {
+        width: 100%;
     }
 
     .search-input,
@@ -1121,7 +1127,8 @@ form {
         background: var(--surface);
         border-radius: 0.75rem;
         box-shadow: var(--shadow);
-        margin-bottom: 0.75rem;
+        border: 1px solid var(--border);
+        margin: 0 0 0.75rem;
     }
 
     .contacts-table td {
@@ -1138,6 +1145,17 @@ form {
         padding-bottom: 0.5rem;
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .contacts-table td[data-col="status"] {
+        font-size: 0.875rem;
+    }
+
+    .contacts-table td[data-col="phone"],
+    .contacts-table td[data-col="category"],
+    .contacts-table td[data-col="lastContact"] {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
     }
 
     .contacts-table td[data-col="actions"] {
@@ -1173,6 +1191,14 @@ form {
     .modal-large form {
         max-height: calc(100vh - 100px);
         overflow-y: auto;
+    }
+
+    .btn {
+        padding: 0.75rem 1.25rem;
+    }
+
+    .modal-actions .btn + .btn {
+        margin-top: 0.5rem;
     }
 
     .bulk-actions {
