@@ -1064,11 +1064,11 @@ form {
 /* Mobile styles */
 @media (max-width: 768px) {
     .nav-container {
+        position: relative;
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
-        gap: 0.5rem;
-        flex-wrap: wrap;
+        padding: 0.5rem 1rem;
     }
 
     .nav-brand {
@@ -1083,14 +1083,32 @@ form {
 
     .nav-menu {
         display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        margin-top: 0.4rem;
         flex-direction: column;
         gap: 0.25rem;
-        margin-top: 0.5rem;
-        width: 100%;
+        background: var(--surface);
+        border-radius: 0.5rem;
+        padding: 0.5rem 0;
+        box-shadow: var(--shadow-lg);
+        z-index: 20;
     }
 
     .nav-container.nav-open .nav-menu {
         display: flex;
+    }
+
+    .nav-menu .nav-link {
+        padding: 0.6rem 1rem;
+        display: block;
+        width: 100%;
+    }
+
+    .nav-menu .nav-link:hover {
+        background: var(--background);
     }
 
     .filters-bar {

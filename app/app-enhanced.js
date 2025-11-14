@@ -125,18 +125,26 @@ class OutreachTracker {
     }
 
     setupEventListeners() {
+        const navContainer = document.querySelector('.nav-container');
+        const navToggle = document.querySelector('.nav-toggle');
+
         // Navigation
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                const page = e.target.dataset.page;
-                this.showPage(page);
+                const page = link.dataset.page || e.target.dataset.page;
+                if (page) {
+                    this.showPage(page);
+                }
+
+                // Close mobile dropdown if open
+                if (navContainer && navContainer.classList.contains('nav-open')) {
+                    navContainer.classList.remove('nav-open');
+                }
             });
         });
 
         // Mobile nav toggle
-        const navToggle = document.querySelector('.nav-toggle');
-        const navContainer = document.querySelector('.nav-container');
         if (navToggle && navContainer) {
             navToggle.addEventListener('click', () => {
                 navContainer.classList.toggle('nav-open');
