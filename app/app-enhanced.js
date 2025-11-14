@@ -549,6 +549,7 @@ class OutreachTracker {
     renderCalendar() {
         if (!this._calendarDate) this._calendarDate = new Date();
         const grid = document.getElementById('calendar-grid');
+        const listEl = document.getElementById('calendar-followup-list');
         const title = document.getElementById('cal-title');
         const d = new Date(this._calendarDate.getFullYear(), this._calendarDate.getMonth(), 1);
         const month = d.getMonth();
@@ -586,7 +587,7 @@ class OutreachTracker {
         // Trailing blanks to complete grid
         while (cells.length % 7 !== 0) cells.push(null);
 
-        // Map follow-ups
+        // Map follow-ups for this month
         const byDateKey = (dateObj) => dateObj.toISOString().slice(0,10);
         const itemsByDay = {};
         this.contacts.forEach(c => {
@@ -598,20 +599,44 @@ class OutreachTracker {
             }
         });
 
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
         const cellsHtml = cells.map(cellDate => {
             if (!cellDate) {
                 return `<div class="calendar-cell"><div class="calendar-cell-header">&nbsp;</div><div class="calendar-cell-body"></div></div>`;
             }
             const key = byDateKey(cellDate);
             const items = itemsByDay[key] || [];
-            const itemsHtml = items.map(c => `
+            const isToday =
+                cellDate.getFullYear() === today.getFullYear() &&
+                cellDate.getMonth() === today.getMonth() &&
+                cellDate.getDate() === today.getDate();
+
+            const classes = ['calendar-cell'];
+            if (isToday) classes.push('today');
+            if (items.length > 0) classes.push('has-items');
+
+            const maxItems = 3;
+            const visibleItems = items.slice(0, maxItems);
+            const remaining = items.length - visibleItems.length;
+
+            const itemsHtml = visibleItems.map(c => `
                 <div class="calendar-item" data-id="${c.id}">
                     ${c.vendorName}
                 </div>
-            `).join('');
+            `).join('') + (remaining > 0 ? `
+                <div class="calendar-item">
+                    +${remaining} more…
+                </div>
+            ` : '');
+
             return `
-                <div class="calendar-cell">
-                    <div class="calendar-cell-header">${cellDate.getDate()}</div>
+                <div class="${classes.join(' ')}">
+                    <div class="calendar-cell-header">
+                        <span>${cellDate.getDate()}</span>
+                        ${items.length > 0 ? `<span class="calendar-count-badge">${items.length}</span>` : ''}
+                    </div>
                     <div class="calendar-cell-body">
                         ${itemsHtml}
                     </div>
@@ -621,12 +646,69 @@ class OutreachTracker {
 
         grid.innerHTML = headerHtml + cellsHtml;
 
-        grid.querySelectorAll('.calendar-item').forEach(el => {
+        grid.querySelectorAll('.calendar-item[data-id]').forEach(el => {
             el.addEventListener('click', () => {
                 const id = el.getAttribute('data-id');
                 this.viewContact(id);
             });
         });
+
+        // Build upcoming follow-ups list (next 30 days)
+        if (listEl) {
+            const upcoming = [];
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const horizon = new Date(now);
+            horizon.setDate(horizon.getDate() + 30);
+
+            this.contacts.forEach(c => {
+                if (!c.followUpDate) return;
+                const fd = new Date(c.followUpDate);
+                fd.setHours(0, 0, 0, 0);
+                if (fd >= now && fd <= horizon) {
+                    upcoming.push({
+                        date: fd,
+                        contact: c
+                    });
+                }
+            });
+
+            upcoming.sort((a, b) => a.date - b.date);
+
+            if (upcoming.length === 0) {
+                listEl.innerHTML = '<p class="empty-state">No upcoming follow-ups</p>';
+            } else {
+                listEl.innerHTML = upcoming.map(entry => {
+                    const c = entry.contact;
+                    const metaParts = [];
+                    if (c.status) metaParts.push(c.status);
+                    if (c.category) metaParts.push(c.category);
+                    const locationParts = [];
+                    if (c.city) locationParts.push(c.city);
+                    if (c.state) locationParts.push(c.state);
+                    if (locationParts.length) metaParts.push(locationParts.join(', '));
+
+                    const meta = metaParts.join(' • ');
+
+                    return `
+                        <div class="calendar-followup-row" data-id="${c.id}">
+                            <div class="calendar-followup-main">
+                                <div class="calendar-followup-name">${c.vendorName || '(No vendor name)'}</div>
+                                <div class="calendar-followup-meta">${meta || 'Follow-up scheduled'}</div>
+                            </div>
+                            <div class="calendar-followup-date">${this.formatDate(entry.date.toISOString())}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                listEl.querySelectorAll('.calendar-followup-row').forEach(row => {
+                    row.addEventListener('click', () => {
+                        const id = row.getAttribute('data-id');
+                        this.viewContact(id);
+                    });
+                });
+            }
+        }
     }
     renderRecentActivity() {
         const container = document.getElementById('recent-activity-list');
