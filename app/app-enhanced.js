@@ -755,7 +755,7 @@ class OutreachTracker {
             }).join('') : '';
 
             return `
-            <tr>
+            <tr class="contact-row" data-id="${contact.id}">
                 <td data-col="vendor" data-label="Vendor">
                     <label class="row-select-wrap">
                         <input type="checkbox" class="row-select" data-id="${contact.id}" ${this.selectedContactIds.has(contact.id) ? 'checked' : ''}>
@@ -777,6 +777,23 @@ class OutreachTracker {
                 </td>
             </tr>
         `}).join('');
+
+        // Make entire row clickable (except checkbox and action buttons)
+        tbody.querySelectorAll('.contact-row').forEach(row => {
+            row.addEventListener('click', (e) => {
+                const target = e.target;
+                if (
+                    target.closest('input.row-select') ||
+                    target.closest('.action-btn')
+                ) {
+                    return;
+                }
+                const id = row.getAttribute('data-id');
+                if (id) {
+                    this.viewContact(id);
+                }
+            });
+        });
     }
 
     getFilteredContacts() {

@@ -1297,6 +1297,14 @@ form {
         margin: 0 0 0.75rem;
     }
 
+.contact-row {
+    cursor: pointer;
+}
+
+.contact-row:hover {
+    background-color: rgba(148, 163, 184, 0.06);
+}
+
     .contacts-table td {
         display: flex;
         flex-direction: column;
