@@ -1550,62 +1550,156 @@ AdSell.ai`,
         this.saveData();
     }
 
-    // CSV Import (keeping existing implementation with minor enhancements)
+    // CSV Import - robust header mapping
     handleCSVUpload(file) {
         if (!file) return;
 
         const reader = new FileReader();
+
         reader.onload = (e) => {
             const csv = e.target.result;
-            const lines = csv.split('\n');
-            const headers = lines[0].split(',').map(h => h.trim());
-            
+            // Handle both \n and \r\n and ignore empty lines
+            const lines = csv.split(/\r?\n/).filter(line => line.trim().length > 0);
+            if (lines.length < 2) {
+                alert("CSV appears to be empty or missing data rows.");
+                return;
+            }
+
+            const headers = this.parseCSVLine(lines[0]).map(h => h.trim());
+            const headerMap = headers.map(h => h.toLowerCase());
+
             const contacts = [];
+
+            // Helper to check if a header contains any of the keywords
+            const hasAny = (header, keywords) =>
+                keywords.some(k => header.includes(k));
+
             for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
-                
-                const values = this.parseCSVLine(lines[i]);
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                const values = this.parseCSVLine(line);
+
                 const contact = {
                     id: this.generateId(),
-                    vendorName: '',
-                    companyName: '',
-                    contactName: '',
-                    title: '',
-                    email: '',
-                    phone: '',
-                    website: '',
-                    category: '',
-                    segment: '',
-                    status: 'Not Started',
-                    notes: '',
-                    internalNotes: '',
+                    vendorName: "",
+                    companyName: "",
+                    contactName: "",
+                    title: "",
+                    email: "",
+                    phone: "",
+                    website: "",
+                    category: "",
+                    segment: "",
+                    status: "Not Started",
+                    notes: "",
+                    internalNotes: "",
                     tags: [],
-                    leadSource: 'CSV Import',
+                    leadSource: "CSV Import",
                     createdAt: new Date().toISOString(),
                     lastContact: null,
                     followUpDate: null
                 };
 
+                const extraNotes = [];
+
                 headers.forEach((header, index) => {
-                    const value = values[index] ? values[index].trim() : '';
-                    const headerLower = header.toLowerCase();
-                    
-                    if (headerLower.includes('vendor') || headerLower.includes('business')) contact.vendorName = value;
-                    else if (headerLower.includes('company')) contact.companyName = value;
-                    else if (headerLower.includes('contact') && headerLower.includes('name')) contact.contactName = value;
-                    else if (headerLower.includes('title') || headerLower.includes('position')) contact.title = value;
-                    else if (headerLower.includes('email')) contact.email = value;
-                    else if (headerLower.includes('phone')) contact.phone = value;
-                    else if (headerLower.includes('website') || headerLower.includes('web')) contact.website = value;
-                    else if (headerLower.includes('category')) contact.category = value;
-                    else if (headerLower.includes('segment')) contact.segment = value;
-                    else if (headerLower.includes('status')) contact.status = value || 'Not Started';
-                    else if (headerLower.includes('note')) contact.notes = value;
+                    const rawValue = values[index] != null ? values[index] : "";
+                    const value = rawValue.toString().trim();
+                    if (!value) return;
+
+                    const h = headerMap[index];
+
+                    // Vendor / Company / Organization name
+                    if (hasAny(h, ["vendor", "business", "organization", "organisation", "org", "company", "account", "brand"])) {
+                        if (!contact.vendorName) contact.vendorName = value;
+                        if (!contact.companyName) contact.companyName = value;
+                    }
+                    // Contact name
+                    else if (
+                        (h.includes("contact") && h.includes("name")) ||
+                        hasAny(h, ["marketing_contact_name", "contact_name"]) ||
+                        (h === "name" || h.includes("full name"))
+                    ) {
+                        if (!contact.contactName) contact.contactName = value;
+                    }
+                    // Email
+                    else if (h.includes("email") || h.includes("e-mail")) {
+                        if (!contact.email) contact.email = value;
+                    }
+                    // Phone (direct, alt, mobile, etc.)
+                    else if (hasAny(h, ["phone", "tel", "telephone", "mobile", "cell"])) {
+                        if (!contact.phone) contact.phone = value;
+                        else if (!contact.phone.includes(value)) contact.phone += ` / ${value}`;
+                    }
+                    // Website / domain / URL
+                    else if (hasAny(h, ["website", "domain", "url", "site", "homepage"])) {
+                        if (!contact.website) {
+                            let v = value;
+                            if (!/^https?:\/\//i.test(v) && v) {
+                                v = "https://" + v.replace(/^\/+/, "");
+                            }
+                            contact.website = v;
+                        }
+                    }
+                    // Category / industry / vertical
+                    else if (hasAny(h, ["category", "industry", "vertical"])) {
+                        if (!contact.category) contact.category = value;
+                    }
+                    // Segment / region / market / territory
+                    else if (hasAny(h, ["segment", "region", "market", "territory"])) {
+                        if (!contact.segment) contact.segment = value;
+                    }
+                    // Status / stage / pipeline
+                    else if (hasAny(h, ["status", "stage", "pipeline"])) {
+                        contact.status = value || "Not Started";
+                    }
+                    // Notes / comments / description
+                    else if (hasAny(h, ["notes", "note", "comment", "comments", "description"])) {
+                        extraNotes.push(`${header}: ${value}`);
+                    }
+                    // Unknown columns → store in notes so we don't lose info
+                    else {
+                        extraNotes.push(`${header}: ${value}`);
+                    }
                 });
 
-                if (contact.vendorName && contact.email) {
+                // Fallbacks for vendor/company names
+                if (!contact.vendorName) {
+                    contact.vendorName =
+                        contact.companyName ||
+                        contact.contactName ||
+                        (contact.email ? contact.email.split("@")[0] : "") ||
+                        contact.phone ||
+                        "";
+                }
+                if (!contact.companyName && contact.vendorName) {
+                    contact.companyName = contact.vendorName;
+                }
+
+                // Merge extra notes into notes field
+                if (extraNotes.length) {
+                    contact.notes = contact.notes
+                        ? contact.notes + "\n" + extraNotes.join("\n")
+                        : extraNotes.join("\n");
+                }
+
+                // Keep the row if it has any meaningful identifier
+                const hasIdentifier =
+                    (contact.vendorName && contact.vendorName.trim()) ||
+                    (contact.companyName && contact.companyName.trim()) ||
+                    (contact.contactName && contact.contactName.trim()) ||
+                    (contact.email && contact.email.trim()) ||
+                    (contact.phone && contact.phone.trim());
+
+                if (hasIdentifier) {
                     contacts.push(contact);
                 }
+            }
+
+            if (contacts.length === 0) {
+                alert("No usable contact rows were found in this CSV.");
+                return;
             }
 
             this.pendingImport = contacts;
@@ -1644,10 +1738,15 @@ AdSell.ai`,
         }
 
         document.getElementById('preview-count').textContent = this.pendingImport.length;
-        
+
         const preview = this.pendingImport.slice(0, 10).map(contact => `
             <div style="padding: 0.5rem; border-bottom: 1px solid var(--border);">
-                <strong>${contact.vendorName}</strong> - ${contact.email} - ${contact.status}
+                <strong>${contact.vendorName || '(No vendor/business name)'}</strong><br>
+                ${contact.contactName ? `${contact.contactName} · ` : ''}
+                ${contact.email || '(no email)'}<br>
+                <span style="font-size: 0.8rem; color: var(--text-secondary);">
+                    Status: ${contact.status || 'Not Started'}
+                </span>
             </div>
         `).join('');
 
