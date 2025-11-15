@@ -622,7 +622,7 @@ class OutreachTracker {
         document.getElementById('stat-signed-up').textContent = signedUp;
     }
 
-    OutreachTracker.prototype.renderDashboardTasks = function () {
+    renderDashboardTasks() {
         const container = document.getElementById('dashboard-tasks-widget');
         if (!container) return;
 
@@ -669,11 +669,11 @@ class OutreachTracker {
         `;
 
         container.innerHTML = html;
-    };
+    }
 
     // ===== Tasks Page Rendering & Modal =====
 
-    OutreachTracker.prototype.renderTasksPage = function () {
+    renderTasksPage() {
         const todayEl = document.getElementById('tasks-today');
         const overdueEl = document.getElementById('tasks-overdue');
         const upcomingEl = document.getElementById('tasks-upcoming');
@@ -767,9 +767,9 @@ class OutreachTracker {
                 });
             }
         });
-    };
+    }
 
-    OutreachTracker.prototype.openTaskModal = function (taskId) {
+    openTaskModal(taskId) {
         const modal = document.getElementById('task-modal');
         const titleEl = document.getElementById('task-modal-title');
         const form = document.getElementById('task-form');
@@ -801,15 +801,15 @@ class OutreachTracker {
         }
 
         modal.classList.add('active');
-    };
+    }
 
-    OutreachTracker.prototype.closeTaskModal = function () {
+    closeTaskModal() {
         const modal = document.getElementById('task-modal');
         if (modal) modal.classList.remove('active');
         this.editingTaskId = null;
-    };
+    }
 
-    OutreachTracker.prototype.saveTask = async function (form) {
+    async saveTask(form) {
         const formData = new FormData(form);
         const taskData = {
             title: formData.get('title') || '',
@@ -827,7 +827,7 @@ class OutreachTracker {
 
         this.closeTaskModal();
         this.showNotification('Task saved successfully!');
-    };
+    }
 
     OutreachTracker.prototype.openCalendarDayModal = async function (dateKey) {
         const modal = document.getElementById('calendar-day-modal');
@@ -1103,7 +1103,7 @@ class OutreachTracker {
                 <div class="${classes.join(' ')}" data-date="${key}">
                     <div class="calendar-cell-header">
                         <span>${cellDate.getDate()}</span>
-                        ${items.length > 0 || tasksForDay.length > 0 ? `<span class="calendar-count-badge">${items.length + tasksForDay.length}</span>` : ''}
+                        ${items.length > 0 ? `<span class="calendar-count-badge">${items.length}</span>` : ''}
                     </div>
                     <div class="calendar-cell-body">
                         ${itemsHtml}
@@ -1867,7 +1867,7 @@ class OutreachTracker {
                     ` : ''}
 
                     <!-- Tasks for this Contact -->
-                    <div class="detail-section">
+                    <div class="detail-section" id="contact-tasks-section">
                         <div style="display:flex;justify-content:space-between;align-items:center;">
                             <h3>Tasks</h3>
                             <button type="button" class="btn btn-primary contact-tasks-add">+ Add Task</button>
@@ -1964,7 +1964,7 @@ class OutreachTracker {
         });
 
         // Wire tasks section buttons (if any)
-        const contactTasksSection = document.querySelector('#contact-detail-content .detail-section:last-of-type');
+        const contactTasksSection = document.getElementById('contact-tasks-section');
         if (contactTasksSection) {
             contactTasksSection.querySelectorAll('.task-row').forEach(row => {
                 const taskId = row.getAttribute('data-task-id');
@@ -2451,18 +2451,18 @@ AdSell.ai`,
     }
 
     // ===== Tasks Helpers =====
-    OutreachTracker.prototype.getTasksForContact = function (contactId) {
+    getTasksForContact(contactId) {
         return (this.tasks || []).filter(t => t.contactId === contactId);
-    };
+    }
 
-    OutreachTracker.prototype.getTasksForDate = function (dateKey) {
+    getTasksForDate(dateKey) {
         if (!dateKey) return [];
         return (this.tasks || []).filter(
             t => t.dueDate && t.dueDate.startsWith(dateKey) && t.status === 'open'
         );
-    };
+    }
 
-    OutreachTracker.prototype.afterTasksChanged = function () {
+    afterTasksChanged() {
         // Re-render key views that depend on tasks
         if (typeof this.renderTasksPage === 'function') {
             this.renderTasksPage();
@@ -2476,9 +2476,9 @@ AdSell.ai`,
         if (this.currentContact && this.currentContact.id) {
             this.viewContact(this.currentContact.id);
         }
-    };
+    }
 
-    OutreachTracker.prototype.addTask = async function (taskData) {
+    async addTask(taskData) {
         const now = new Date().toISOString();
         const task = {
             id: this.generateId(),
@@ -2495,9 +2495,9 @@ AdSell.ai`,
         await this.saveData();
         this.afterTasksChanged();
         return task;
-    };
+    }
 
-    OutreachTracker.prototype.updateTask = async function (taskId, updates) {
+    async updateTask(taskId, updates) {
         const idx = this.tasks.findIndex(t => t.id === taskId);
         if (idx === -1) return;
         const existing = this.tasks[idx];
@@ -2513,19 +2513,19 @@ AdSell.ai`,
         this.tasks[idx] = next;
         await this.saveData();
         this.afterTasksChanged();
-    };
+    }
 
-    OutreachTracker.prototype.completeTask = async function (taskId) {
+    async completeTask(taskId) {
         await this.updateTask(taskId, { status: 'completed', completedAt: new Date().toISOString() });
-    };
+    }
 
-    OutreachTracker.prototype.deleteTask = async function (taskId) {
+    async deleteTask(taskId) {
         const before = this.tasks.length;
         this.tasks = this.tasks.filter(t => t.id !== taskId);
         if (this.tasks.length === before) return;
         await this.saveData();
         this.afterTasksChanged();
-    };
+    }
 
     // CSV Import - robust header mapping
     handleCSVUpload(file) {
