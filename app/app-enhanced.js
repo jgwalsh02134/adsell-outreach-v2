@@ -94,6 +94,8 @@ class OutreachTracker {
             lastContact: true,
             actions: true
         };
+        this.sortBy = null;
+        this.sortDir = 'asc';
         this.selectedContactIds = new Set();
         this.advancedFilters = { statuses: [], categories: [], segments: [], tags: [] };
         this.savedFilters = [];
@@ -275,6 +277,20 @@ class OutreachTracker {
                     this.saveColumnPreferences();
                     this.applyColumnVisibility();
                 }
+            });
+        }
+
+        // Contacts table header sorting
+        const contactsTable = document.querySelector('.contacts-table');
+        if (contactsTable) {
+            const headerCells = contactsTable.querySelectorAll('thead th[data-sort]');
+            headerCells.forEach(th => {
+                th.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const sortKey = th.getAttribute('data-sort');
+                    if (!sortKey) return;
+                    this.setSort(sortKey);
+                });
             });
         }
 
@@ -968,26 +984,31 @@ class OutreachTracker {
     async openCalendarDayModal(dateKey) {
         const modal = document.getElementById('calendar-day-modal');
         const title = document.getElementById('calendar-day-title');
-        const listEl = document.getElementById('calendar-day-list');
-        const addBtn = document.getElementById('calendar-day-add');
+        const followupList = document.getElementById('calendar-day-list');
+        const taskList = document.getElementById('calendar-day-task-list');
         const contactSelect = document.getElementById('calendar-day-contact-select');
-        if (!modal || !title || !listEl || !addBtn || !contactSelect) return;
+        const addFollowupBtn = document.getElementById('calendar-day-add-followup');
+        const taskTitleInput = document.getElementById('calendar-day-task-title');
+        const addTaskBtn = document.getElementById('calendar-day-add-task');
+
+        if (!modal || !title || !followupList || !taskList || !contactSelect || !addFollowupBtn || !taskTitleInput || !addTaskBtn) return;
 
         this._selectedCalendarDate = dateKey;
-        title.textContent = `Follow-ups for ${this.formatDate(dateKey)}`;
+        title.textContent = `Follow-ups and Tasks for ${this.formatDate(dateKey)}`;
 
         const contactsForDay = this.contacts.filter(
             c => c.followUpDate && c.followUpDate.startsWith(dateKey)
         );
 
-        const tasksForDay = this.getTasksForDate(dateKey);
+        const tasksForDay = (this.tasks || []).filter(
+            t => t.dueDate && t.dueDate.startsWith(dateKey) && t.status !== 'completed'
+        );
 
-        let html = '';
-
+        // Render follow-ups
         if (!contactsForDay.length) {
-            html += '<p class="text-muted">No follow-ups on this day yet.</p>';
+            followupList.innerHTML = '<p class="text-muted">No follow-ups on this day yet.</p>';
         } else {
-            html += contactsForDay.map(c => `
+            followupList.innerHTML = contactsForDay.map(c => `
                 <div class="calendar-day-row" data-id="${c.id}">
                     <div class="calendar-day-main">
                         <div class="calendar-day-name">${c.vendorName || c.companyName || c.contactName || '(No name)'}</div>
@@ -1004,17 +1025,18 @@ class OutreachTracker {
             `).join('');
         }
 
-        if (tasksForDay.length) {
-            html += tasksForDay.map(t => {
+        // Render tasks
+        if (!tasksForDay.length) {
+            taskList.innerHTML = '<p class="text-muted">No tasks on this day yet.</p>';
+        } else {
+            taskList.innerHTML = tasksForDay.map(t => {
                 const contact = t.contactId ? this.contacts.find(c => c.id === t.contactId) : null;
-                const contactName = contact ? (contact.vendorName || contact.companyName || contact.contactName) : '';
+                const contactName = contact ? (contact.vendorName || contact.companyName || contact.contactName) : '(No linked contact)';
                 return `
-                    <div class="calendar-day-row task-row task-${(t.priority || 'Medium').toLowerCase()} ${t.status === 'completed' ? 'task-completed' : ''}" data-task-id="${t.id}">
+                    <div class="calendar-day-row" data-task-id="${t.id}">
                         <div class="calendar-day-main">
                             <div class="calendar-day-name">${t.title}</div>
-                            <div class="calendar-day-meta">
-                                ${contactName ? contactName + ' • ' : ''}${t.priority || 'Medium'}
-                            </div>
+                            <div class="calendar-day-meta">${contactName}</div>
                         </div>
                         <div class="calendar-day-controls">
                             <button type="button" class="btn btn-secondary btn-sm calendar-day-task-complete">${t.status === 'completed' ? 'Reopen' : 'Complete'}</button>
@@ -1026,14 +1048,8 @@ class OutreachTracker {
             }).join('');
         }
 
-        if (!contactsForDay.length && !tasksForDay.length) {
-            html = '<p class="text-muted">No follow-ups or tasks on this day yet.</p>';
-        }
-
-        listEl.innerHTML = html;
-
         // Wire follow-up row buttons
-        listEl.querySelectorAll('.calendar-day-row[data-id]').forEach(row => {
+        followupList.querySelectorAll('.calendar-day-row[data-id]').forEach(row => {
             const id = row.getAttribute('data-id');
             if (!id) return;
 
@@ -1075,7 +1091,7 @@ class OutreachTracker {
         });
 
         // Wire task row buttons
-        listEl.querySelectorAll('.calendar-day-row[data-task-id]').forEach(row => {
+        taskList.querySelectorAll('.calendar-day-row[data-task-id]').forEach(row => {
             const taskId = row.getAttribute('data-task-id');
             if (!taskId) return;
 
@@ -1111,14 +1127,14 @@ class OutreachTracker {
             }
         });
 
-        // Build select options for adding follow-up
+        // Build select options for adding follow-up / tasks
         const options = this.contacts.map(c => {
             const label = c.vendorName || c.companyName || c.contactName || '(No name)';
             return `<option value="${c.id}">${label}</option>`;
         }).join('');
         contactSelect.innerHTML = `<option value="">Select contact…</option>` + options;
 
-        addBtn.onclick = async () => {
+        addFollowupBtn.onclick = async () => {
             const id = contactSelect.value;
             if (!id) return;
             const contact = this.contacts.find(c => c.id === id);
@@ -1128,6 +1144,22 @@ class OutreachTracker {
                 this.renderCalendar();
                 this.openCalendarDayModal(dateKey);
             }
+        };
+
+        addTaskBtn.onclick = async () => {
+            const titleVal = taskTitleInput.value.trim();
+            if (!titleVal) return;
+            const taskData = {
+                title: titleVal,
+                contactId: contactSelect.value || null,
+                dueDate: dateKey,
+                priority: 'Medium',
+                notes: ''
+            };
+            await this.addTask(taskData);
+            taskTitleInput.value = '';
+            this.renderCalendar();
+            this.openCalendarDayModal(dateKey);
         };
 
         modal.classList.add('active');
@@ -1511,6 +1543,47 @@ class OutreachTracker {
                 return c.tags.some(tid => adv.tags.includes(tid));
             });
         }
+        
+        // Apply sorting
+        if (this.sortBy) {
+            const sortKey = this.sortBy;
+            const dir = this.sortDir === 'desc' ? -1 : 1;
+
+            filtered.sort((a, b) => {
+                if (sortKey === 'lastContact') {
+                    const aTime = a.lastContact ? new Date(a.lastContact).getTime() : 0;
+                    const bTime = b.lastContact ? new Date(b.lastContact).getTime() : 0;
+                    if (aTime === bTime) return 0;
+                    return aTime < bTime ? -1 * dir : 1 * dir;
+                }
+
+                const getVal = (c) => {
+                    switch (sortKey) {
+                        case 'vendorName':
+                            return (c.vendorName || '').toLowerCase();
+                        case 'contactName':
+                            return (c.contactName || '').toLowerCase();
+                        case 'email':
+                            return (c.email || '').toLowerCase();
+                        case 'phone':
+                            return (c.phone || '').toLowerCase();
+                        case 'category':
+                            return (c.category || '').toLowerCase();
+                        case 'project':
+                            return (c.project || '').toLowerCase();
+                        case 'status':
+                            return (c.status || '').toLowerCase();
+                        default:
+                            return '';
+                    }
+                };
+
+                const av = getVal(a);
+                const bv = getVal(b);
+                if (av === bv) return 0;
+                return av < bv ? -1 * dir : 1 * dir;
+            });
+        }
 
         return filtered;
     }
@@ -1537,6 +1610,31 @@ class OutreachTracker {
             const key = td.getAttribute('data-col');
             if (key === 'vendor') return;
             td.classList.toggle('hidden-column', this.visibleColumns[key] === false);
+        });
+    }
+
+    setSort(sortKey) {
+        if (!sortKey) return;
+        if (this.sortBy === sortKey) {
+            this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortBy = sortKey;
+            this.sortDir = 'asc';
+        }
+        this.renderContacts();
+        this.applyColumnVisibility();
+        this.updateSortHeaderStates();
+    }
+
+    updateSortHeaderStates() {
+        const table = document.querySelector('.contacts-table');
+        if (!table) return;
+        table.querySelectorAll('thead th[data-sort]').forEach(th => {
+            const key = th.getAttribute('data-sort');
+            th.classList.remove('sort-asc', 'sort-desc');
+            if (key && key === this.sortBy) {
+                th.classList.add(this.sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
         });
     }
 

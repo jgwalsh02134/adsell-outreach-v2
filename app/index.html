@@ -406,20 +406,20 @@
                 <table class="contacts-table">
                     <thead class="contacts-header">
                         <tr>
-                            <th data-col="vendor" class="sticky-col">Vendor Name</th>
-                            <th data-col="contact">Contact</th>
-                            <th data-col="email">Email</th>
-                            <th data-col="phone">Phone</th>
-                            <th data-col="category">Category</th>
-                            <th data-col="project">Project</th>
-                            <th data-col="status">Status</th>
-                            <th data-col="lastContact">Last Contact</th>
+                            <th data-col="vendor" data-sort="vendorName" class="sticky-col">Vendor Name</th>
+                            <th data-col="contact" data-sort="contactName">Contact</th>
+                            <th data-col="email" data-sort="email">Email</th>
+                            <th data-col="phone" data-sort="phone">Phone</th>
+                            <th data-col="category" data-sort="category">Category</th>
+                            <th data-col="project" data-sort="project">Project</th>
+                            <th data-col="status" data-sort="status">Status</th>
+                            <th data-col="lastContact" data-sort="lastContact">Last Contact</th>
                             <th data-col="actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="contacts-table-body">
                         <tr>
-                            <td colspan="8" class="empty-state">No contacts found</td>
+                            <td colspan="9" class="empty-state">No contacts found</td>
                         </tr>
                     </tbody>
                 </table>
@@ -926,23 +926,31 @@
 
     <!-- Calendar Day Modal -->
     <div id="calendar-day-modal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content modal-large">
             <div class="modal-header">
-                <h3 id="calendar-day-title">Follow-ups</h3>
+                <h3 id="calendar-day-title">Day Details</h3>
                 <button class="modal-close" id="calendar-day-close">&times;</button>
             </div>
             <div class="modal-body">
-                <div id="calendar-day-list" class="calendar-day-list">
-                    <!-- Populated by JS -->
+                <div class="calendar-day-section">
+                    <h4>Follow-ups</h4>
+                    <div id="calendar-day-list" class="calendar-day-list"></div>
+                </div>
+                <div class="calendar-day-section">
+                    <h4>Tasks</h4>
+                    <div id="calendar-day-task-list" class="calendar-day-list"></div>
                 </div>
                 <div class="calendar-day-actions">
-                    <label class="form-group">
-                        <span class="detail-label">Add Follow-Up</span>
-                        <select id="calendar-day-contact-select" class="filter-select">
-                            <!-- Options populated by JS -->
-                        </select>
-                    </label>
-                    <button class="btn btn-primary" id="calendar-day-add">Save Follow-Up</button>
+                    <div class="calendar-day-add">
+                        <label>Add follow-up for:</label>
+                        <select id="calendar-day-contact-select" class="filter-select"></select>
+                        <button id="calendar-day-add-followup" class="btn btn-primary" type="button">Add Follow-up</button>
+                    </div>
+                    <div class="calendar-day-add">
+                        <label>Add task:</label>
+                        <input type="text" id="calendar-day-task-title" placeholder="Task title" />
+                        <button id="calendar-day-add-task" class="btn btn-primary" type="button">Add Task</button>
+                    </div>
                 </div>
             </div>
         </div>
