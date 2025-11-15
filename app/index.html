@@ -523,6 +523,9 @@
         <div id="projects-page" class="page">
             <div class="page-header">
                 <h2>Projects</h2>
+                <div class="header-actions">
+                    <button class="btn btn-primary" type="button" id="add-project-btn">+ Add Project</button>
+                </div>
             </div>
             <div id="projects-list"></div>
         </div>
@@ -983,6 +986,55 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Project Modal -->
+    <div id="project-modal" class="modal">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h3 id="project-modal-title">Add Project</h3>
+                <button class="modal-close" id="project-modal-close">&times;</button>
+            </div>
+            <form id="project-form">
+                <input type="hidden" name="projectId">
+                <div class="form-group">
+                    <label>Project Name *</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status">
+                        <option value="">Select status</option>
+                        <option value="Planning">Planning</option>
+                        <option value="Active">Active</option>
+                        <option value="On Hold">On Hold</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Owner</label>
+                    <input type="text" name="owner">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="date" name="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input type="date" name="endDate">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="project-cancel-btn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Project</button>
+                </div>
+            </form>
         </div>
     </div>
 

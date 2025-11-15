@@ -74,6 +74,17 @@ async function callAI(prompt, mode = "default") {
 class OutreachTracker {
     constructor() {
         console.log('[AdSell CRM] constructor');
+        /**
+         * Project objects are stored in this.projects and synced via KV.
+         * Shape:
+         * - id: string
+         * - name: string
+         * - status: optional, one of: Planning | Active | On Hold | Completed
+         * - owner: optional string (rep / owner)
+         * - startDate: optional string (YYYY-MM-DD)
+         * - endDate: optional string (YYYY-MM-DD)
+         * - description: optional string
+         */
         this.contacts = [];
         this.activities = [];
         this.scripts = [];
@@ -527,6 +538,24 @@ class OutreachTracker {
             });
         }
 
+        // Projects: add/edit modal wiring
+        const addProjectBtn = document.getElementById('add-project-btn');
+        if (addProjectBtn) {
+            addProjectBtn.addEventListener('click', () => this.showProjectModal(null));
+        }
+        const projectModalClose = document.getElementById('project-modal-close');
+        if (projectModalClose) {
+            projectModalClose.addEventListener('click', () => this.closeProjectModal());
+        }
+        const projectCancelBtn = document.getElementById('project-cancel-btn');
+        if (projectCancelBtn) {
+            projectCancelBtn.addEventListener('click', () => this.closeProjectModal());
+        }
+        const projectForm = document.getElementById('project-form');
+        if (projectForm) {
+            projectForm.addEventListener('submit', (e) => this.handleProjectFormSubmit(e));
+        }
+
         // Close modals on background click
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
@@ -620,14 +649,56 @@ class OutreachTracker {
             this.tasks = [];
             this.projects = [];
         }
-
-        // Ensure projects list includes any project strings on contacts
+        // Normalize projects collection to always be an array of Project objects
         if (!Array.isArray(this.projects)) {
             this.projects = [];
         }
+        const normalizedProjects = [];
+        const seenNames = new Set();
+        (this.projects || []).forEach(p => {
+            let projectObj = null;
+            if (typeof p === 'string') {
+                const name = p.trim();
+                if (!name) return;
+                projectObj = {
+                    id: this.generateId(),
+                    name,
+                    status: 'Active',
+                    owner: '',
+                    startDate: '',
+                    endDate: '',
+                    description: ''
+                };
+            } else if (p && typeof p === 'object') {
+                const name = (p.name || '').trim();
+                if (!name) return;
+                projectObj = {
+                    id: p.id || this.generateId(),
+                    name,
+                    status: p.status || '',
+                    owner: p.owner || '',
+                    startDate: p.startDate || '',
+                    endDate: p.endDate || '',
+                    description: p.description || ''
+                };
+            }
+            if (!projectObj) return;
+            const key = projectObj.name.toLowerCase();
+            if (seenNames.has(key)) return;
+            seenNames.add(key);
+            normalizedProjects.push(projectObj);
+        });
+        this.projects = normalizedProjects;
+
+        // Ensure projects list includes any project strings on contacts and tasks
         (this.contacts || []).forEach(c => {
             if (c && c.project) {
                 this.ensureProjectExists(c.project);
+            }
+        });
+        (this.tasks || []).forEach(t => {
+            if (t && t.project) {
+                this.ensureProjectExists(t.project);
             }
         });
     }
@@ -860,18 +931,79 @@ class OutreachTracker {
 
     ensureProjectExists(projectName) {
         const name = (projectName || '').trim();
-        if (!name) return;
-        if (!this.projects) this.projects = [];
-        const exists = this.projects.some(
-            p => (p.name || '').trim().toLowerCase() === name.toLowerCase()
-        );
-        if (!exists) {
-            this.projects.push({
-                id: this.generateId(),
-                name,
-                description: ''
-            });
+        if (!name) return null;
+        if (!Array.isArray(this.projects)) {
+            this.projects = [];
         }
+        const existing = this.getProjectByName(name);
+        if (existing) {
+            return existing;
+        }
+        const project = {
+            id: this.generateId(),
+            name,
+            status: 'Active',
+            owner: '',
+            startDate: '',
+            endDate: '',
+            description: ''
+        };
+        this.projects.push(project);
+        return project;
+    }
+
+    getProjectById(id) {
+        if (!id) return null;
+        return (this.projects || []).find(p => p.id === id) || null;
+    }
+
+    getProjectByName(name) {
+        const target = (name || '').trim().toLowerCase();
+        if (!target) return null;
+        return (this.projects || []).find(
+            p => (p.name || '').trim().toLowerCase() === target
+        ) || null;
+    }
+
+    upsertProject(projectObj) {
+        if (!projectObj) return null;
+        const name = (projectObj.name || '').trim();
+        if (!name) return null;
+
+        if (!Array.isArray(this.projects)) {
+            this.projects = [];
+        }
+
+        const id = projectObj.id || this.generateId();
+        const existingIndex = this.projects.findIndex(p => p.id === id);
+        const base = existingIndex !== -1 ? this.projects[existingIndex] : {};
+
+        const next = {
+            id,
+            name,
+            status: projectObj.status || base.status || '',
+            owner: projectObj.owner || base.owner || '',
+            startDate: projectObj.startDate || base.startDate || '',
+            endDate: projectObj.endDate || base.endDate || '',
+            description: projectObj.description || base.description || ''
+        };
+
+        if (existingIndex !== -1) {
+            this.projects[existingIndex] = next;
+        } else {
+            this.projects.push(next);
+        }
+
+        return next;
+    }
+
+    deleteProject(projectId) {
+        if (!projectId) return;
+        if (!Array.isArray(this.projects)) {
+            this.projects = [];
+            return;
+        }
+        this.projects = this.projects.filter(p => p.id !== projectId);
     }
 
     renderProjectFilterOptions() {
@@ -894,45 +1026,193 @@ class OutreachTracker {
         const container = document.getElementById('projects-list');
         if (!container) return;
 
-        // Combine explicit projects with any project strings on contacts
-        const names = new Set(this.getProjectNames());
-        (this.contacts || []).forEach(c => {
-            const name = (c.project || '').trim();
-            if (name) names.add(name);
-        });
+        const projects = Array.isArray(this.projects) ? this.projects.slice() : [];
 
-        const allProjects = Array.from(names).sort((a, b) => a.localeCompare(b));
-
-        if (allProjects.length === 0) {
+        if (!projects.length) {
             container.innerHTML = '<p class="empty-state">No projects yet. Assign a project name on contacts to get started.</p>';
             return;
         }
 
-        const projectsData = allProjects.map(name => {
+        const projectsData = projects.map(project => {
+            const name = (project.name || '').trim();
             const contactsForProject = (this.contacts || []).filter(
-                c => (c.project || '').trim() === name
+                c => (c.project || '').trim().toLowerCase() === name.toLowerCase()
             );
             const tasksForProject = (this.tasks || []).filter(
-                t => (t.project || '').trim() === name
+                t => (t.project || '').trim().toLowerCase() === name.toLowerCase()
             );
             return {
-                name,
+                project,
                 contactsCount: contactsForProject.length,
                 tasksCount: tasksForProject.length
             };
         });
 
-        container.innerHTML = projectsData.map(p => `
-            <div class="project-card">
+        container.innerHTML = projectsData.map(p => {
+            const proj = p.project;
+            const name = (proj.name || '').trim();
+            const status = (proj.status || '').trim();
+            const owner = (proj.owner || '').trim();
+            const startDate = (proj.startDate || '').trim();
+            const endDate = (proj.endDate || '').trim();
+            const hasDates = startDate || endDate;
+            const dateRange = hasDates
+                ? `${startDate || '—'} \u2192 ${endDate || '—'}`
+                : '';
+
+            return `
+            <div class="project-card" data-project-id="${proj.id || ''}">
                 <div class="project-card-header">
-                    <h3>${p.name}</h3>
+                    <h3>${name || 'Untitled Project'}</h3>
                 </div>
                 <div class="project-card-body">
-                    <div><strong>Contacts:</strong> ${p.contactsCount}</div>
-                    <div><strong>Tasks:</strong> ${p.tasksCount}</div>
+                    <div class="project-card-meta">
+                        ${status ? `<span class="status-badge project-status-badge">${status}</span>` : ''}
+                        ${owner ? `<span class="project-meta-text">Owner: ${owner}</span>` : ''}
+                        ${dateRange ? `<span class="project-meta-text">${dateRange}</span>` : ''}
+                    </div>
+                    <div class="project-card-summary">
+                        ${p.contactsCount} contacts &middot; ${p.tasksCount} tasks
+                    </div>
+                    ${proj.description ? `<div class="project-card-description">${proj.description}</div>` : ''}
+                    <div class="project-card-actions">
+                        <button type="button" class="btn btn-secondary project-edit-btn">Edit</button>
+                        <button type="button" class="btn btn-danger project-delete-btn">Delete</button>
+                    </div>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
+
+        // Wire card interactions
+        container.querySelectorAll('.project-card').forEach(card => {
+            const projectId = card.getAttribute('data-project-id');
+            if (!projectId) return;
+
+            // Card body click → filter contacts by project
+            card.addEventListener('click', (e) => {
+                const target = e.target;
+                if (target.closest('.project-card-actions')) {
+                    return;
+                }
+                const project = this.getProjectById(projectId);
+                if (!project) return;
+                const name = project.name;
+                this.showPage('contacts');
+                const projectFilter = document.getElementById('project-filter');
+                if (projectFilter) {
+                    projectFilter.value = name;
+                    this.filterContacts();
+                }
+            });
+
+            const editBtn = card.querySelector('.project-edit-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.showProjectModal(projectId);
+                });
+            }
+
+            const deleteBtn = card.querySelector('.project-delete-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const ok = window.confirm('Delete this project? This will not modify existing contacts or tasks.');
+                    if (!ok) return;
+                    this.deleteProject(projectId);
+                    await this.saveData();
+                    this.renderProjectsPage();
+                    if (typeof this.renderProjectFilterOptions === 'function') {
+                        this.renderProjectFilterOptions();
+                    }
+                });
+            }
+        });
+    }
+
+    showProjectModal(projectId) {
+        const modal = document.getElementById('project-modal');
+        const titleEl = document.getElementById('project-modal-title');
+        const form = document.getElementById('project-form');
+        if (!modal || !titleEl || !form) return;
+
+        const idInput = form.querySelector('input[name="projectId"]');
+        const nameInput = form.querySelector('input[name="name"]');
+        const statusSelect = form.querySelector('select[name="status"]');
+        const ownerInput = form.querySelector('input[name="owner"]');
+        const startDateInput = form.querySelector('input[name="startDate"]');
+        const endDateInput = form.querySelector('input[name="endDate"]');
+        const descInput = form.querySelector('textarea[name="description"]');
+
+        if (!projectId) {
+            titleEl.textContent = 'Add Project';
+            if (idInput) idInput.value = '';
+            if (nameInput) nameInput.value = '';
+            if (statusSelect) statusSelect.value = '';
+            if (ownerInput) ownerInput.value = '';
+            if (startDateInput) startDateInput.value = '';
+            if (endDateInput) endDateInput.value = '';
+            if (descInput) descInput.value = '';
+        } else {
+            const project = this.getProjectById(projectId);
+            if (!project) return;
+            titleEl.textContent = 'Edit Project';
+            if (idInput) idInput.value = project.id || '';
+            if (nameInput) nameInput.value = project.name || '';
+            if (statusSelect) statusSelect.value = project.status || '';
+            if (ownerInput) ownerInput.value = project.owner || '';
+            if (startDateInput) startDateInput.value = project.startDate || '';
+            if (endDateInput) endDateInput.value = project.endDate || '';
+            if (descInput) descInput.value = project.description || '';
+        }
+
+        modal.classList.add('active');
+    }
+
+    closeProjectModal() {
+        const modal = document.getElementById('project-modal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    }
+
+    async handleProjectFormSubmit(event) {
+        event.preventDefault();
+        const form = event.target;
+        if (!form) return;
+
+        const formData = new FormData(form);
+        const id = (formData.get('projectId') || '').toString().trim();
+        const name = (formData.get('name') || '').toString().trim();
+        const status = (formData.get('status') || '').toString().trim();
+        const owner = (formData.get('owner') || '').toString().trim();
+        const startDate = (formData.get('startDate') || '').toString().trim();
+        const endDate = (formData.get('endDate') || '').toString().trim();
+        const description = (formData.get('description') || '').toString().trim();
+
+        if (!name) {
+            alert('Project name is required.');
+            return;
+        }
+
+        const projectData = {
+            id: id || undefined,
+            name,
+            status,
+            owner,
+            startDate,
+            endDate,
+            description
+        };
+
+        this.upsertProject(projectData);
+        await this.saveData();
+        this.renderProjectsPage();
+        if (typeof this.renderProjectFilterOptions === 'function') {
+            this.renderProjectFilterOptions();
+        }
+        this.closeProjectModal();
     }
 
     // ===== Tasks Page Rendering & Modal =====
@@ -2974,8 +3254,12 @@ AdSell.ai`,
             status: taskData.status || 'open',
             dueDate: taskData.dueDate || null,
             createdAt: now,
-            completedAt: null
+            completedAt: null,
+            project: taskData.project || ''
         };
+        if (task.project) {
+            this.ensureProjectExists(task.project);
+        }
         this.tasks.push(task);
         await this.saveData();
         this.afterTasksChanged();

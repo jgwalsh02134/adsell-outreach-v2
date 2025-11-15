@@ -977,6 +977,37 @@ body {
     margin: 0 0 0.25rem 0;
 }
 
+.project-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.35rem;
+}
+
+.project-card-summary {
+    font-size: 0.85rem;
+    margin-bottom: 0.35rem;
+}
+
+.project-card-description {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.project-card-actions {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.project-status-badge {
+    font-size: 0.7rem;
+}
+
 /* Contacts Quick Add */
 .contacts-quick-add {
     margin-top: 0.75rem;
