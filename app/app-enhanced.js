@@ -1332,7 +1332,7 @@ class OutreachTracker {
         const filteredContacts = this.getFilteredContacts();
 
         if (filteredContacts.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No contacts found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No contacts found</td></tr>';
             return;
         }
 
@@ -1387,6 +1387,7 @@ class OutreachTracker {
                     }
                 </td>
                 <td data-col="category" data-label="Category">${contact.category || '—'}</td>
+                <td data-col="project" data-label="Project">${contact.project || '—'}</td>
                 <td data-col="status" data-label="Status">
                     <span class="status-badge status-${statusSlug}">${statusText}</span>
                 </td>
@@ -1740,6 +1741,7 @@ class OutreachTracker {
             tags: selectedTags,
             
             // Tracking
+            project: formData.get('project') || '',
             leadSource: formData.get('leadSource') || 'Albany Ski Expo',
             referredBy: formData.get('referredBy'),
             
@@ -2195,6 +2197,7 @@ class OutreachTracker {
         form.followUpDate.value = this.currentContact.followUpDate || '';
         form.nextSteps.value = this.currentContact.nextSteps || '';
         form.leadSource.value = this.currentContact.leadSource || '';
+        form.project.value = this.currentContact.project || '';
         form.referredBy.value = this.currentContact.referredBy || '';
         
         // Render tag selector with current selections
@@ -2722,6 +2725,7 @@ AdSell.ai`,
                     internalNotes: "",
                     tags: [],
                     leadSource: "CSV Import",
+                    project: "",
                     createdAt: new Date().toISOString(),
                     lastContact: null,
                     followUpDate: null
@@ -2779,6 +2783,12 @@ AdSell.ai`,
                     // Status / stage / pipeline
                     else if (hasAny(h, ["status", "stage", "pipeline"])) {
                         contact.status = value || "Not Started";
+                    }
+                    // Project / campaign
+                    else if (
+                        hasAny(h, ["project", "campaign", "outreach_project"])
+                    ) {
+                        if (!contact.project) contact.project = value;
                     }
                     // Notes / comments / description
                     else if (hasAny(h, ["notes", "note", "comment", "comments", "description"])) {
@@ -3080,7 +3090,7 @@ AdSell.ai`,
             'address','city','state','zipCode',
             'dealStage','dealValue','dealProbability','expectedCloseDate',
             'decisionMaker','authority','budget',
-            'notes','internalNotes','nextSteps','followUpDate','leadSource','createdAt','lastContact','tags'
+            'notes','internalNotes','nextSteps','followUpDate','leadSource','project','createdAt','lastContact','tags'
         ];
         const rows = [headers].concat(contacts.map(c => [
             c.id, c.vendorName, c.companyName, c.contactName, c.title, c.email, c.phone, c.website,
@@ -3089,7 +3099,7 @@ AdSell.ai`,
             c.address, c.city, c.state, c.zipCode,
             c.dealStage, c.dealValue, c.dealProbability, c.expectedCloseDate,
             c.decisionMaker, c.authority, c.budget,
-            c.notes, c.internalNotes, c.nextSteps, c.followUpDate, c.leadSource, c.createdAt, c.lastContact,
+            c.notes, c.internalNotes, c.nextSteps, c.followUpDate, c.leadSource, c.project, c.createdAt, c.lastContact,
             Array.isArray(c.tags) ? c.tags.join('|') : ''
         ]));
         const csv = this.toCSV(rows);
