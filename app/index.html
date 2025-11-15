@@ -168,6 +168,7 @@
                 <li><a href="#" class="nav-link" data-page="contacts">Contacts</a></li>
                 <li><a href="#" class="nav-link" data-page="pipeline">Pipeline</a></li>
                 <li><a href="#" class="nav-link" data-page="calendar">Calendar</a></li>
+                <li><a href="#" class="nav-link" data-page="tasks">Tasks</a></li>
                 <li><a href="#" class="nav-link" data-page="scripts">Scripts</a></li>
                 <li><a href="#" class="nav-link" data-page="upload">Import CSV</a></li>
                 <li><a href="#" class="nav-link" data-page="analytics">Analytics</a></li>
@@ -212,6 +213,10 @@
                     <p class="empty-state">No recent activity</p>
                 </div>
             </div>
+
+            <div id="dashboard-tasks-widget" class="dashboard-tasks-widget">
+                <!-- Populated by renderDashboardTasks() -->
+            </div>
         </div>
 
         <!-- Calendar Page -->
@@ -233,6 +238,45 @@
                 <h3 class="calendar-list-title">Upcoming Follow-ups</h3>
                 <div id="calendar-followup-list" class="calendar-followup-list">
                     <!-- Populated by renderCalendar() -->
+                </div>
+            </section>
+        </div>
+
+        <!-- Tasks Page -->
+        <div id="tasks-page" class="page">
+            <div class="page-header">
+                <h2>Tasks</h2>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" type="button" id="tasks-ai-suggest">AI Suggest Tasks</button>
+                    <button class="btn btn-primary" type="button" id="tasks-add-btn">+ Add Task</button>
+                </div>
+            </div>
+
+            <section class="tasks-section">
+                <h3>Today&apos;s Tasks</h3>
+                <div id="tasks-today" class="tasks-list">
+                    <!-- Populated by renderTasksPage() -->
+                </div>
+            </section>
+
+            <section class="tasks-section">
+                <h3>Overdue</h3>
+                <div id="tasks-overdue" class="tasks-list">
+                    <!-- Populated by renderTasksPage() -->
+                </div>
+            </section>
+
+            <section class="tasks-section">
+                <h3>Upcoming</h3>
+                <div id="tasks-upcoming" class="tasks-list">
+                    <!-- Populated by renderTasksPage() -->
+                </div>
+            </section>
+
+            <section class="tasks-section">
+                <h3>Completed</h3>
+                <div id="tasks-completed" class="tasks-list">
+                    <!-- Populated by renderTasksPage() -->
                 </div>
             </section>
         </div>
@@ -780,6 +824,50 @@
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="app.closeActivityModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary">Log Activity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h3 id="task-modal-title">Add Task</h3>
+                <button class="modal-close" id="task-modal-close">&times;</button>
+            </div>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="task-title">Title *</label>
+                    <input id="task-title" name="title" type="text" required>
+                </div>
+                <div class="form-group">
+                    <label for="task-contact">Contact</label>
+                    <select id="task-contact" name="contactId">
+                        <!-- Options populated by JS -->
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-due-date">Due Date</label>
+                        <input id="task-due-date" type="date" name="dueDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="task-priority">Priority</label>
+                        <select id="task-priority" name="priority">
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="task-notes">Notes</label>
+                    <textarea id="task-notes" name="notes" rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="task-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Task</button>
                 </div>
             </form>
         </div>

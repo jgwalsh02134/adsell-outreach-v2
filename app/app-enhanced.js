@@ -72,6 +72,7 @@ class OutreachTracker {
         this.scripts = [];
         this.tags = [];
         this.customFields = [];
+        this.tasks = [];
         this.currentContact = null;
         this.editingContactId = null;
         this.editingScriptId = null;
@@ -142,6 +143,11 @@ class OutreachTracker {
                 }
             });
         }
+
+        // Initial tasks-related renders
+        if (typeof this.renderDashboardTasks === 'function') {
+            this.renderDashboardTasks();
+        }
     }
 
     setupEventListeners() {
@@ -154,7 +160,7 @@ class OutreachTracker {
                 e.preventDefault();
                 const page = link.dataset.page || e.target.dataset.page;
                 if (page) {
-                    this.showPage(page);
+                this.showPage(page);
                 }
 
                 // Close mobile dropdown if open
@@ -396,6 +402,24 @@ class OutreachTracker {
             this.saveScript(e.target);
         });
 
+        // Task form
+        const taskForm = document.getElementById('task-form');
+        if (taskForm) {
+            taskForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveTask(e.target);
+            });
+        }
+
+        const taskCancel = document.getElementById('task-cancel');
+        const taskClose = document.getElementById('task-modal-close');
+        if (taskCancel) {
+            taskCancel.addEventListener('click', () => this.closeTaskModal());
+        }
+        if (taskClose) {
+            taskClose.addEventListener('click', () => this.closeTaskModal());
+        }
+
         // (AI modal buttons use init() aiFollowupEmail/aiSummarizeCall bindings)
 
         // Search and filters
@@ -403,6 +427,19 @@ class OutreachTracker {
         document.getElementById('status-filter').addEventListener('change', () => this.filterContacts());
         document.getElementById('category-filter').addEventListener('change', () => this.filterContacts());
         document.getElementById('segment-filter').addEventListener('change', () => this.filterContacts());
+
+        // Tasks page buttons
+        const tasksAddBtn = document.getElementById('tasks-add-btn');
+        if (tasksAddBtn) {
+            tasksAddBtn.addEventListener('click', () => this.openTaskModal());
+        }
+
+        const tasksAiBtn = document.getElementById('tasks-ai-suggest');
+        if (tasksAiBtn) {
+            tasksAiBtn.addEventListener('click', () => {
+                this.showAIModal('AI task recommendations coming soon.');
+            });
+        }
 
         // CSV upload
         document.getElementById('csv-file-input').addEventListener('change', (e) => {
@@ -437,6 +474,7 @@ class OutreachTracker {
             this.scripts = Array.isArray(data.scripts) ? data.scripts : [];
             this.tags = Array.isArray(data.tags) ? data.tags : [];
             this.customFields = Array.isArray(data.customFields) ? data.customFields : [];
+            this.tasks = Array.isArray(data.tasks) ? data.tasks : [];
 
             // cache locally as backup
             localStorage.setItem('adsell_contacts', JSON.stringify(this.contacts));
@@ -444,13 +482,15 @@ class OutreachTracker {
             localStorage.setItem('adsell_scripts', JSON.stringify(this.scripts));
             localStorage.setItem('adsell_tags', JSON.stringify(this.tags));
             localStorage.setItem('adsell_custom_fields', JSON.stringify(this.customFields));
+            localStorage.setItem('adsell_tasks', JSON.stringify(this.tasks));
         } catch (err) {
             console.error("Failed to load from shared API, falling back to localStorage:", err);
-            this.contacts = JSON.parse(localStorage.getItem('adsell_contacts')) || [];
-            this.activities = JSON.parse(localStorage.getItem('adsell_activities')) || [];
-            this.scripts = JSON.parse(localStorage.getItem('adsell_scripts')) || [];
-            this.tags = JSON.parse(localStorage.getItem('adsell_tags')) || [];
-            this.customFields = JSON.parse(localStorage.getItem('adsell_custom_fields')) || [];
+        this.contacts = JSON.parse(localStorage.getItem('adsell_contacts')) || [];
+        this.activities = JSON.parse(localStorage.getItem('adsell_activities')) || [];
+        this.scripts = JSON.parse(localStorage.getItem('adsell_scripts')) || [];
+        this.tags = JSON.parse(localStorage.getItem('adsell_tags')) || [];
+        this.customFields = JSON.parse(localStorage.getItem('adsell_custom_fields')) || [];
+            this.tasks = JSON.parse(localStorage.getItem('adsell_tasks')) || [];
         }
     }
 
@@ -484,6 +524,7 @@ class OutreachTracker {
         localStorage.setItem('adsell_scripts', JSON.stringify(this.scripts));
         localStorage.setItem('adsell_tags', JSON.stringify(this.tags));
         localStorage.setItem('adsell_custom_fields', JSON.stringify(this.customFields));
+        localStorage.setItem('adsell_tasks', JSON.stringify(this.tasks));
 
         // push to shared API
         try {
@@ -495,7 +536,8 @@ class OutreachTracker {
                     activities: this.activities,
                     scripts: this.scripts,
                     tags: this.tags,
-                    customFields: this.customFields
+                        customFields: this.customFields,
+                        tasks: this.tasks
                 })
             });
         } catch (err) {
@@ -537,6 +579,7 @@ class OutreachTracker {
             case 'dashboard':
                 this.updateStats();
                 this.renderRecentActivity();
+            this.renderDashboardTasks();
                 break;
             case 'contacts':
                 this.renderContacts();
@@ -558,6 +601,9 @@ class OutreachTracker {
             case 'calendar':
                 this.renderCalendar();
                 break;
+            case 'tasks':
+                this.renderTasksPage();
+                break;
         }
     }
 
@@ -576,6 +622,213 @@ class OutreachTracker {
         document.getElementById('stat-signed-up').textContent = signedUp;
     }
 
+    OutreachTracker.prototype.renderDashboardTasks = function () {
+        const container = document.getElementById('dashboard-tasks-widget');
+        if (!container) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayKey = today.toISOString().slice(0, 10);
+
+        const tasks = (this.tasks || []).filter(t => t.status === 'open' && t.dueDate);
+
+        const todayTasks = tasks.filter(t => t.dueDate === todayKey);
+        const overdueTasks = tasks.filter(t => t.dueDate < todayKey);
+
+        const topTasks = [...todayTasks, ...overdueTasks].slice(0, 5);
+
+        if (topTasks.length === 0) {
+            container.innerHTML = '<p class="empty-state">No open tasks for today.</p>';
+            return;
+        }
+
+        const html = `
+            <div class="card">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                    <h3 style="font-size:0.95rem;font-weight:600;">Today&apos;s &amp; Overdue Tasks</h3>
+                    <button class="btn btn-secondary btn-sm" type="button" onclick="app.showPage('tasks')">View All</button>
+                </div>
+                <div class="card-body">
+                    ${topTasks.map(task => {
+                        const isOverdue = task.dueDate < todayKey;
+                        const contact = this.contacts.find(c => c.id === task.contactId);
+                        const contactName = contact ? (contact.vendorName || contact.companyName || contact.contactName) : '';
+                        const dueLabel = isOverdue ? 'Overdue' : 'Today';
+                        return `
+                            <div class="dashboard-task-item ${isOverdue ? 'task-overdue' : ''}">
+                                <div>
+                                    <div>${task.title}</div>
+                                    ${contactName ? `<div style="font-size:0.75rem;color:var(--text-secondary);">${contactName}</div>` : ''}
+                                </div>
+                                <div style="font-size:0.75rem;color:var(--text-secondary);">${dueLabel}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    };
+
+    // ===== Tasks Page Rendering & Modal =====
+
+    OutreachTracker.prototype.renderTasksPage = function () {
+        const todayEl = document.getElementById('tasks-today');
+        const overdueEl = document.getElementById('tasks-overdue');
+        const upcomingEl = document.getElementById('tasks-upcoming');
+        const completedEl = document.getElementById('tasks-completed');
+        if (!todayEl || !overdueEl || !upcomingEl || !completedEl) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayKey = today.toISOString().slice(0, 10);
+
+        const tasks = (this.tasks || []).slice();
+
+        const openTasks = tasks.filter(t => t.status === 'open');
+        const completedTasks = tasks.filter(t => t.status === 'completed');
+
+        const overdueTasks = openTasks.filter(t => t.dueDate && t.dueDate < todayKey);
+        const todayTasks = openTasks.filter(t => t.dueDate === todayKey);
+        const upcomingTasks = openTasks.filter(t => t.dueDate && t.dueDate > todayKey);
+
+        const renderList = (list, el) => {
+            if (!list.length) {
+                el.innerHTML = '<p class="empty-state">None</p>';
+                return;
+            }
+            el.innerHTML = list.map(t => {
+                const contact = t.contactId ? this.contacts.find(c => c.id === t.contactId) : null;
+                const contactName = contact ? (contact.vendorName || contact.companyName || contact.contactName) : '';
+                const priorityClass = `task-priority-${(t.priority || 'Medium').toLowerCase()}`;
+                const isOverdue = t.dueDate && t.dueDate < todayKey;
+                const extraClasses = [
+                    'task-row',
+                    priorityClass,
+                    t.status === 'completed' ? 'task-completed' : '',
+                    isOverdue ? 'task-overdue' : ''
+                ].filter(Boolean).join(' ');
+                const dueLabel = t.dueDate ? this.formatDate(t.dueDate) : 'No due date';
+                return `
+                    <div class="${extraClasses}" data-task-id="${t.id}">
+                        <div class="task-main">
+                            <div class="task-title">${t.title}</div>
+                            <div class="task-meta">
+                                ${contactName ? contactName + ' • ' : ''}${t.priority || 'Medium'} • ${dueLabel}
+                            </div>
+                        </div>
+                        <div class="task-controls">
+                            <button type="button" class="btn btn-secondary btn-sm task-complete-btn">${t.status === 'completed' ? 'Reopen' : 'Complete'}</button>
+                            <button type="button" class="btn btn-secondary btn-sm task-edit-btn">Edit</button>
+                            <button type="button" class="btn btn-danger btn-sm task-delete-btn">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        renderList(todayTasks, todayEl);
+        renderList(overdueTasks, overdueEl);
+        renderList(upcomingTasks, upcomingEl);
+        renderList(completedTasks, completedEl);
+
+        // Wire task buttons
+        const container = document.getElementById('tasks-page');
+        if (!container) return;
+        container.querySelectorAll('.task-row').forEach(row => {
+            const taskId = row.getAttribute('data-task-id');
+            if (!taskId) return;
+
+            const completeBtn = row.querySelector('.task-complete-btn');
+            const editBtn = row.querySelector('.task-edit-btn');
+            const deleteBtn = row.querySelector('.task-delete-btn');
+
+            if (completeBtn) {
+                completeBtn.addEventListener('click', async () => {
+                    const task = this.tasks.find(t => t.id === taskId);
+                    if (!task) return;
+                    const newStatus = task.status === 'completed' ? 'open' : 'completed';
+                    await this.updateTask(taskId, { status: newStatus });
+                });
+            }
+
+            if (editBtn) {
+                editBtn.addEventListener('click', () => {
+                    this.openTaskModal(taskId);
+                });
+            }
+
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async () => {
+                    const confirmed = window.confirm('Delete this task? This cannot be undone.');
+                    if (!confirmed) return;
+                    await this.deleteTask(taskId);
+                });
+            }
+        });
+    };
+
+    OutreachTracker.prototype.openTaskModal = function (taskId) {
+        const modal = document.getElementById('task-modal');
+        const titleEl = document.getElementById('task-modal-title');
+        const form = document.getElementById('task-form');
+        const contactSelect = document.getElementById('task-contact');
+        if (!modal || !titleEl || !form || !contactSelect) return;
+
+        this.editingTaskId = taskId || null;
+
+        // Populate contact options
+        contactSelect.innerHTML = '<option value="">(No contact)</option>' + this.contacts.map(c => {
+            const label = c.vendorName || c.companyName || c.contactName || '(No name)';
+            return `<option value="${c.id}">${label}</option>`;
+        }).join('');
+
+        if (this.editingTaskId) {
+            const task = this.tasks.find(t => t.id === this.editingTaskId);
+            if (!task) return;
+            titleEl.textContent = 'Edit Task';
+            form.title.value = task.title || '';
+            form.contactId.value = task.contactId || '';
+            form.dueDate.value = task.dueDate || '';
+            form.priority.value = task.priority || 'Medium';
+            form.notes.value = task.notes || '';
+        } else {
+            titleEl.textContent = 'Add Task';
+            form.reset();
+            form.priority.value = 'Medium';
+            form.contactId.value = this.currentContact ? this.currentContact.id : '';
+        }
+
+        modal.classList.add('active');
+    };
+
+    OutreachTracker.prototype.closeTaskModal = function () {
+        const modal = document.getElementById('task-modal');
+        if (modal) modal.classList.remove('active');
+        this.editingTaskId = null;
+    };
+
+    OutreachTracker.prototype.saveTask = async function (form) {
+        const formData = new FormData(form);
+        const taskData = {
+            title: formData.get('title') || '',
+            contactId: formData.get('contactId') || null,
+            dueDate: formData.get('dueDate') || null,
+            priority: formData.get('priority') || 'Medium',
+            notes: formData.get('notes') || ''
+        };
+
+        if (this.editingTaskId) {
+            await this.updateTask(this.editingTaskId, taskData);
+        } else {
+            await this.addTask(taskData);
+        }
+
+        this.closeTaskModal();
+        this.showNotification('Task saved successfully!');
+    };
+
     OutreachTracker.prototype.openCalendarDayModal = async function (dateKey) {
         const modal = document.getElementById('calendar-day-modal');
         const title = document.getElementById('calendar-day-title');
@@ -591,10 +844,14 @@ class OutreachTracker {
             c => c.followUpDate && c.followUpDate.startsWith(dateKey)
         );
 
+        const tasksForDay = this.getTasksForDate(dateKey);
+
+        let html = '';
+
         if (!contactsForDay.length) {
-            listEl.innerHTML = '<p class="text-muted">No follow-ups on this day yet.</p>';
+            html += '<p class="text-muted">No follow-ups on this day yet.</p>';
         } else {
-            listEl.innerHTML = contactsForDay.map(c => `
+            html += contactsForDay.map(c => `
                 <div class="calendar-day-row" data-id="${c.id}">
                     <div class="calendar-day-main">
                         <div class="calendar-day-name">${c.vendorName || c.companyName || c.contactName || '(No name)'}</div>
@@ -611,8 +868,36 @@ class OutreachTracker {
             `).join('');
         }
 
-        // Wire row buttons
-        listEl.querySelectorAll('.calendar-day-row').forEach(row => {
+        if (tasksForDay.length) {
+            html += tasksForDay.map(t => {
+                const contact = t.contactId ? this.contacts.find(c => c.id === t.contactId) : null;
+                const contactName = contact ? (contact.vendorName || contact.companyName || contact.contactName) : '';
+                return `
+                    <div class="calendar-day-row task-row task-${(t.priority || 'Medium').toLowerCase()} ${t.status === 'completed' ? 'task-completed' : ''}" data-task-id="${t.id}">
+                        <div class="calendar-day-main">
+                            <div class="calendar-day-name">${t.title}</div>
+                            <div class="calendar-day-meta">
+                                ${contactName ? contactName + ' • ' : ''}${t.priority || 'Medium'}
+                            </div>
+                        </div>
+                        <div class="calendar-day-controls">
+                            <button type="button" class="btn btn-secondary btn-sm calendar-day-task-complete">${t.status === 'completed' ? 'Reopen' : 'Complete'}</button>
+                            <button type="button" class="btn btn-secondary btn-sm calendar-day-task-edit">Edit</button>
+                            <button type="button" class="btn btn-danger btn-sm calendar-day-task-delete">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        if (!contactsForDay.length && !tasksForDay.length) {
+            html = '<p class="text-muted">No follow-ups or tasks on this day yet.</p>';
+        }
+
+        listEl.innerHTML = html;
+
+        // Wire follow-up row buttons
+        listEl.querySelectorAll('.calendar-day-row[data-id]').forEach(row => {
             const id = row.getAttribute('data-id');
             if (!id) return;
 
@@ -649,6 +934,43 @@ class OutreachTracker {
                         this.renderCalendar();
                         this.openCalendarDayModal(dateKey);
                     }
+                });
+            }
+        });
+
+        // Wire task row buttons
+        listEl.querySelectorAll('.calendar-day-row[data-task-id]').forEach(row => {
+            const taskId = row.getAttribute('data-task-id');
+            if (!taskId) return;
+
+            const completeBtn = row.querySelector('.calendar-day-task-complete');
+            const editBtn = row.querySelector('.calendar-day-task-edit');
+            const deleteBtn = row.querySelector('.calendar-day-task-delete');
+
+            if (completeBtn) {
+                completeBtn.addEventListener('click', async () => {
+                    const task = this.tasks.find(t => t.id === taskId);
+                    if (!task) return;
+                    const newStatus = task.status === 'completed' ? 'open' : 'completed';
+                    await this.updateTask(taskId, { status: newStatus });
+                    this.openCalendarDayModal(dateKey);
+                });
+            }
+
+            if (editBtn) {
+                editBtn.addEventListener('click', () => {
+                    const task = this.tasks.find(t => t.id === taskId);
+                    if (!task) return;
+                    this.openTaskModal(taskId);
+                });
+            }
+
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async () => {
+                    const confirmed = window.confirm('Delete this task? This cannot be undone.');
+                    if (!confirmed) return;
+                    await this.deleteTask(taskId);
+                    this.openCalendarDayModal(dateKey);
                 });
             }
         });
@@ -729,6 +1051,17 @@ class OutreachTracker {
             }
         });
 
+        // Map tasks for this month
+        const tasksByDay = {};
+        (this.tasks || []).forEach(t => {
+            if (!t.dueDate || t.status !== 'open') return;
+            const td = new Date(t.dueDate);
+            if (td.getMonth() === month && td.getFullYear() === year) {
+                const key = byDateKey(td);
+                (tasksByDay[key] = tasksByDay[key] || []).push(t);
+            }
+        });
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -738,6 +1071,7 @@ class OutreachTracker {
             }
             const key = byDateKey(cellDate);
             const items = itemsByDay[key] || [];
+            const tasksForDay = tasksByDay[key] || [];
             const isToday =
                 cellDate.getFullYear() === today.getFullYear() &&
                 cellDate.getMonth() === today.getMonth() &&
@@ -745,7 +1079,7 @@ class OutreachTracker {
 
             const classes = ['calendar-cell'];
             if (isToday) classes.push('today');
-            if (items.length > 0) classes.push('has-items');
+            if (items.length > 0 || tasksForDay.length > 0) classes.push('has-items');
 
             const maxItems = 3;
             const visibleItems = items.slice(0, maxItems);
@@ -759,13 +1093,17 @@ class OutreachTracker {
                 <div class="calendar-item">
                     +${remaining} more…
                 </div>
+            ` : '') + (tasksForDay.length ? `
+                <div class="calendar-task-item">
+                    ${tasksForDay.length} task${tasksForDay.length > 1 ? 's' : ''}
+                </div>
             ` : '');
 
             return `
                 <div class="${classes.join(' ')}" data-date="${key}">
                     <div class="calendar-cell-header">
                         <span>${cellDate.getDate()}</span>
-                        ${items.length > 0 ? `<span class="calendar-count-badge">${items.length}</span>` : ''}
+                        ${items.length > 0 || tasksForDay.length > 0 ? `<span class="calendar-count-badge">${items.length + tasksForDay.length}</span>` : ''}
                     </div>
                     <div class="calendar-cell-body">
                         ${itemsHtml}
@@ -922,7 +1260,7 @@ class OutreachTracker {
                         <input type="checkbox" class="row-select" data-id="${contact.id}" ${this.selectedContactIds.has(contact.id) ? 'checked' : ''}>
                         <div>
                             <span class="contact-name-link">${contact.vendorName}</span>
-                            ${tags ? `<div class="tags-inline">${tags}</div>` : ''}
+                    ${tags ? `<div class="tags-inline">${tags}</div>` : ''}
                         </div>
                     </label>
                 </td>
@@ -1528,6 +1866,53 @@ class OutreachTracker {
                     </div>
                     ` : ''}
 
+                    <!-- Tasks for this Contact -->
+                    <div class="detail-section">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <h3>Tasks</h3>
+                            <button type="button" class="btn btn-primary contact-tasks-add">+ Add Task</button>
+                        </div>
+                        ${(() => {
+                            const tasks = this.getTasksForContact(id);
+                            if (!tasks.length) {
+                                return '<p class="empty-state">No tasks for this contact.</p>';
+                            }
+                            return `
+                                <div class="tasks-list">
+                                    ${tasks.map(t => {
+                                        const today = new Date();
+                                        today.setHours(0,0,0,0);
+                                        const todayKey = today.toISOString().slice(0,10);
+                                        const isOverdue = t.status === 'open' && t.dueDate && t.dueDate < todayKey;
+                                        const priorityClass = 'task-priority-' + (t.priority || 'Medium').toLowerCase();
+                                        const classes = [
+                                            'task-row',
+                                            priorityClass,
+                                            t.status === 'completed' ? 'task-completed' : '',
+                                            isOverdue ? 'task-overdue' : ''
+                                        ].filter(Boolean).join(' ');
+                                        const dueLabel = t.dueDate ? this.formatDate(t.dueDate) : 'No due date';
+                                        return `
+                                            <div class="${classes}" data-task-id="${t.id}">
+                                                <div class="task-main">
+                                                    <div class="task-title">${t.title}</div>
+                                                    <div class="task-meta">
+                                                        ${(t.priority || 'Medium')} • ${dueLabel}
+                                                    </div>
+                                                </div>
+                                                <div class="task-controls">
+                                                    <button type="button" class="btn btn-secondary btn-sm task-complete-btn">${t.status === 'completed' ? 'Reopen' : 'Complete'}</button>
+                                                    <button type="button" class="btn btn-secondary btn-sm task-edit-btn">Edit</button>
+                                                    <button type="button" class="btn btn-danger btn-sm task-delete-btn">Delete</button>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            `;
+                        })()}
+                    </div>
+
                     <!-- Activity Timeline -->
                     <div class="detail-section">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1577,6 +1962,48 @@ class OutreachTracker {
                 await this.deleteActivity(activityId);
             });
         });
+
+        // Wire tasks section buttons (if any)
+        const contactTasksSection = document.querySelector('#contact-detail-content .detail-section:last-of-type');
+        if (contactTasksSection) {
+            contactTasksSection.querySelectorAll('.task-row').forEach(row => {
+                const taskId = row.getAttribute('data-task-id');
+                if (!taskId) return;
+                const completeBtn = row.querySelector('.task-complete-btn');
+                const editBtn = row.querySelector('.task-edit-btn');
+                const deleteBtn = row.querySelector('.task-delete-btn');
+
+                if (completeBtn) {
+                    completeBtn.addEventListener('click', async () => {
+                        const task = this.tasks.find(t => t.id === taskId);
+                        if (!task) return;
+                        const newStatus = task.status === 'completed' ? 'open' : 'completed';
+                        await this.updateTask(taskId, { status: newStatus });
+                    });
+                }
+
+                if (editBtn) {
+                    editBtn.addEventListener('click', () => {
+                        this.openTaskModal(taskId);
+                    });
+                }
+
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', async () => {
+                        const confirmed = window.confirm('Delete this task? This cannot be undone.');
+                        if (!confirmed) return;
+                        await this.deleteTask(taskId);
+                    });
+                }
+            });
+
+            const contactTasksAddBtn = contactTasksSection.querySelector('.contact-tasks-add');
+            if (contactTasksAddBtn) {
+                contactTasksAddBtn.addEventListener('click', () => {
+                    this.openTaskModal();
+                });
+            }
+        }
 
         this.showPage('contact-detail');
     }
@@ -2023,6 +2450,83 @@ AdSell.ai`,
         this.saveData();
     }
 
+    // ===== Tasks Helpers =====
+    OutreachTracker.prototype.getTasksForContact = function (contactId) {
+        return (this.tasks || []).filter(t => t.contactId === contactId);
+    };
+
+    OutreachTracker.prototype.getTasksForDate = function (dateKey) {
+        if (!dateKey) return [];
+        return (this.tasks || []).filter(
+            t => t.dueDate && t.dueDate.startsWith(dateKey) && t.status === 'open'
+        );
+    };
+
+    OutreachTracker.prototype.afterTasksChanged = function () {
+        // Re-render key views that depend on tasks
+        if (typeof this.renderTasksPage === 'function') {
+            this.renderTasksPage();
+        }
+        if (typeof this.renderDashboardTasks === 'function') {
+            this.renderDashboardTasks();
+        }
+        if (typeof this.renderCalendar === 'function') {
+            this.renderCalendar();
+        }
+        if (this.currentContact && this.currentContact.id) {
+            this.viewContact(this.currentContact.id);
+        }
+    };
+
+    OutreachTracker.prototype.addTask = async function (taskData) {
+        const now = new Date().toISOString();
+        const task = {
+            id: this.generateId(),
+            contactId: taskData.contactId || null,
+            title: taskData.title || '',
+            notes: taskData.notes || '',
+            priority: taskData.priority || 'Medium',
+            status: taskData.status || 'open',
+            dueDate: taskData.dueDate || null,
+            createdAt: now,
+            completedAt: null
+        };
+        this.tasks.push(task);
+        await this.saveData();
+        this.afterTasksChanged();
+        return task;
+    };
+
+    OutreachTracker.prototype.updateTask = async function (taskId, updates) {
+        const idx = this.tasks.findIndex(t => t.id === taskId);
+        if (idx === -1) return;
+        const existing = this.tasks[idx];
+        const next = { ...existing, ...updates };
+
+        // Manage completedAt based on status
+        if (existing.status !== 'completed' && next.status === 'completed' && !next.completedAt) {
+            next.completedAt = new Date().toISOString();
+        } else if (existing.status === 'completed' && next.status !== 'completed') {
+            next.completedAt = null;
+        }
+
+        this.tasks[idx] = next;
+        await this.saveData();
+        this.afterTasksChanged();
+    };
+
+    OutreachTracker.prototype.completeTask = async function (taskId) {
+        await this.updateTask(taskId, { status: 'completed', completedAt: new Date().toISOString() });
+    };
+
+    OutreachTracker.prototype.deleteTask = async function (taskId) {
+        const before = this.tasks.length;
+        this.tasks = this.tasks.filter(t => t.id !== taskId);
+        if (this.tasks.length === before) return;
+        await this.saveData();
+        this.afterTasksChanged();
+    };
+
     // CSV Import - robust header mapping
     handleCSVUpload(file) {
         if (!file) return;
@@ -2040,7 +2544,7 @@ AdSell.ai`,
 
             const headers = this.parseCSVLine(lines[0]).map(h => h.trim());
             const headerMap = headers.map(h => h.toLowerCase());
-
+            
             const contacts = [];
 
             // Build a set of keys for existing contacts to detect duplicates.
@@ -2065,7 +2569,7 @@ AdSell.ai`,
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
-
+                
                 const values = this.parseCSVLine(line);
 
                 const contact = {
@@ -2202,8 +2706,8 @@ AdSell.ai`,
                     importKeys.add(dedupeKey);
                 }
 
-                contacts.push(contact);
-            }
+                    contacts.push(contact);
+                }
 
             if (contacts.length === 0) {
                 alert("No usable contact rows were found in this CSV.");
@@ -2246,7 +2750,7 @@ AdSell.ai`,
         }
 
         document.getElementById('preview-count').textContent = this.pendingImport.length;
-
+        
         const preview = this.pendingImport.slice(0, 10).map(contact => `
             <div style="padding: 0.5rem; border-bottom: 1px solid var(--border);">
                 <strong>${contact.vendorName || '(No vendor/business name)'}</strong><br>
