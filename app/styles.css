@@ -1247,6 +1247,64 @@ form {
     white-space: nowrap;
 }
 
+/* Calendar Day modal list */
+.calendar-day-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 320px;
+    overflow-y: auto;
+    margin-bottom: 0.75rem;
+}
+
+.calendar-day-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+}
+
+.calendar-day-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.calendar-day-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.calendar-day-meta {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.calendar-day-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: flex-end;
+}
+
+.calendar-day-controls button {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Make calendar cells feel interactive */
+.calendar-cell {
+    cursor: pointer;
+}
+
+.calendar-cell:hover {
+    background-color: rgba(148, 163, 184, 0.06);
+}
+
 /* Responsive breakpoints: mobile-first */
 
 /* Tablet and up: side-by-side forms */

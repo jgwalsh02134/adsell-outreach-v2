@@ -128,6 +128,20 @@ class OutreachTracker {
         if (this.tags.length === 0) {
             this.initializeDefaultTags();
         }
+
+        // Calendar Day modal close wiring
+        const calDayModal = document.getElementById('calendar-day-modal');
+        const calDayClose = document.getElementById('calendar-day-close');
+        if (calDayModal && calDayClose) {
+            calDayClose.addEventListener('click', () => {
+                calDayModal.classList.remove('active');
+            });
+            calDayModal.addEventListener('click', (e) => {
+                if (e.target === calDayModal) {
+                    calDayModal.classList.remove('active');
+                }
+            });
+        }
     }
 
     setupEventListeners() {
@@ -562,6 +576,105 @@ class OutreachTracker {
         document.getElementById('stat-signed-up').textContent = signedUp;
     }
 
+    OutreachTracker.prototype.openCalendarDayModal = async function (dateKey) {
+        const modal = document.getElementById('calendar-day-modal');
+        const title = document.getElementById('calendar-day-title');
+        const listEl = document.getElementById('calendar-day-list');
+        const addBtn = document.getElementById('calendar-day-add');
+        const contactSelect = document.getElementById('calendar-day-contact-select');
+        if (!modal || !title || !listEl || !addBtn || !contactSelect) return;
+
+        this._selectedCalendarDate = dateKey;
+        title.textContent = `Follow-ups for ${this.formatDate(dateKey)}`;
+
+        const contactsForDay = this.contacts.filter(
+            c => c.followUpDate && c.followUpDate.startsWith(dateKey)
+        );
+
+        if (!contactsForDay.length) {
+            listEl.innerHTML = '<p class="text-muted">No follow-ups on this day yet.</p>';
+        } else {
+            listEl.innerHTML = contactsForDay.map(c => `
+                <div class="calendar-day-row" data-id="${c.id}">
+                    <div class="calendar-day-main">
+                        <div class="calendar-day-name">${c.vendorName || c.companyName || c.contactName || '(No name)'}</div>
+                        <div class="calendar-day-meta">
+                            ${(c.status || 'Status not set')}${c.category ? ' • ' + c.category : ''}
+                        </div>
+                    </div>
+                    <div class="calendar-day-controls">
+                        <button type="button" class="btn btn-secondary btn-sm calendar-day-view">View</button>
+                        <button type="button" class="btn btn-secondary btn-sm calendar-day-change">Change Date</button>
+                        <button type="button" class="btn btn-danger btn-sm calendar-day-clear">Clear</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Wire row buttons
+        listEl.querySelectorAll('.calendar-day-row').forEach(row => {
+            const id = row.getAttribute('data-id');
+            if (!id) return;
+
+            const viewBtn = row.querySelector('.calendar-day-view');
+            const changeBtn = row.querySelector('.calendar-day-change');
+            const clearBtn = row.querySelector('.calendar-day-clear');
+
+            if (viewBtn) {
+                viewBtn.addEventListener('click', () => {
+                    this.viewContact(id);
+                });
+            }
+
+            if (changeBtn) {
+                changeBtn.addEventListener('click', async () => {
+                    const newDate = window.prompt('New follow-up date (YYYY-MM-DD):', dateKey);
+                    if (!newDate) return;
+                    const contact = this.contacts.find(c => c.id === id);
+                    if (contact) {
+                        contact.followUpDate = newDate;
+                        await this.saveData();
+                        this.renderCalendar();
+                        this.openCalendarDayModal(newDate);
+                    }
+                });
+            }
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', async () => {
+                    const contact = this.contacts.find(c => c.id === id);
+                    if (contact) {
+                        contact.followUpDate = null;
+                        await this.saveData();
+                        this.renderCalendar();
+                        this.openCalendarDayModal(dateKey);
+                    }
+                });
+            }
+        });
+
+        // Build select options for adding follow-up
+        const options = this.contacts.map(c => {
+            const label = c.vendorName || c.companyName || c.contactName || '(No name)';
+            return `<option value="${c.id}">${label}</option>`;
+        }).join('');
+        contactSelect.innerHTML = `<option value="">Select contact…</option>` + options;
+
+        addBtn.onclick = async () => {
+            const id = contactSelect.value;
+            if (!id) return;
+            const contact = this.contacts.find(c => c.id === id);
+            if (contact) {
+                contact.followUpDate = dateKey;
+                await this.saveData();
+                this.renderCalendar();
+                this.openCalendarDayModal(dateKey);
+            }
+        };
+
+        modal.classList.add('active');
+    };
+
     // Calendar
     renderCalendar() {
         if (!this._calendarDate) this._calendarDate = new Date();
@@ -649,7 +762,7 @@ class OutreachTracker {
             ` : '');
 
             return `
-                <div class="${classes.join(' ')}">
+                <div class="${classes.join(' ')}" data-date="${key}">
                     <div class="calendar-cell-header">
                         <span>${cellDate.getDate()}</span>
                         ${items.length > 0 ? `<span class="calendar-count-badge">${items.length}</span>` : ''}
@@ -663,8 +776,21 @@ class OutreachTracker {
 
         grid.innerHTML = headerHtml + cellsHtml;
 
+        // Cell-level click → open day modal
+        const cells = grid.querySelectorAll('.calendar-cell[data-date]');
+        cells.forEach(cell => {
+            cell.addEventListener('click', () => {
+                const dateKey = cell.getAttribute('data-date');
+                if (dateKey) {
+                    this.openCalendarDayModal(dateKey);
+                }
+            });
+        });
+
+        // Individual item click → view contact (preserve existing behavior)
         grid.querySelectorAll('.calendar-item[data-id]').forEach(el => {
-            el.addEventListener('click', () => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const id = el.getAttribute('data-id');
                 this.viewContact(id);
             });
