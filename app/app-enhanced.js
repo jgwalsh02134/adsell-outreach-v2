@@ -829,7 +829,7 @@ class OutreachTracker {
         this.showNotification('Task saved successfully!');
     }
 
-    OutreachTracker.prototype.openCalendarDayModal = async function (dateKey) {
+    async openCalendarDayModal(dateKey) {
         const modal = document.getElementById('calendar-day-modal');
         const title = document.getElementById('calendar-day-title');
         const listEl = document.getElementById('calendar-day-list');
@@ -995,7 +995,7 @@ class OutreachTracker {
         };
 
         modal.classList.add('active');
-    };
+    }
 
     // Calendar
     renderCalendar() {
@@ -2130,7 +2130,7 @@ class OutreachTracker {
         this.showNotification('Activity logged successfully!');
     }
 
-    OutreachTracker.prototype.deleteActivity = async function (activityId) {
+    async deleteActivity(activityId) {
         const beforeCount = this.activities.length;
         this.activities = this.activities.filter(a => a.id !== activityId);
 
@@ -2144,7 +2144,7 @@ class OutreachTracker {
             this.viewContact(this.currentContact.id);
         }
         this.renderRecentActivity();
-    };
+    }
 
     // Scripts Management (keeping existing implementation)
     renderScripts() {
