@@ -772,7 +772,7 @@ class OutreachTracker {
             }).join('') : '';
 
             const fullEmail = contact.email || '';
-            const primaryEmail = fullEmail.split(/[;,]/)[0] || '';
+            const primaryEmail = fullEmail.split(/[;,]/)[0].trim();
 
             const primaryContactName =
                 contact.contactName ||
@@ -780,6 +780,10 @@ class OutreachTracker {
                     ? primaryEmail.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, ch => ch.toUpperCase())
                     : '') ||
                 '';
+
+            const fullPhone = contact.phone || '';
+            const primaryPhone = fullPhone.split(/[;,]/)[0].trim();
+            const telHref = primaryPhone ? primaryPhone.replace(/[^0-9+]/g, '') : '';
 
             const statusText = contact.status || 'Not Started';
             const statusSlug = this.slugify(statusText);
@@ -797,8 +801,20 @@ class OutreachTracker {
                     </label>
                 </td>
                 <td data-col="contact" data-label="Contact">${primaryContactName || '—'}</td>
-                <td data-col="email" data-label="Email" title="${fullEmail}">${primaryEmail || '—'}</td>
-                <td data-col="phone" data-label="Phone">${contact.phone || '—'}</td>
+                <td data-col="email" data-label="Email" title="${fullEmail}">
+                    ${
+                        primaryEmail
+                            ? `<a href="mailto:${primaryEmail}" class="contact-link">${primaryEmail}</a>`
+                            : '—'
+                    }
+                </td>
+                <td data-col="phone" data-label="Phone" title="${fullPhone}">
+                    ${
+                        primaryPhone
+                            ? `<a href="tel:${telHref}" class="contact-link">${primaryPhone}</a>`
+                            : '—'
+                    }
+                </td>
                 <td data-col="category" data-label="Category">${contact.category || '—'}</td>
                 <td data-col="status" data-label="Status">
                     <span class="status-badge status-${statusSlug}">${statusText}</span>
@@ -1189,6 +1205,18 @@ class OutreachTracker {
         this.currentContact = this.contacts.find(c => c.id === id);
         if (!this.currentContact) return;
 
+        const emailString = this.currentContact.email || '';
+        const emailParts = emailString
+            ? emailString.split(/[;,]/).map(e => e.trim()).filter(Boolean)
+            : [];
+
+        const phoneString = this.currentContact.phone || '';
+        const phoneParts = phoneString
+            ? phoneString.split(/[;,]/).map(p => p.trim()).filter(Boolean)
+            : [];
+        const primaryPhoneDetail = phoneParts[0] || '';
+        const telHrefDetail = primaryPhoneDetail ? primaryPhoneDetail.replace(/[^0-9+]/g, '') : '';
+
         const contactActivities = this.activities
             .filter(a => a.contactId === id)
             .sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -1218,11 +1246,23 @@ class OutreachTracker {
                         <div class="detail-grid">
                             <div class="detail-item">
                                 <span class="detail-label">Email</span>
-                                <span class="detail-value"><a href="mailto:${this.currentContact.email}">${this.currentContact.email}</a></span>
+                                <span class="detail-value">
+                                    ${
+                                        emailParts.length
+                                            ? emailParts.map(e => `<div><a href="mailto:${e}" class="contact-link">${e}</a></div>`).join('')
+                                            : '—'
+                                    }
+                                </span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Phone</span>
-                                <span class="detail-value">${this.currentContact.phone || '—'}</span>
+                                <span class="detail-value">
+                                    ${
+                                        primaryPhoneDetail
+                                            ? `<a href="tel:${telHrefDetail}" class="contact-link">${primaryPhoneDetail}</a>`
+                                            : '—'
+                                    }
+                                </span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Website</span>
