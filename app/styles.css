@@ -1247,6 +1247,12 @@ form {
     white-space: nowrap;
 }
 
+.timeline-delete-btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    margin-left: 0.5rem;
+}
+
 /* Calendar Day modal list */
 .calendar-day-list {
     display: flex;

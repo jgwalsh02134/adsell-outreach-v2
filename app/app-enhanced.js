@@ -1542,6 +1542,13 @@ class OutreachTracker {
                                             <div class="timeline-header">
                                                 <span class="timeline-type">${activity.type}</span>
                                                 <span class="timeline-date">${this.formatDate(activity.date)}</span>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-secondary btn-sm timeline-delete-btn action-btn"
+                                                    data-id="${activity.id}"
+                                                >
+                                                    Delete
+                                                </button>
                                             </div>
                                             <p class="timeline-notes">${activity.notes}</p>
                                             ${activity.followUpDate ? `<p class="timeline-notes" style="margin-top: 0.5rem;"><strong>Follow-up:</strong> ${this.formatDate(activity.followUpDate)}</p>` : ''}
@@ -1556,6 +1563,21 @@ class OutreachTracker {
         `;
 
         document.getElementById('contact-detail-content').innerHTML = content;
+
+        // Wire delete buttons for activities
+        const timelineDeleteButtons = document.querySelectorAll('.timeline-delete-btn');
+        timelineDeleteButtons.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const activityId = btn.getAttribute('data-id');
+                if (!activityId) return;
+                const confirmed = window.confirm('Delete this activity? This cannot be undone.');
+                if (!confirmed) return;
+                await this.deleteActivity(activityId);
+            });
+        });
+
         this.showPage('contact-detail');
     }
 
@@ -1680,6 +1702,22 @@ class OutreachTracker {
         
         this.showNotification('Activity logged successfully!');
     }
+
+    OutreachTracker.prototype.deleteActivity = async function (activityId) {
+        const beforeCount = this.activities.length;
+        this.activities = this.activities.filter(a => a.id !== activityId);
+
+        if (this.activities.length === beforeCount) {
+            return;
+        }
+
+        await this.saveData();
+
+        if (this.currentContact && this.currentContact.id) {
+            this.viewContact(this.currentContact.id);
+        }
+        this.renderRecentActivity();
+    };
 
     // Scripts Management (keeping existing implementation)
     renderScripts() {
@@ -2726,7 +2764,7 @@ OutreachTracker.prototype.aiFollowupEmail = async function () {
     const c = this.currentContact || {};
 
     const prompt = `
-Write a friendly but professional follow-up email for this sales scenario.
+You are writing a friendly but professional follow-up email for this sales scenario.
 
 Contact:
 Name: ${c.contactName || ""}
@@ -2736,7 +2774,13 @@ Stage: ${c.status || ""}
 My rough notes / context:
 ${notes || "(no extra notes)"}
 
-Keep it concise, clear, and tailored to ski / outdoor advertising with AdSell.ai.
+Keep the email concise, clear, and focused on how AdSell.ai's PRINT advertising platform can help this business.
+
+Return a single follow-up email formatted in Markdown with this structure:
+
+## Follow-Up Email
+
+[Write the email body below this heading, using normal paragraphs and line breaks. Do not include any other sections or commentary.]
 `;
     if (notesEl) notesEl.value = "Generating follow-up email with AI...";
     const result = await callAI(prompt);
@@ -2754,16 +2798,28 @@ OutreachTracker.prototype.aiSummarizeCall = async function () {
     }
 
     const prompt = `
-Take these rough call notes and turn them into a clean sales call summary.
+You are a sales assistant turning rough call notes into a clean, structured summary.
 
 Notes:
 ${rawNotes}
 
-Provide:
-- A 3–5 sentence summary of the call.
-- Bullet list of agreed next steps.
-- A 0–100 qualification score with 1–2 lines on why.
-- A recommended next outreach touch (channel + timing).
+Return your output in Markdown with these sections and content:
+
+## Call Summary
+- 3–5 sentences summarizing the overall call and key outcomes.
+
+## Key Points
+- Bullet list of the most important points discussed.
+
+## Next Steps
+- Bullet list of agreed next steps with as much specificity as possible.
+
+## Qualification Score
+- Score: NN/100
+- Rationale: 1–3 short sentences explaining why you chose this score.
+
+## Recommended Next Outreach
+- A short recommendation for the next outreach touch (channel + timing).
 `;
     if (notesEl) notesEl.value = "Summarizing with AI...";
     const result = await callAI(prompt);
