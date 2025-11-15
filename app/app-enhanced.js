@@ -80,6 +80,7 @@ class OutreachTracker {
         this.tags = [];
         this.customFields = [];
         this.tasks = [];
+        this.projects = [];
         this.currentContact = null;
         this.editingContactId = null;
         this.editingScriptId = null;
@@ -535,6 +536,7 @@ class OutreachTracker {
         const localTags = JSON.parse(localStorage.getItem('adsell_tags') || '[]');
         const localCustomFields = JSON.parse(localStorage.getItem('adsell_custom_fields') || '[]');
         const localTasks = JSON.parse(localStorage.getItem('adsell_tasks') || '[]');
+        const localProjects = JSON.parse(localStorage.getItem('adsell_projects') || '[]');
 
         const localHasData =
             localContacts.length ||
@@ -542,7 +544,8 @@ class OutreachTracker {
             localScripts.length ||
             localTags.length ||
             localCustomFields.length ||
-            localTasks.length;
+            localTasks.length ||
+            localProjects.length;
 
         let useApi = false;
         if (apiData && (
@@ -551,7 +554,8 @@ class OutreachTracker {
             (Array.isArray(apiData.scripts) && apiData.scripts.length) ||
             (Array.isArray(apiData.tags) && apiData.tags.length) ||
             (Array.isArray(apiData.customFields) && apiData.customFields.length) ||
-            (Array.isArray(apiData.tasks) && apiData.tasks.length)
+            (Array.isArray(apiData.tasks) && apiData.tasks.length) ||
+            (Array.isArray(apiData.projects) && apiData.projects.length)
         )) {
             useApi = true;
         }
@@ -563,6 +567,7 @@ class OutreachTracker {
             this.tags = Array.isArray(apiData.tags) ? apiData.tags : [];
             this.customFields = Array.isArray(apiData.customFields) ? apiData.customFields : [];
             this.tasks = Array.isArray(apiData.tasks) ? apiData.tasks : [];
+            this.projects = Array.isArray(apiData.projects) ? apiData.projects : [];
 
             // cache back to localStorage
         localStorage.setItem('adsell_contacts', JSON.stringify(this.contacts));
@@ -571,6 +576,7 @@ class OutreachTracker {
         localStorage.setItem('adsell_tags', JSON.stringify(this.tags));
         localStorage.setItem('adsell_custom_fields', JSON.stringify(this.customFields));
             localStorage.setItem('adsell_tasks', JSON.stringify(this.tasks));
+            localStorage.setItem('adsell_projects', JSON.stringify(this.projects));
         } else if (localHasData) {
             // prefer localStorage data if API is empty
             this.contacts = localContacts;
@@ -579,6 +585,7 @@ class OutreachTracker {
             this.tags = localTags;
             this.customFields = localCustomFields;
             this.tasks = localTasks;
+            this.projects = localProjects;
         } else {
             // nothing anywhere
             this.contacts = [];
@@ -587,7 +594,18 @@ class OutreachTracker {
             this.tags = [];
             this.customFields = [];
             this.tasks = [];
+            this.projects = [];
         }
+
+        // Ensure projects list includes any project strings on contacts
+        if (!Array.isArray(this.projects)) {
+            this.projects = [];
+        }
+        (this.contacts || []).forEach(c => {
+            if (c && c.project) {
+                this.ensureProjectExists(c.project);
+            }
+        });
     }
 
     loadColumnPreferences() {
@@ -621,6 +639,7 @@ class OutreachTracker {
         localStorage.setItem('adsell_tags', JSON.stringify(this.tags));
         localStorage.setItem('adsell_custom_fields', JSON.stringify(this.customFields));
         localStorage.setItem('adsell_tasks', JSON.stringify(this.tasks));
+        localStorage.setItem('adsell_projects', JSON.stringify(this.projects));
 
         const hasAnyData =
             (this.contacts && this.contacts.length > 0) ||
@@ -628,7 +647,8 @@ class OutreachTracker {
             (this.scripts && this.scripts.length > 0) ||
             (this.tags && this.tags.length > 0) ||
             (this.customFields && this.customFields.length > 0) ||
-            (this.tasks && this.tasks.length > 0);
+            (this.tasks && this.tasks.length > 0) ||
+            (this.projects && this.projects.length > 0);
 
         // push to shared API only when there is meaningful data
         if (!hasAnyData) {
@@ -646,7 +666,8 @@ class OutreachTracker {
                     scripts: this.scripts,
                     tags: this.tags,
                     customFields: this.customFields,
-                    tasks: this.tasks
+                    tasks: this.tasks,
+                    projects: this.projects
                 })
             });
         } catch (err) {
@@ -724,6 +745,9 @@ class OutreachTracker {
                 break;
             case 'tasks':
                 this.renderTasksPage();
+                break;
+            case 'projects':
+                this.renderProjectsPage();
                 break;
         }
     }
@@ -803,15 +827,34 @@ class OutreachTracker {
         container.innerHTML = html;
     }
 
+    getProjectNames() {
+        const names = (this.projects || [])
+            .map(p => (p.name || '').trim())
+            .filter(Boolean);
+        return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
+    }
+
+    ensureProjectExists(projectName) {
+        const name = (projectName || '').trim();
+        if (!name) return;
+        if (!this.projects) this.projects = [];
+        const exists = this.projects.some(
+            p => (p.name || '').trim().toLowerCase() === name.toLowerCase()
+        );
+        if (!exists) {
+            this.projects.push({
+                id: this.generateId(),
+                name,
+                description: ''
+            });
+        }
+    }
+
     renderProjectFilterOptions() {
         const select = document.getElementById('project-filter');
         if (!select) return;
 
-        const projects = Array.from(new Set(
-            (this.contacts || [])
-                .map(c => (c.project || '').trim())
-                .filter(Boolean)
-        ));
+        const projects = this.getProjectNames();
 
         const options = ['<option value="">All Projects</option>']
             .concat(projects.map(p => `<option value="${p}">${p}</option>`));
@@ -821,6 +864,51 @@ class OutreachTracker {
         if (currentValue && projects.includes(currentValue)) {
             select.value = currentValue;
         }
+    }
+
+    renderProjectsPage() {
+        const container = document.getElementById('projects-list');
+        if (!container) return;
+
+        // Combine explicit projects with any project strings on contacts
+        const names = new Set(this.getProjectNames());
+        (this.contacts || []).forEach(c => {
+            const name = (c.project || '').trim();
+            if (name) names.add(name);
+        });
+
+        const allProjects = Array.from(names).sort((a, b) => a.localeCompare(b));
+
+        if (allProjects.length === 0) {
+            container.innerHTML = '<p class="empty-state">No projects yet. Assign a project name on contacts to get started.</p>';
+            return;
+        }
+
+        const projectsData = allProjects.map(name => {
+            const contactsForProject = (this.contacts || []).filter(
+                c => (c.project || '').trim() === name
+            );
+            const tasksForProject = (this.tasks || []).filter(
+                t => (t.project || '').trim() === name
+            );
+            return {
+                name,
+                contactsCount: contactsForProject.length,
+                tasksCount: tasksForProject.length
+            };
+        });
+
+        container.innerHTML = projectsData.map(p => `
+            <div class="project-card">
+                <div class="project-card-header">
+                    <h3>${p.name}</h3>
+                </div>
+                <div class="project-card-body">
+                    <div><strong>Contacts:</strong> ${p.contactsCount}</div>
+                    <div><strong>Tasks:</strong> ${p.tasksCount}</div>
+                </div>
+            </div>
+        `).join('');
     }
 
     // ===== Tasks Page Rendering & Modal =====
@@ -1891,6 +1979,10 @@ class OutreachTracker {
             // Custom fields
             customFields: {}
         };
+
+        if (contact.project) {
+            this.ensureProjectExists(contact.project);
+        }
 
         if (this.editingContactId) {
             const index = this.contacts.findIndex(c => c.id === this.editingContactId);
@@ -2985,6 +3077,10 @@ AdSell.ai`,
                 // If we have a dedupeKey that is new, add it to importKeys for this batch
                 if (dedupeKey) {
                     importKeys.add(dedupeKey);
+                }
+
+                if (contact.project) {
+                    this.ensureProjectExists(contact.project);
                 }
 
                     contacts.push(contact);
