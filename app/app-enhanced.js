@@ -1222,8 +1222,8 @@ class OutreachTracker {
         grid.innerHTML = headerHtml + cellsHtml;
 
         // Cell-level click → open day modal
-        const cells = grid.querySelectorAll('.calendar-cell[data-date]');
-        cells.forEach(cell => {
+        const dayCells = grid.querySelectorAll('.calendar-cell[data-date]');
+        dayCells.forEach(cell => {
             cell.addEventListener('click', () => {
                 const dateKey = cell.getAttribute('data-date');
                 if (dateKey) {
