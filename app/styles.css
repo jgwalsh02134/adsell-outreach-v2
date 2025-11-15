@@ -383,6 +383,20 @@ body {
     border-bottom: 2px solid var(--border);
 }
 
+.contacts-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--surface);
+}
+
+.contacts-table thead.contacts-header th {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 10;
+}
+
 .contacts-table th {
     padding: 1rem;
     text-align: left;
@@ -391,16 +405,56 @@ body {
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    position: sticky;
-    top: 0;
-    background: var(--background);
-    z-index: 5;
 }
 
 .contacts-table td {
     padding: 1rem;
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
+}
+
+/* Zebra striping for readability */
+.contacts-table tbody tr:nth-child(even) {
+    background-color: rgba(148, 163, 184, 0.03);
+}
+
+/* Status badge styling */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-not-started {
+    background: rgba(148, 163, 184, 0.15);
+    color: #475569;
+}
+
+.status-in-progress {
+    background: rgba(59, 130, 246, 0.15);
+    color: #1d4ed8;
+}
+
+.status-responded {
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+}
+
+.status-signed-up {
+    background: rgba(234, 179, 8, 0.15);
+    color: #b45309;
+}
+
+/* Email column truncation */
+.contacts-table td[data-col="email"] {
+    max-width: 320px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .contacts-table tbody tr:hover {

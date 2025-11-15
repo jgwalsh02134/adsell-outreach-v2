@@ -771,23 +771,39 @@ class OutreachTracker {
                 return tag ? `<span class="tag-badge" style="background: ${tag.color}20; color: ${tag.color};">${tag.name}</span>` : '';
             }).join('') : '';
 
+            const fullEmail = contact.email || '';
+            const primaryEmail = fullEmail.split(/[;,]/)[0] || '';
+
+            const primaryContactName =
+                contact.contactName ||
+                (primaryEmail
+                    ? primaryEmail.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, ch => ch.toUpperCase())
+                    : '') ||
+                '';
+
+            const statusText = contact.status || 'Not Started';
+            const statusSlug = this.slugify(statusText);
+            const last = contact.lastContact ? this.formatDate(contact.lastContact) : 'Never';
+
             return `
             <tr class="contact-row" data-id="${contact.id}">
                 <td data-col="vendor" data-label="Vendor">
                     <label class="row-select-wrap">
                         <input type="checkbox" class="row-select" data-id="${contact.id}" ${this.selectedContactIds.has(contact.id) ? 'checked' : ''}>
                         <div>
-                    <strong>${contact.vendorName}</strong>
-                    ${tags ? `<div class="tags-inline">${tags}</div>` : ''}
+                            <span class="contact-name-link">${contact.vendorName}</span>
+                            ${tags ? `<div class="tags-inline">${tags}</div>` : ''}
                         </div>
                     </label>
                 </td>
-                <td data-col="contact" data-label="Contact">${contact.contactName || '—'}</td>
-                <td data-col="email" data-label="Email">${contact.email}</td>
+                <td data-col="contact" data-label="Contact">${primaryContactName || '—'}</td>
+                <td data-col="email" data-label="Email" title="${fullEmail}">${primaryEmail || '—'}</td>
                 <td data-col="phone" data-label="Phone">${contact.phone || '—'}</td>
                 <td data-col="category" data-label="Category">${contact.category || '—'}</td>
-                <td data-col="status" data-label="Status"><span class="status-badge status-${this.slugify(contact.status)}">${contact.status}</span></td>
-                <td data-col="lastContact" data-label="Last Contact">${contact.lastContact ? this.formatDate(contact.lastContact) : '—'}</td>
+                <td data-col="status" data-label="Status">
+                    <span class="status-badge status-${statusSlug}">${statusText}</span>
+                </td>
+                <td data-col="lastContact" data-label="Last Contact">${last}</td>
                 <td data-col="actions" data-label="Actions">
                     <button class="btn btn-secondary action-btn" onclick="app.viewContact('${contact.id}')">View</button>
                     <button class="btn btn-secondary action-btn" onclick="app.logActivity('${contact.id}')">Log Activity</button>
@@ -806,6 +822,19 @@ class OutreachTracker {
                     return;
                 }
                 const id = row.getAttribute('data-id');
+                if (id) {
+                    this.viewContact(id);
+                }
+            });
+        });
+
+        // Explicitly make vendor name clickable without triggering checkbox
+        tbody.querySelectorAll('.contact-name-link').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const row = el.closest('.contact-row');
+                const id = row ? row.getAttribute('data-id') : null;
                 if (id) {
                     this.viewContact(id);
                 }
