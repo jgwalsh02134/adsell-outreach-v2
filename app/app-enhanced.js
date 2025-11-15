@@ -89,6 +89,7 @@ class OutreachTracker {
             email: true,
             phone: true,
             category: true,
+            project: true,
             status: true,
             lastContact: true,
             actions: true
