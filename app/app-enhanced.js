@@ -649,7 +649,12 @@ class OutreachTracker {
         document.querySelectorAll('.page').forEach(page => {
             page.classList.remove('active');
         });
-        document.getElementById(`${pageName}-page`).classList.add('active');
+        const pageEl = document.getElementById(`${pageName}-page`);
+        if (pageEl) {
+            pageEl.classList.add('active');
+        } else {
+            console.warn("Missing page element:", pageName);
+        }
 
         // Render page content
         switch(pageName) {
@@ -692,11 +697,17 @@ class OutreachTracker {
         const responded = this.contacts.filter(c => c.status === 'Responded').length;
         const signedUp = this.contacts.filter(c => c.status === 'Signed Up').length;
 
-        document.getElementById('stat-total').textContent = total;
-        document.getElementById('stat-not-started').textContent = notStarted;
-        document.getElementById('stat-in-progress').textContent = inProgress;
-        document.getElementById('stat-responded').textContent = responded;
-        document.getElementById('stat-signed-up').textContent = signedUp;
+        const elTotal = document.getElementById('stat-total');
+        const elNot = document.getElementById('stat-not-started');
+        const elProg = document.getElementById('stat-in-progress');
+        const elResp = document.getElementById('stat-responded');
+        const elSign = document.getElementById('stat-signed-up');
+
+        if (elTotal) elTotal.textContent = total;
+        if (elNot) elNot.textContent = notStarted;
+        if (elProg) elProg.textContent = inProgress;
+        if (elResp) elResp.textContent = responded;
+        if (elSign) elSign.textContent = signedUp;
     }
 
     renderDashboardTasks() {
