@@ -458,39 +458,79 @@ class OutreachTracker {
 
     // Data Management
     async loadData() {
+        let apiData = null;
+
         try {
             const res = await fetch("https://adsell-openai-proxy.jgregorywalsh.workers.dev/contacts", {
                 method: "GET"
             });
-
-            if (!res.ok) {
-                throw new Error("Failed to load shared contacts");
+            if (res.ok) {
+                apiData = await res.json();
+            } else {
+                console.error("Failed to load shared contacts, status:", res.status);
             }
+        } catch (err) {
+            console.error("Failed to load from KV API:", err);
+        }
 
-            const data = await res.json();
+        const localContacts = JSON.parse(localStorage.getItem('adsell_contacts') || '[]');
+        const localActivities = JSON.parse(localStorage.getItem('adsell_activities') || '[]');
+        const localScripts = JSON.parse(localStorage.getItem('adsell_scripts') || '[]');
+        const localTags = JSON.parse(localStorage.getItem('adsell_tags') || '[]');
+        const localCustomFields = JSON.parse(localStorage.getItem('adsell_custom_fields') || '[]');
+        const localTasks = JSON.parse(localStorage.getItem('adsell_tasks') || '[]');
 
-            this.contacts = Array.isArray(data.contacts) ? data.contacts : [];
-            this.activities = Array.isArray(data.activities) ? data.activities : [];
-            this.scripts = Array.isArray(data.scripts) ? data.scripts : [];
-            this.tags = Array.isArray(data.tags) ? data.tags : [];
-            this.customFields = Array.isArray(data.customFields) ? data.customFields : [];
-            this.tasks = Array.isArray(data.tasks) ? data.tasks : [];
+        const localHasData =
+            localContacts.length ||
+            localActivities.length ||
+            localScripts.length ||
+            localTags.length ||
+            localCustomFields.length ||
+            localTasks.length;
 
-            // cache locally as backup
+        let useApi = false;
+        if (apiData && (
+            (Array.isArray(apiData.contacts) && apiData.contacts.length) ||
+            (Array.isArray(apiData.activities) && apiData.activities.length) ||
+            (Array.isArray(apiData.scripts) && apiData.scripts.length) ||
+            (Array.isArray(apiData.tags) && apiData.tags.length) ||
+            (Array.isArray(apiData.customFields) && apiData.customFields.length) ||
+            (Array.isArray(apiData.tasks) && apiData.tasks.length)
+        )) {
+            useApi = true;
+        }
+
+        if (useApi) {
+            this.contacts = Array.isArray(apiData.contacts) ? apiData.contacts : [];
+            this.activities = Array.isArray(apiData.activities) ? apiData.activities : [];
+            this.scripts = Array.isArray(apiData.scripts) ? apiData.scripts : [];
+            this.tags = Array.isArray(apiData.tags) ? apiData.tags : [];
+            this.customFields = Array.isArray(apiData.customFields) ? apiData.customFields : [];
+            this.tasks = Array.isArray(apiData.tasks) ? apiData.tasks : [];
+
+            // cache back to localStorage
             localStorage.setItem('adsell_contacts', JSON.stringify(this.contacts));
             localStorage.setItem('adsell_activities', JSON.stringify(this.activities));
             localStorage.setItem('adsell_scripts', JSON.stringify(this.scripts));
             localStorage.setItem('adsell_tags', JSON.stringify(this.tags));
             localStorage.setItem('adsell_custom_fields', JSON.stringify(this.customFields));
             localStorage.setItem('adsell_tasks', JSON.stringify(this.tasks));
-        } catch (err) {
-            console.error("Failed to load from shared API, falling back to localStorage:", err);
-        this.contacts = JSON.parse(localStorage.getItem('adsell_contacts')) || [];
-        this.activities = JSON.parse(localStorage.getItem('adsell_activities')) || [];
-        this.scripts = JSON.parse(localStorage.getItem('adsell_scripts')) || [];
-        this.tags = JSON.parse(localStorage.getItem('adsell_tags')) || [];
-        this.customFields = JSON.parse(localStorage.getItem('adsell_custom_fields')) || [];
-            this.tasks = JSON.parse(localStorage.getItem('adsell_tasks')) || [];
+        } else if (localHasData) {
+            // prefer localStorage data if API is empty
+            this.contacts = localContacts;
+            this.activities = localActivities;
+            this.scripts = localScripts;
+            this.tags = localTags;
+            this.customFields = localCustomFields;
+            this.tasks = localTasks;
+        } else {
+            // nothing anywhere
+            this.contacts = [];
+            this.activities = [];
+            this.scripts = [];
+            this.tags = [];
+            this.customFields = [];
+            this.tasks = [];
         }
     }
 
@@ -526,7 +566,20 @@ class OutreachTracker {
         localStorage.setItem('adsell_custom_fields', JSON.stringify(this.customFields));
         localStorage.setItem('adsell_tasks', JSON.stringify(this.tasks));
 
-        // push to shared API
+        const hasAnyData =
+            (this.contacts && this.contacts.length > 0) ||
+            (this.activities && this.activities.length > 0) ||
+            (this.scripts && this.scripts.length > 0) ||
+            (this.tags && this.tags.length > 0) ||
+            (this.customFields && this.customFields.length > 0) ||
+            (this.tasks && this.tasks.length > 0);
+
+        // push to shared API only when there is meaningful data
+        if (!hasAnyData) {
+            console.warn("saveData: No data to sync to KV; skipping /contacts/import.");
+            return;
+        }
+
         try {
             await fetch("https://adsell-openai-proxy.jgregorywalsh.workers.dev/contacts/import", {
                 method: "POST",
@@ -536,8 +589,8 @@ class OutreachTracker {
                     activities: this.activities,
                     scripts: this.scripts,
                     tags: this.tags,
-                        customFields: this.customFields,
-                        tasks: this.tasks
+                    customFields: this.customFields,
+                    tasks: this.tasks
                 })
             });
         } catch (err) {
