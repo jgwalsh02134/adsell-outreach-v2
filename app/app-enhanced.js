@@ -503,6 +503,30 @@ class OutreachTracker {
         });
         }
 
+        // Contacts quick add form
+        const quickAddForm = document.getElementById('contacts-quick-add-form');
+        if (quickAddForm) {
+            quickAddForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(quickAddForm);
+                const vendorName = (formData.get('vendorName') || '').trim();
+                if (!vendorName) {
+                    alert('Please enter a company / organization name.');
+                    return;
+                }
+                const contactData = {
+                    vendorName,
+                    contactName: (formData.get('contactName') || '').trim(),
+                    email: (formData.get('email') || '').trim(),
+                    phone: (formData.get('phone') || '').trim(),
+                    project: (formData.get('project') || '').trim(),
+                    category: (formData.get('category') || '').trim()
+                };
+                this.quickAddContact(contactData);
+                quickAddForm.reset();
+            });
+        }
+
         // Close modals on background click
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
@@ -1043,6 +1067,13 @@ class OutreachTracker {
         modal.classList.add('active');
     }
 
+    openTaskForContact(contactId) {
+        const contact = this.contacts.find(c => c.id === contactId);
+        if (!contact) return;
+        this.currentContact = contact;
+        this.openTaskModal(null);
+    }
+
     closeTaskModal() {
         const modal = document.getElementById('task-modal');
         if (modal) modal.classList.remove('active');
@@ -1544,6 +1575,7 @@ class OutreachTracker {
                 <td data-col="actions" data-label="Actions">
                     <button class="btn btn-secondary action-btn" onclick="app.viewContact('${contact.id}')">View</button>
                     <button class="btn btn-secondary action-btn" onclick="app.logActivity('${contact.id}')">Log Activity</button>
+                    <button class="btn btn-secondary action-btn" onclick="app.openTaskForContact('${contact.id}')">Add Task</button>
                 </td>
             </tr>
         `}).join('');
@@ -1741,7 +1773,14 @@ class OutreachTracker {
         const container = document.getElementById('advanced-filters-content');
         if (!container) return;
         const statuses = ['Not Started','In Progress','Responded','Signed Up'];
-        const categories = ['Ski Resort','Ski Club','Outdoor Gear Shop','Ski/Bike Shop','Equipment Manufacturer','Nordic Ski Center','Tourism Organization','Health/Fitness','Other'];
+        const categories = [
+            'Vendor / Supplier',
+            'Customer / Advertiser',
+            'Partner',
+            'Media / Press',
+            'Prospect / Lead',
+            'Other'
+        ];
         const segments = ['Expo','NE','Club'];
         const tags = this.tags;
 
@@ -1793,6 +1832,86 @@ class OutreachTracker {
         const options = ['<option value="">Choose Tag...</option>']
             .concat(this.tags.map(t => `<option value="${t.id}">${t.name}</option>`));
         select.innerHTML = options.join('');
+    }
+
+    async quickAddContact(data) {
+        const now = new Date().toISOString();
+        const contact = {
+            id: this.generateId(),
+            // Basic Info
+            vendorName: data.vendorName || '',
+            companyName: data.vendorName || '',
+            contactName: data.contactName || '',
+            title: '',
+            email: data.email || '',
+            phone: data.phone || '',
+            website: '',
+
+            // Business Info
+            category: data.category || '',
+            segment: '',
+            status: 'Not Started',
+            industryVertical: '',
+            companySize: '',
+            annualRevenue: '',
+
+            // Contact Details
+            linkedin: '',
+            twitter: '',
+            facebook: '',
+            instagram: '',
+
+            // Address
+            address: '',
+            city: '',
+            state: '',
+            zipCode: '',
+            country: 'USA',
+
+            // Deal Info
+            dealStage: '',
+            dealValue: '',
+            dealProbability: '',
+            expectedCloseDate: '',
+
+            // Decision Making
+            decisionMaker: false,
+            budget: '',
+            authority: '',
+
+            // Notes & Tags
+            notes: '',
+            internalNotes: '',
+            tags: [],
+
+            // Tracking
+            project: data.project || '',
+            leadSource: 'Manual Add',
+            referredBy: '',
+
+            // Metadata
+            createdAt: now,
+            lastContact: null,
+            followUpDate: null,
+            nextSteps: '',
+
+            // Custom fields
+            customFields: {}
+        };
+
+        if (contact.project) {
+            this.ensureProjectExists(contact.project);
+        }
+
+        this.contacts.push(contact);
+        await this.saveData();
+        this.renderContacts();
+        this.applyColumnVisibility();
+        this.updateStats();
+        if (typeof this.renderProjectFilterOptions === 'function') {
+            this.renderProjectFilterOptions();
+        }
+        this.showNotification('Contact added successfully.');
     }
 
     bulkSelectAll() {

@@ -977,6 +977,40 @@ body {
     margin: 0 0 0.25rem 0;
 }
 
+/* Contacts Quick Add */
+.contacts-quick-add {
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--border);
+}
+
+.quick-add-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.quick-add-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.quick-add-row input,
+.quick-add-row select {
+    flex: 1 1 0;
+    min-width: 140px;
+}
+
+.quick-add-submit {
+    white-space: nowrap;
+}
+
 /* Modal */
 .modal {
     display: none;

@@ -310,12 +310,11 @@
                 </select>
                 <select id="category-filter" class="filter-select">
                     <option value="">All Categories</option>
-                    <option value="Ski Resort">Ski Resort</option>
-                    <option value="Ski Club">Ski Club</option>
-                    <option value="Outdoor Gear Shop">Outdoor Gear Shop</option>
-                    <option value="Ski/Bike Shop">Ski/Bike Shop</option>
-                    <option value="Equipment Manufacturer">Equipment Manufacturer</option>
-                    <option value="Nordic Ski Center">Nordic Ski Center</option>
+                    <option value="Vendor / Supplier">Vendor / Supplier</option>
+                    <option value="Customer / Advertiser">Customer / Advertiser</option>
+                    <option value="Partner">Partner</option>
+                    <option value="Media / Press">Media / Press</option>
+                    <option value="Prospect / Lead">Prospect / Lead</option>
                     <option value="Other">Other</option>
                 </select>
                 <select id="segment-filter" class="filter-select">
@@ -403,11 +402,36 @@
                 </div>
             </div>
 
+            <div id="contacts-quick-add" class="contacts-quick-add card">
+                <h3 class="quick-add-title">Quick Add Contact</h3>
+                <form id="contacts-quick-add-form">
+                    <div class="quick-add-row">
+                        <input type="text" name="vendorName" placeholder="Company / Organization" required>
+                        <input type="text" name="contactName" placeholder="Contact name">
+                        <input type="email" name="email" placeholder="Email">
+                    </div>
+                    <div class="quick-add-row">
+                        <input type="text" name="phone" placeholder="Phone">
+                        <input type="text" name="project" placeholder="Project / Campaign">
+                        <select name="category">
+                            <option value="">Category</option>
+                            <option value="Vendor / Supplier">Vendor / Supplier</option>
+                            <option value="Customer / Advertiser">Customer / Advertiser</option>
+                            <option value="Partner">Partner</option>
+                            <option value="Media / Press">Media / Press</option>
+                            <option value="Prospect / Lead">Prospect / Lead</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary quick-add-submit">Quick Add Contact</button>
+                    </div>
+                </form>
+            </div>
+
             <div class="table-container">
                 <table class="contacts-table">
                     <thead class="contacts-header">
                         <tr>
-                            <th data-col="vendor" data-sort="vendorName" class="sticky-col">Vendor Name</th>
+                            <th data-col="vendor" data-sort="vendorName" class="sticky-col">Company / Organization</th>
                             <th data-col="contact" data-sort="contactName">Contact</th>
                             <th data-col="email" data-sort="email">Email</th>
                             <th data-col="phone" data-sort="phone">Phone</th>
@@ -601,15 +625,12 @@
                         <div class="form-group">
                             <label>Category</label>
                             <select name="category">
-                                <option value="">Select Category</option>
-                                <option value="Ski Resort">Ski Resort</option>
-                                <option value="Ski Club">Ski Club</option>
-                                <option value="Outdoor Gear Shop">Outdoor Gear Shop</option>
-                                <option value="Ski/Bike Shop">Ski/Bike Shop</option>
-                                <option value="Equipment Manufacturer">Equipment Manufacturer</option>
-                                <option value="Nordic Ski Center">Nordic Ski Center</option>
-                                <option value="Tourism Organization">Tourism Organization</option>
-                                <option value="Health/Fitness">Health/Fitness</option>
+                                <option value="">Select category</option>
+                                <option value="Vendor / Supplier">Vendor / Supplier</option>
+                                <option value="Customer / Advertiser">Customer / Advertiser</option>
+                                <option value="Partner">Partner</option>
+                                <option value="Media / Press">Media / Press</option>
+                                <option value="Prospect / Lead">Prospect / Lead</option>
                                 <option value="Other">Other</option>
                             </select>
                         </div>
