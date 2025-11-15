@@ -467,7 +467,7 @@ class OutreachTracker {
             if (res.ok) {
                 apiData = await res.json();
             } else {
-                console.error("Failed to load shared contacts, status:", res.status);
+                console.error("loadData: failed to load from KV API, status:", res.status);
             }
         } catch (err) {
             console.error("Failed to load from KV API:", err);
@@ -576,7 +576,7 @@ class OutreachTracker {
 
         // push to shared API only when there is meaningful data
         if (!hasAnyData) {
-            console.warn("saveData: No data to sync to KV; skipping /contacts/import.");
+            console.warn("saveData: no data to sync to KV; skipping /contacts/import.");
             return;
         }
 
@@ -594,7 +594,7 @@ class OutreachTracker {
                 })
             });
         } catch (err) {
-            console.error("Failed to sync to shared contacts API:", err);
+            console.error("saveData: failed to sync to shared contacts API:", err);
         }
     }
 
