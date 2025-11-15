@@ -460,6 +460,11 @@ class OutreachTracker {
             segmentFilter.addEventListener('change', () => this.filterContacts());
         }
 
+        const projectFilter = document.getElementById('project-filter');
+        if (projectFilter) {
+            projectFilter.addEventListener('change', () => this.filterContacts());
+        }
+
         // Tasks page buttons
         const tasksAddBtn = document.getElementById('tasks-add-btn');
         if (tasksAddBtn) {
@@ -685,6 +690,9 @@ class OutreachTracker {
                 this.renderBulkTagOptions();
                 this.updateBulkUI();
                 this.renderAdvancedFiltersPanel();
+                if (typeof this.renderProjectFilterOptions === 'function') {
+                    this.renderProjectFilterOptions();
+                }
                 break;
             case 'scripts':
                 this.renderScripts();
@@ -777,6 +785,26 @@ class OutreachTracker {
         `;
 
         container.innerHTML = html;
+    }
+
+    renderProjectFilterOptions() {
+        const select = document.getElementById('project-filter');
+        if (!select) return;
+
+        const projects = Array.from(new Set(
+            (this.contacts || [])
+                .map(c => (c.project || '').trim())
+                .filter(Boolean)
+        ));
+
+        const options = ['<option value="">All Projects</option>']
+            .concat(projects.map(p => `<option value="${p}">${p}</option>`));
+
+        const currentValue = select.value;
+        select.innerHTML = options.join('');
+        if (currentValue && projects.includes(currentValue)) {
+            select.value = currentValue;
+        }
     }
 
     // ===== Tasks Page Rendering & Modal =====
@@ -1460,6 +1488,12 @@ class OutreachTracker {
             filtered = filtered.filter(contact => contact.segment === segment);
         }
 
+        const projectFilter = document.getElementById('project-filter');
+        const project = projectFilter ? projectFilter.value : '';
+        if (project) {
+            filtered = filtered.filter(contact => contact.project === project);
+        }
+
         // Advanced multi-select filters
         const adv = this.advancedFilters || {};
         if (Array.isArray(adv.statuses) && adv.statuses.length > 0) {
@@ -1864,6 +1898,10 @@ class OutreachTracker {
                             <div class="detail-item">
                                 <span class="detail-label">Segment</span>
                                 <span class="detail-value">${this.currentContact.segment || '—'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Project</span>
+                                <span class="detail-value">${this.currentContact.project || '—'}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Company Size</span>
