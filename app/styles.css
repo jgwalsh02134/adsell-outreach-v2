@@ -449,6 +449,22 @@ body {
     color: #b45309;
 }
 
+/* Contact detail status dropdown */
+.status-select {
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    background-color: #fff;
+    color: var(--text-primary);
+    outline: none;
+}
+
+.status-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.3);
+}
+
 /* Email column truncation */
 .contacts-table td[data-col="email"] {
     max-width: 320px;

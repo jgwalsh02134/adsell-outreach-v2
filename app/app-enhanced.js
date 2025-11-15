@@ -1873,9 +1873,11 @@ class OutreachTracker {
                             <div class="detail-item">
                                 <span class="detail-label">Status</span>
                                 <span class="detail-value">
-                                    <span class="status-badge status-${this.slugify(this.currentContact.status)}">
-                                        ${this.currentContact.status}
-                                    </span>
+                                    <select id="contact-status-select" class="status-select">
+                                        ${['Not Started', 'In Progress', 'Responded', 'Signed Up'].map(s => `
+                                            <option value="${s}" ${this.currentContact.status === s ? 'selected' : ''}>${s}</option>
+                                        `).join('')}
+                                    </select>
                                 </span>
                             </div>
                             <div class="detail-item">
@@ -2110,6 +2112,31 @@ class OutreachTracker {
                     this.openTaskModal();
                 });
             }
+        }
+
+        // Wire status dropdown change
+        const statusSelect = document.getElementById('contact-status-select');
+        if (statusSelect) {
+            statusSelect.addEventListener('change', async () => {
+                const newStatus = statusSelect.value || 'Not Started';
+
+                // Update currentContact
+                if (this.currentContact) {
+                    this.currentContact.status = newStatus;
+                }
+
+                // Update the contact in the main contacts array
+                const idx = this.contacts.findIndex(c => c.id === id);
+                if (idx !== -1) {
+                    this.contacts[idx].status = newStatus;
+                }
+
+                // Persist and refresh dependent views
+                await this.saveData();
+                this.updateStats();
+                this.renderPipeline();
+                this.showNotification(`Status updated to ${newStatus}`);
+            });
         }
 
         this.showPage('contact-detail');
