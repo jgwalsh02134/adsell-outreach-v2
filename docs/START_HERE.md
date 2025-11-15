@@ -15,7 +15,7 @@ Welcome to your complete outreach management system for the AdSell.ai ski magazi
 ```
 index.html          Main application interface
 styles.css          All styling and design  
-app.js              Application logic
+app-enhanced.js     Application logic (enhanced CRM)
 ```
 **These 3 files are all you need to run the app!**
 
@@ -137,7 +137,7 @@ Make sure you have these essential files:
 **Required for App:**
 - [x] index.html
 - [x] styles.css  
-- [x] app.js
+- [x] app-enhanced.js
 
 **Recommended Utilities:**
 - [x] data-loader.html
@@ -191,7 +191,7 @@ Everything you need is in this folder. Pick your path above and get started!
 
 **For This App:**
 - Review documentation files
-- Check code comments in `app.js`
+- Check code comments in `app-enhanced.js`
 - Open browser dev tools (F12) for debugging
 
 **For AdSell.ai Platform:**

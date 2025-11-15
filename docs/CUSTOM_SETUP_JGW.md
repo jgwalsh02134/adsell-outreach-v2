@@ -30,8 +30,7 @@ DOWNLOADS="/Users/j-gregory-walsh/Downloads"
 
 # Move app files
 mv "$DOWNLOADS/index.html" app/
-mv "$DOWNLOADS/index-enhanced.html" app/
-mv "$DOWNLOADS/app.js" app/
+# Legacy app.js has been removed; use the enhanced app only.
 mv "$DOWNLOADS/app-enhanced.js" app/
 mv "$DOWNLOADS/styles.css" app/
 mv "$DOWNLOADS/data-loader.html" app/
@@ -114,10 +113,8 @@ open app/index-enhanced.html
 ```
 /Users/j-gregory-walsh/adsell-outreach-v2/
 ├── app/
-│   ├── index.html
-│   ├── index-enhanced.html        ⭐ Main app
-│   ├── app.js
-│   ├── app-enhanced.js
+│   ├── index.html                ⭐ Main app (enhanced CRM)
+│   ├── app-enhanced.js           ⭐ Application logic
 │   ├── styles.css
 │   └── data-loader.html
 ├── docs/

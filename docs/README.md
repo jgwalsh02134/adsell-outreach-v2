@@ -160,14 +160,14 @@ Help ski industry businesses understand how they can use AdSell.ai to advertise 
 
 ### File Structure
 ```
-index.html   - Main HTML structure
-styles.css   - All styling and layout
-app.js       - Application logic and functionality
+index.html       - Main HTML structure
+styles.css       - All styling and layout
+app-enhanced.js  - Application logic and functionality
 ```
 
 ### Customization
 - Colors can be adjusted in `styles.css` CSS variables
-- Default scripts can be modified in `app.js` `addDefaultScripts()`
+- Default scripts can be modified in `app-enhanced.js` (`addDefaultScripts()`)
 - Contact fields can be extended in the data model
 
 ## Support
