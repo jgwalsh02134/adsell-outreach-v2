@@ -1,3 +1,9 @@
+window.addEventListener('error', (e) => {
+    console.error('[AdSell CRM][Global Error]', e.error || e.message || e);
+});
+
+console.log('[AdSell CRM] app-enhanced.js loaded at', new Date().toISOString());
+
 // AdSell.ai Outreach Tracker - Enhanced with Profile Builder
 
 // Shared AI helper (OpenAI proxy via Cloudflare Worker)
@@ -67,6 +73,7 @@ async function callAI(prompt, mode = "default") {
 }
 class OutreachTracker {
     constructor() {
+        console.log('[AdSell CRM] constructor');
         this.contacts = [];
         this.activities = [];
         this.scripts = [];
@@ -94,6 +101,7 @@ class OutreachTracker {
     }
 
     async init() {
+        console.log('[AdSell CRM] init() starting');
         // Load data from API (with localStorage fallback)
         await this.loadData();
         this.loadColumnPreferences();
@@ -143,6 +151,8 @@ class OutreachTracker {
                 }
             });
         }
+
+        console.log('[AdSell CRM] init() finished');
 
         // Initial tasks-related renders
         if (typeof this.renderDashboardTasks === 'function') {
@@ -637,6 +647,8 @@ class OutreachTracker {
 
     // Navigation
     showPage(pageName) {
+        console.log('[AdSell CRM] showPage()', pageName);
+
         // Update nav links
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.remove('active');
@@ -653,15 +665,17 @@ class OutreachTracker {
         if (pageEl) {
             pageEl.classList.add('active');
         } else {
-            console.warn("Missing page element:", pageName);
+            console.warn('[AdSell CRM] showPage: missing page element for', pageName);
         }
 
         // Render page content
-        switch(pageName) {
+        switch (pageName) {
             case 'dashboard':
                 this.updateStats();
                 this.renderRecentActivity();
-            this.renderDashboardTasks();
+                if (typeof this.renderDashboardTasks === 'function') {
+                    this.renderDashboardTasks();
+                }
                 break;
             case 'contacts':
                 this.renderContacts();
@@ -696,12 +710,17 @@ class OutreachTracker {
         const inProgress = this.contacts.filter(c => c.status === 'In Progress').length;
         const responded = this.contacts.filter(c => c.status === 'Responded').length;
         const signedUp = this.contacts.filter(c => c.status === 'Signed Up').length;
+        console.log('[AdSell CRM] updateStats()', { total, notStarted, inProgress, responded, signedUp });
 
         const elTotal = document.getElementById('stat-total');
         const elNot = document.getElementById('stat-not-started');
         const elProg = document.getElementById('stat-in-progress');
         const elResp = document.getElementById('stat-responded');
         const elSign = document.getElementById('stat-signed-up');
+
+        if (!elTotal || !elNot || !elProg || !elResp || !elSign) {
+            console.warn('[AdSell CRM] updateStats: one or more stat elements missing');
+        }
 
         if (elTotal) elTotal.textContent = total;
         if (elNot) elNot.textContent = notStarted;
