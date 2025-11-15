@@ -3196,8 +3196,15 @@ function hideAIModal() {
     if (modal) modal.classList.remove('active');
 }
 
-// Initialize app
-const app = new OutreachTracker();
+// Initialize app when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.app = new OutreachTracker();
+    });
+} else {
+    // DOM is already ready
+    window.app = new OutreachTracker();
+}
 
 // Class prototype AI helpers (delegating to callAI and modal)
 OutreachTracker.prototype.showAIModal = function (html) {
