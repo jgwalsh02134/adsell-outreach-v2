@@ -1400,11 +1400,18 @@ form {
     }
 
     .pipeline-board {
-        grid-template-columns: 1fr 1fr;
+        display: flex;
+        flex-direction: column;
+        overflow-x: visible;
+    }
+
+    .pipeline-column {
+        min-width: 100%;
     }
 
     .calendar-grid {
         grid-template-columns: repeat(2, 1fr);
+        overflow-x: visible;
     }
 
     .stat-card {

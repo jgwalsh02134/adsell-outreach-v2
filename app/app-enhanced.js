@@ -202,6 +202,23 @@ class OutreachTracker {
             });
         }
 
+        // Dashboard stat cards → shortcuts
+        const dashboardLinks = document.querySelectorAll('.stat-card.dashboard-link');
+        dashboardLinks.forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetPage = card.dataset.target || 'contacts';
+                if (!targetPage) return;
+
+                this.showPage(targetPage);
+
+                // Close mobile nav if open
+                if (navContainer && navContainer.classList.contains('nav-open')) {
+                    navContainer.classList.remove('nav-open');
+                }
+            });
+        });
+
         // AI modal close handlers
         const aiClose = document.getElementById('ai-modal-close');
         if (aiClose) {
