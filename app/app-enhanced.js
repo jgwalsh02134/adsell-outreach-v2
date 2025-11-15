@@ -385,22 +385,31 @@ class OutreachTracker {
         }
 
         // Contact form
-        document.getElementById('contact-form').addEventListener('submit', (e) => {
+        const contactForm = document.getElementById('contact-form');
+        if (contactForm) {
+            contactForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.saveContact(e.target);
         });
+        }
 
         // Activity form
-        document.getElementById('activity-form').addEventListener('submit', (e) => {
+        const activityForm = document.getElementById('activity-form');
+        if (activityForm) {
+            activityForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.saveActivity(e.target);
         });
+        }
 
         // Script form
-        document.getElementById('script-form').addEventListener('submit', (e) => {
+        const scriptForm = document.getElementById('script-form');
+        if (scriptForm) {
+            scriptForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.saveScript(e.target);
         });
+        }
 
         // Task form
         const taskForm = document.getElementById('task-form');
@@ -423,10 +432,22 @@ class OutreachTracker {
         // (AI modal buttons use init() aiFollowupEmail/aiSummarizeCall bindings)
 
         // Search and filters
-        document.getElementById('search-input').addEventListener('input', () => this.filterContacts());
-        document.getElementById('status-filter').addEventListener('change', () => this.filterContacts());
-        document.getElementById('category-filter').addEventListener('change', () => this.filterContacts());
-        document.getElementById('segment-filter').addEventListener('change', () => this.filterContacts());
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', () => this.filterContacts());
+        }
+        const statusFilter = document.getElementById('status-filter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', () => this.filterContacts());
+        }
+        const categoryFilter = document.getElementById('category-filter');
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', () => this.filterContacts());
+        }
+        const segmentFilter = document.getElementById('segment-filter');
+        if (segmentFilter) {
+            segmentFilter.addEventListener('change', () => this.filterContacts());
+        }
 
         // Tasks page buttons
         const tasksAddBtn = document.getElementById('tasks-add-btn');
@@ -442,9 +463,12 @@ class OutreachTracker {
         }
 
         // CSV upload
-        document.getElementById('csv-file-input').addEventListener('change', (e) => {
+        const csvInput = document.getElementById('csv-file-input');
+        if (csvInput) {
+            csvInput.addEventListener('change', (e) => {
             this.handleCSVUpload(e.target.files[0]);
         });
+        }
 
         // Close modals on background click
         document.querySelectorAll('.modal').forEach(modal => {
@@ -509,11 +533,11 @@ class OutreachTracker {
             this.tasks = Array.isArray(apiData.tasks) ? apiData.tasks : [];
 
             // cache back to localStorage
-            localStorage.setItem('adsell_contacts', JSON.stringify(this.contacts));
-            localStorage.setItem('adsell_activities', JSON.stringify(this.activities));
-            localStorage.setItem('adsell_scripts', JSON.stringify(this.scripts));
-            localStorage.setItem('adsell_tags', JSON.stringify(this.tags));
-            localStorage.setItem('adsell_custom_fields', JSON.stringify(this.customFields));
+        localStorage.setItem('adsell_contacts', JSON.stringify(this.contacts));
+        localStorage.setItem('adsell_activities', JSON.stringify(this.activities));
+        localStorage.setItem('adsell_scripts', JSON.stringify(this.scripts));
+        localStorage.setItem('adsell_tags', JSON.stringify(this.tags));
+        localStorage.setItem('adsell_custom_fields', JSON.stringify(this.customFields));
             localStorage.setItem('adsell_tasks', JSON.stringify(this.tasks));
         } else if (localHasData) {
             // prefer localStorage data if API is empty
