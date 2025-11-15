@@ -2005,6 +2005,21 @@ AdSell.ai`,
 
             const contacts = [];
 
+            // Build a set of keys for existing contacts to detect duplicates.
+            // Key format: vendorName|email, both lowercased and trimmed.
+            const existingKeys = new Set(
+                (this.contacts || [])
+                    .filter(c => c.vendorName && c.email)
+                    .map(c => {
+                        const vendor = c.vendorName.toLowerCase().trim();
+                        const email = c.email.toLowerCase().trim();
+                        return `${vendor}|${email}`;
+                    })
+            );
+
+            // Also track keys within this import batch to avoid duplicates inside the CSV itself.
+            const importKeys = new Set();
+
             // Helper to check if a header contains any of the keywords
             const hasAny = (header, keywords) =>
                 keywords.some(k => header.includes(k));
@@ -2127,9 +2142,29 @@ AdSell.ai`,
                     (contact.email && contact.email.trim()) ||
                     (contact.phone && contact.phone.trim());
 
-                if (hasIdentifier) {
-                    contacts.push(contact);
+                if (!hasIdentifier) {
+                    continue;
                 }
+
+                // Build dedupe key if we have both vendorName and email
+                let dedupeKey = null;
+                if (contact.vendorName && contact.email) {
+                    const vendor = contact.vendorName.toLowerCase().trim();
+                    const email = contact.email.toLowerCase().trim();
+                    dedupeKey = `${vendor}|${email}`;
+                }
+
+                // If dedupeKey exists and is already present in existingKeys or importKeys, skip this contact
+                if (dedupeKey && (existingKeys.has(dedupeKey) || importKeys.has(dedupeKey))) {
+                    continue;
+                }
+
+                // If we have a dedupeKey that is new, add it to importKeys for this batch
+                if (dedupeKey) {
+                    importKeys.add(dedupeKey);
+                }
+
+                contacts.push(contact);
             }
 
             if (contacts.length === 0) {
