@@ -86,6 +86,7 @@ body {
     height: 24px;
     width: auto;
     margin-right: 0.75rem;
+    display: block;
 }
 
 .nav-brand-text {
