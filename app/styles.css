@@ -89,6 +89,10 @@ body {
     display: block;
 }
 
+svg.nav-logo {
+    display: none;
+}
+
 .nav-brand-text {
     display: flex;
     flex-direction: column;
