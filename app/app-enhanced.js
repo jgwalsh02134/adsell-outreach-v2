@@ -310,6 +310,10 @@ class OutreachTracker {
         if (bulkUpdateStatusBtn) {
             bulkUpdateStatusBtn.addEventListener('click', () => this.bulkUpdateStatus());
         }
+        const bulkUpdateProjectBtn = document.getElementById('bulk-update-project');
+        if (bulkUpdateProjectBtn) {
+            bulkUpdateProjectBtn.addEventListener('click', () => this.bulkUpdateProject());
+        }
         const bulkAddTagBtn = document.getElementById('bulk-add-tag');
         if (bulkAddTagBtn) {
             bulkAddTagBtn.addEventListener('click', () => this.bulkAddTag());
@@ -2207,6 +2211,50 @@ class OutreachTracker {
         this.applyColumnVisibility();
         this.updateStats();
         this.showNotification('Status updated for selected contacts');
+    }
+
+    async bulkUpdateProject() {
+        if (this.selectedContactIds.size === 0) {
+            return;
+        }
+
+        const projectSelect = document.getElementById('bulk-project');
+        if (!projectSelect) return;
+
+        let projectName = (projectSelect.value || '').trim();
+        if (!projectName) {
+            const input = window.prompt('Enter project name to apply to selected contacts:');
+            if (!input) {
+                return;
+            }
+            projectName = input.trim();
+            if (!projectName) {
+                return;
+            }
+        }
+
+        // Ensure project exists in global projects list
+        if (typeof this.ensureProjectExists === 'function') {
+            this.ensureProjectExists(projectName);
+        }
+
+        // Apply project name to all selected contacts
+        this.contacts.forEach(c => {
+            if (this.selectedContactIds.has(c.id)) {
+                c.project = projectName;
+            }
+        });
+
+        await this.saveData();
+        this.renderContacts();
+        this.applyColumnVisibility();
+        if (typeof this.renderProjectFilterOptions === 'function') {
+            this.renderProjectFilterOptions();
+        }
+        if (typeof this.renderProjectsPage === 'function') {
+            this.renderProjectsPage();
+        }
+        this.showNotification(`Project updated to "${projectName}" for selected contacts`);
     }
 
     async bulkAddTag() {
