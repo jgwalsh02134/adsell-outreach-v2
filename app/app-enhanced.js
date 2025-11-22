@@ -179,13 +179,14 @@ class OutreachTracker {
         const navContainer = document.querySelector('.nav-container');
         const navToggle = document.querySelector('.nav-toggle');
 
-        // Top navigation links
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
+        // Top navigation links (including brand header with data-page)
+        const primaryNavButtons = document.querySelectorAll('.nav-link, .brand-link[data-page]');
+        primaryNavButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                const page = link.dataset.page || e.target.dataset.page;
+                const page = btn.dataset.page || e.target.dataset.page;
                 if (page) {
-                this.showPage(page);
+                    this.showPage(page);
                 }
 
                 // Close mobile dropdown if open
@@ -227,25 +228,6 @@ class OutreachTracker {
                 }
             });
         });
-
-        // Brand logo click → dashboard
-        const brandButton = document.querySelector('.brand-link');
-        if (brandButton) {
-            brandButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.showPage('dashboard');
-
-                // Close mobile nav if open
-                if (navContainer && navContainer.classList.contains('nav-open')) {
-                    navContainer.classList.remove('nav-open');
-                }
-
-                // Sync mobile tabbar active state to dashboard
-                const dashboardTab = document.querySelector('.mobile-tabbar .tab-link[data-page="dashboard"]');
-                const allTabs = document.querySelectorAll('.mobile-tabbar .tab-link');
-                allTabs.forEach(t => t.classList.toggle('active', t === dashboardTab));
-            });
-        }
 
         // Dashboard stat cards → shortcuts
         const dashboardLinks = document.querySelectorAll('.stat-card.dashboard-link');
