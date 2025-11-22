@@ -186,7 +186,7 @@ class OutreachTracker {
                 e.preventDefault();
                 const page = btn.dataset.page || e.target.dataset.page;
                 if (page) {
-                    this.showPage(page);
+                this.showPage(page);
                 }
 
                 // Close mobile dropdown if open
@@ -2210,17 +2210,69 @@ class OutreachTracker {
     }
 
     async bulkAddTag() {
-        const tagId = document.getElementById('bulk-tag').value;
+        const select = document.getElementById('bulk-tag');
+        if (!select) return;
+
+        let tagId = select.value;
+
+        // If no tag selected in the dropdown, prompt the user to enter a new tag name
         if (!tagId) {
-            alert('Choose a tag to add.');
+            let rawName = window.prompt('Enter a tag to add to the selected contacts (e.g., "Ski Expo"):');
+            if (!rawName) {
+                // User cancelled or left empty
+                return;
+            }
+
+            const name = rawName.trim();
+            if (!name) {
+                alert('Tag name cannot be empty.');
+                return;
+            }
+
+            // Ensure tags array exists
+            if (!Array.isArray(this.tags)) {
+                this.tags = [];
+            }
+
+            // Try to find an existing tag with the same name (case-insensitive)
+            const existing = this.tags.find(t => (t.name || '').toLowerCase() === name.toLowerCase());
+
+            if (existing) {
+                tagId = existing.id;
+            } else {
+                // Create a new tag object and add it to state
+                const newTag = {
+                    id: this.generateId(),
+                    name,
+                    color: '#4b5563' // neutral gray by default
+                };
+                this.tags.push(newTag);
+                tagId = newTag.id;
+
+                // Refresh any UIs that depend on the tag list
+                this.renderBulkTagOptions();
+                this.renderAdvancedFiltersPanel();
+                // Also refresh contact tag selector if the modal is open
+                this.renderTagSelector();
+            }
+
+            // Reflect the chosen/created tag in the dropdown
+            select.value = tagId;
+        }
+
+        if (!tagId) {
+            alert('Choose or enter a tag to add.');
             return;
         }
+
+        // Apply the tag ID to all selected contacts
         this.contacts.forEach(c => {
             if (this.selectedContactIds.has(c.id)) {
                 if (!Array.isArray(c.tags)) c.tags = [];
                 if (!c.tags.includes(tagId)) c.tags.push(tagId);
             }
         });
+
         await this.saveData();
         this.renderContacts();
         this.applyColumnVisibility();
