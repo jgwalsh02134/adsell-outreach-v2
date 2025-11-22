@@ -1729,6 +1729,49 @@ form {
         margin-bottom: 0;
     }
 
+    /* Mobile contacts list: show only company and actions, hide detail fields */
+    .contacts-table td[data-col="contact"],
+    .contacts-table td[data-col="email"],
+    .contacts-table td[data-col="phone"],
+    .contacts-table td[data-col="category"],
+    .contacts-table td[data-col="project"],
+    .contacts-table td[data-col="status"],
+    .contacts-table td[data-col="lastContact"] {
+        display: none;
+    }
+
+    .contacts-table td[data-col="vendor"] {
+        font-size: 1rem;
+        font-weight: 600;
+        padding-bottom: 0.25rem;
+    }
+
+    .contacts-table td[data-col="vendor"]::before {
+        display: none;
+    }
+
+    .contacts-table td[data-col="actions"] {
+        margin-top: 0.25rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .contacts-table td[data-col="actions"]::before {
+        display: none;
+    }
+
+    .contacts-table td[data-col="actions"] .action-btn {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.6rem;
+    }
+
+    /* Tighten card padding/margins for contacts cards on mobile */
+    .contacts-table tbody tr {
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
     .modal-content,
     .modal-large {
         width: 100%;
