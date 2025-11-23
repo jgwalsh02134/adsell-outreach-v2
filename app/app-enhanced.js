@@ -337,6 +337,26 @@ class OutreachTracker {
             bulkClearBtn.addEventListener('click', () => this.clearSelection());
         }
 
+        // Contacts mobile toggles for filters and quick add
+        const filtersToggleBtn = document.getElementById('contacts-mobile-filters-btn');
+        const quickAddToggleBtn = document.getElementById('contacts-mobile-quickadd-btn');
+        const filtersBar = document.querySelector('.filters-bar');
+        const quickAddCard = document.getElementById('contacts-quick-add');
+
+        if (filtersToggleBtn && filtersBar) {
+            filtersToggleBtn.addEventListener('click', () => {
+                if (window.innerWidth > 768) return;
+                filtersBar.classList.toggle('mobile-open');
+            });
+        }
+
+        if (quickAddToggleBtn && quickAddCard) {
+            quickAddToggleBtn.addEventListener('click', () => {
+                if (window.innerWidth > 768) return;
+                quickAddCard.classList.toggle('mobile-open');
+            });
+        }
+
         // Export buttons
         const exportCsvBtn = document.getElementById('export-csv');
         if (exportCsvBtn) {
@@ -1841,20 +1861,23 @@ class OutreachTracker {
                 </td>
                 <td data-col="lastContact" data-label="Last Contact">${last}</td>
                 <td data-col="actions" data-label="Actions">
-                    <button class="btn btn-secondary action-btn" onclick="app.viewContact('${contact.id}')">View</button>
+                    <button class="btn btn-secondary action-btn btn-view" onclick="app.viewContact('${contact.id}')">View</button>
                     <button class="btn btn-secondary action-btn" onclick="app.logActivity('${contact.id}')">Log Activity</button>
                     <button class="btn btn-secondary action-btn" onclick="app.openTaskForContact('${contact.id}')">Add Task</button>
                 </td>
             </tr>
         `}).join('');
 
-        // Make entire row clickable (except checkbox and action buttons)
+        // Make entire row clickable on mobile (except checkbox, action buttons, and links)
         tbody.querySelectorAll('.contact-row').forEach(row => {
             row.addEventListener('click', (e) => {
+                if (window.innerWidth > 768) return;
+
                 const target = e.target;
                 if (
                     target.closest('input.row-select') ||
-                    target.closest('.action-btn')
+                    target.closest('.action-btn') ||
+                    target.closest('a')
                 ) {
                     return;
                 }

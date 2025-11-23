@@ -260,6 +260,11 @@ svg.nav-logo {
     color: var(--primary-color);
 }
 
+/* Contacts mobile toggles (hidden by default, shown in mobile media query) */
+.contacts-mobile-toggles {
+    display: none;
+}
+
 /* Stats Grid */
 .stats-grid {
     display: grid;
@@ -1871,6 +1876,40 @@ form {
 
     .stat-card {
         padding: 1rem 1rem;
+    }
+
+    /* Hide the row-level View button in Actions column on mobile */
+    .contacts-table td[data-col="actions"] .btn-view {
+        display: none;
+    }
+
+    /* Contacts mobile toggles bar */
+    .contacts-mobile-toggles {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .contacts-mobile-toggles .btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* Hide filters and quick add by default on mobile */
+    .filters-bar,
+    #contacts-quick-add {
+        display: none;
+    }
+
+    /* Shown when toggled */
+    .filters-bar.mobile-open {
+        display: block;
+        margin-bottom: 0.75rem;
+    }
+
+    #contacts-quick-add.mobile-open {
+        display: block;
+        margin-bottom: 0.75rem;
     }
 }
 
