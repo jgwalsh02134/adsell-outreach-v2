@@ -1676,12 +1676,6 @@ form {
         display: none;
     }
 
-    /* Hide the row selection checkbox column in the contacts table on mobile */
-    .contacts-table tr > td:first-child,
-    .contacts-table tr > th:first-child {
-        display: none;
-    }
-
     .contacts-table tbody tr {
         display: block;
         padding: 0.75rem;
@@ -1840,6 +1834,11 @@ form {
 
     /* Hide the row-level View button in Actions column on mobile */
     .contacts-table td[data-col="actions"] .btn-view {
+        display: none;
+    }
+
+    /* Hide only the row selection checkbox on mobile, keep the company/org cell visible */
+    .contacts-table td[data-col="vendor"] .row-select {
         display: none;
     }
 
