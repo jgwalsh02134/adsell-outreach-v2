@@ -53,22 +53,10 @@ body {
     align-items: center;
 }
 
-.nav-brand h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--primary-color);
-    margin-bottom: 0.25rem;
-}
-
-.nav-subtitle {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-}
-
 .brand-link {
     display: inline-flex;
-    flex-direction: row;
     align-items: center;
+    gap: 0.5rem;
     padding: 0;
     margin: 0;
     border: none;
@@ -77,13 +65,8 @@ body {
     text-align: left;
 }
 
-.brand-link h1,
-.brand-link .nav-subtitle {
-    margin: 0;
-}
-
 .nav-logo {
-    height: 22px;
+    height: 24px;
     width: auto;
     margin-right: 0.5rem;
     display: block;
@@ -96,7 +79,7 @@ svg.nav-logo {
 .nav-brand-text {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    justify-content: center;
 }
 
 .nav-title {
@@ -1646,6 +1629,11 @@ form {
 
     .container {
         padding-bottom: 4rem; /* space for bottom tab bar */
+    }
+
+    /* Slightly reduce brand title size on mobile for better fit */
+    .nav-title {
+        font-size: 0.95rem;
     }
 
     .filters-bar {

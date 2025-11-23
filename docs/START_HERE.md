@@ -63,7 +63,7 @@ DEPLOYMENT.md       Hosting and deployment options
 
 ## 🎯 What This App Does
 
-### Track Your Sales Outreach
+### Track Your Sales Outreach with AdSell Sales Desk
 - Manage all contact information in one place
 - Log every email, call, and interaction
 - Track status from first contact to signed up
