@@ -125,13 +125,14 @@ class OutreachTracker {
         // Setup event listeners
         this.setupEventListeners();
 
-        // Wire AI buttons if present at load
+        // Wire AI and RocketReach buttons if present at load
         document.getElementById("ai-outreach-script")?.addEventListener("click", () => this.aiOutreach());
         document.getElementById("ai-company-research")?.addEventListener("click", () => this.aiCompanyResearch());
         document.getElementById("ai-followup-email")?.addEventListener("click", () => this.aiFollowupEmail());
         document.getElementById("ai-summarize-call")?.addEventListener("click", () => this.aiSummarizeCall());
         document.getElementById("ai-clean-csv")?.addEventListener("click", () => this.aiCleanCSV());
         document.getElementById("rr-enrich-contact")?.addEventListener("click", () => this.enrichCurrentContactWithRocketReach());
+        document.getElementById("rr-enrich-company")?.addEventListener("click", () => this.enrichCurrentCompanyWithRocketReach());
         
         // Render initial page
         this.showPage('dashboard');
@@ -2542,6 +2543,66 @@ class OutreachTracker {
             this.viewContact(contact.id);
         } catch (err) {
             console.error("RocketReach enrich failed", err);
+        }
+    }
+
+    async enrichCurrentCompanyWithRocketReach() {
+        if (!this.currentContact) {
+            console.error("RocketReach company enrich: no current contact set");
+            return;
+        }
+
+        const contact = this.currentContact;
+        const company = (contact.vendorName || contact.companyName || "").trim();
+        const domain = (contact.website || "").trim();
+
+        if (!company && !domain) {
+            alert("Please add a company name or website before using company enrich.");
+            console.error("RocketReach company enrich: missing company/domain");
+            return;
+        }
+
+        const payload = { company, domain };
+        console.log("RocketReach company enrich started", payload);
+
+        try {
+            const res = await fetch("https://adsell-openai-proxy.jgregorywalsh.workers.dev/rocketreach/company-enrich", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+            const errText = await res.text();
+                console.error("RocketReach company enrich failed", res.status, errText);
+                return;
+            }
+
+            const data = await res.json();
+            console.log("RocketReach company enrich response", data);
+
+            if (!data || typeof data !== "object") {
+                console.error("RocketReach company enrich: unexpected response type", data);
+                return;
+            }
+
+            // Map company-level fields if missing
+            if (!contact.website && data.website) {
+                contact.website = data.website;
+            }
+
+            // Update contact in this.contacts
+            const idx = this.contacts.findIndex(c => c.id === contact.id);
+            if (idx !== -1) {
+                this.contacts[idx] = { ...contact };
+            }
+
+            await this.saveData();
+
+            // Re-render contact detail
+            this.viewContact(contact.id);
+        } catch (error) {
+            console.error("RocketReach company enrich error", error);
         }
     }
 
