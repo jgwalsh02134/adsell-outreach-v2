@@ -132,7 +132,6 @@ class OutreachTracker {
         document.getElementById("ai-summarize-call")?.addEventListener("click", () => this.aiSummarizeCall());
         document.getElementById("ai-clean-csv")?.addEventListener("click", () => this.aiCleanCSV());
         document.getElementById("rr-enrich-contact")?.addEventListener("click", () => this.enrichCurrentContactWithRocketReach());
-        document.getElementById("rr-enrich-contact")?.addEventListener("click", () => this.enrichCurrentContactWithRocketReach());
         
         // Render initial page
         this.showPage('dashboard');
@@ -2484,7 +2483,7 @@ class OutreachTracker {
 
     async enrichCurrentContactWithRocketReach() {
         if (!this.currentContact || !this.currentContact.id) {
-            console.warn('[AdSell CRM] RocketReach enrich: no current contact selected');
+            console.error("No current contact set for RocketReach enrich");
             return;
         }
 
@@ -2494,6 +2493,8 @@ class OutreachTracker {
             company: contact.vendorName || contact.companyName || "",
             domain: contact.website || ""
         };
+
+        console.log("RocketReach enrich started for", payload);
 
         try {
             const res = await fetch("https://adsell-openai-proxy.jgregorywalsh.workers.dev/rocketreach/enrich", {
@@ -2518,6 +2519,7 @@ class OutreachTracker {
             if (!contact.email && data.email) contact.email = data.email;
             if (!contact.phone && data.phone) contact.phone = data.phone;
             if (!contact.title && data.title) contact.title = data.title;
+            // optional: linkedin/profile URL
             if (!contact.linkedin && data.linkedin) contact.linkedin = data.linkedin;
 
             // Update contact in main contacts array
@@ -2530,7 +2532,6 @@ class OutreachTracker {
 
             // Re-render current contact detail
             this.viewContact(contact.id);
-            this.showNotification('Contact enriched with RocketReach data (where available).');
         } catch (err) {
             console.error("RocketReach enrich failed", err);
         }
@@ -2825,6 +2826,14 @@ class OutreachTracker {
         `;
 
         document.getElementById('contact-detail-content').innerHTML = content;
+
+        // Wire RocketReach enrich button for this contact
+        const rrBtn = document.getElementById('rr-enrich-contact');
+        if (rrBtn) {
+            rrBtn.onclick = () => {
+                this.enrichCurrentContactWithRocketReach();
+            };
+        }
 
         // Wire delete buttons for activities
         const timelineDeleteButtons = document.querySelectorAll('.timeline-delete-btn');
