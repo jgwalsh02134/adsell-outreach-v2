@@ -1684,12 +1684,11 @@ form {
 
     .contacts-table tbody tr {
         display: block;
-        padding: 0.75rem 0.85rem;
-        background: var(--surface);
-        border-radius: 0.75rem;
-        box-shadow: var(--shadow);
-        border: 1px solid var(--border);
-        margin: 0 0 0.75rem;
+        padding: 0.75rem 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+        background: #ffffff;
     }
 
 .contact-row {
@@ -1701,62 +1700,59 @@ form {
 }
 
     .contacts-table td {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 0.25rem 0;
+        display: block;
+        padding: 0.1rem 0;
         border: none;
         overflow-wrap: anywhere;
         word-break: break-word;
     }
 
+    /* Title line: Company / Organization */
     .contacts-table td[data-col="vendor"] {
-        font-weight: 600;
         font-size: 1rem;
-        padding-bottom: 0.35rem;
+        font-weight: 600;
+        padding-bottom: 0.2rem;
     }
 
-    .contacts-table td[data-col="status"],
+    /* Hide non-primary fields in the list view on mobile */
     .contacts-table td[data-col="contact"],
     .contacts-table td[data-col="email"],
     .contacts-table td[data-col="phone"],
     .contacts-table td[data-col="category"],
     .contacts-table td[data-col="lastContact"] {
-        font-size: 0.85rem;
+        display: none;
     }
 
-    .contacts-table td[data-col="status"],
-    .contacts-table td[data-col="contact"],
-    .contacts-table td[data-col="email"],
-    .contacts-table td[data-col="phone"],
-    .contacts-table td[data-col="category"],
-    .contacts-table td[data-col="lastContact"]::before {
-        color: var(--text-secondary);
-    }
-
-    .contacts-table td[data-col="actions"] {
-        margin-top: 0.5rem;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-
-    .contacts-table td::before {
-        content: attr(data-label);
-        font-size: 0.75rem;
-        color: var(--text-secondary);
-        font-weight: 600;
-        margin-bottom: 0.15rem;
-    }
-
+    /* Hide the "Company / Organization" label above vendor cell */
     .contacts-table td[data-col="vendor"]::before {
-        content: "";
-        margin-bottom: 0;
+        display: none;
     }
 
-    /* Tighten card padding/margins for contacts cards on mobile */
-    .contacts-table tbody tr {
-        padding: 0.5rem 0.75rem;
-        margin-bottom: 0.5rem;
+    /* Project line under company name */
+    .contacts-table td[data-col="project"] {
+        font-size: 0.8rem;
+        color: #6b7280;
+        padding-bottom: 0.15rem;
+    }
+
+    /* Status line under project (status pill stays visible) */
+    .contacts-table td[data-col="status"] {
+        font-size: 0.8rem;
+        padding-bottom: 0.3rem;
+    }
+
+    /* Actions row: compact, full-width buttons */
+    .contacts-table td[data-col="actions"] {
+        margin-top: 0.25rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .contacts-table td[data-col="actions"] .btn {
+        flex: 1 1 48%;
+        font-size: 0.8rem;
+        padding: 0.35rem 0.5rem;
     }
 
     .modal-content,
