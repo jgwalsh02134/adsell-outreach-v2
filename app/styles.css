@@ -1684,7 +1684,7 @@ form {
 
     .contacts-table tbody tr {
         display: block;
-        padding: 0.75rem 0.75rem;
+        padding: 0.75rem;
         margin-bottom: 0.5rem;
         border-radius: 1rem;
         box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
@@ -1711,7 +1711,7 @@ form {
     .contacts-table td[data-col="vendor"] {
         font-size: 1rem;
         font-weight: 600;
-        padding-bottom: 0.2rem;
+        padding-bottom: 0.15rem;
     }
 
     /* Hide non-primary fields in the list view on mobile */
@@ -1732,13 +1732,13 @@ form {
     .contacts-table td[data-col="project"] {
         font-size: 0.8rem;
         color: #6b7280;
-        padding-bottom: 0.15rem;
+        padding-bottom: 0.1rem;
     }
 
     /* Status line under project (status pill stays visible) */
     .contacts-table td[data-col="status"] {
         font-size: 0.8rem;
-        padding-bottom: 0.3rem;
+        padding-bottom: 0.25rem;
     }
 
     /* Actions row: compact, full-width buttons */
@@ -1746,13 +1746,14 @@ form {
         margin-top: 0.25rem;
         display: flex;
         flex-wrap: wrap;
-        gap: 0.25rem;
+        gap: 0.4rem;
     }
 
     .contacts-table td[data-col="actions"] .btn {
-        flex: 1 1 48%;
+        flex: 1 1 calc(50% - 0.4rem);
         font-size: 0.8rem;
         padding: 0.35rem 0.5rem;
+        text-align: center;
     }
 
     .modal-content,
