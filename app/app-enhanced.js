@@ -2488,6 +2488,12 @@ class OutreachTracker {
         }
 
         const contact = this.currentContact;
+        if (!contact.contactName) {
+            alert("Please add a contact name before using RocketReach.");
+            console.error("RocketReach enrich: missing contactName");
+            return;
+        }
+
         const payload = {
             name: contact.contactName || "",
             company: contact.vendorName || contact.companyName || "",
