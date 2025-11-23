@@ -1701,6 +1701,11 @@ form {
         word-break: break-word;
     }
 
+    /* Show ONLY the Company / Organization cell and hide all others */
+    .contacts-table tbody tr td:not([data-col="vendor"]) {
+        display: none;
+    }
+
     /* Title line: Company / Organization */
     .contacts-table td[data-col="vendor"] {
         font-size: 1rem;
@@ -1708,36 +1713,10 @@ form {
         padding-bottom: 0.15rem;
     }
 
-    /* Hide non-primary fields in the list view on mobile */
-    .contacts-table td[data-col="contact"],
-    .contacts-table td[data-col="email"],
-    .contacts-table td[data-col="phone"],
-    .contacts-table td[data-col="category"],
-    .contacts-table td[data-col="lastContact"] {
-        display: none;
-    }
-
     /* Hide the "Company / Organization" label above vendor cell */
     .contacts-table td[data-col="vendor"]::before {
         display: none;
     }
-
-    /* Hide project text column; project pill inside vendor cell still shows */
-    .contacts-table td[data-col="project"] {
-        display: none;
-    }
-
-    /* Status line under project (status pill stays visible) */
-    .contacts-table td[data-col="status"] {
-        font-size: 0.8rem;
-        padding-bottom: 0.25rem;
-    }
-
-    /* Hide Actions column in mobile list; actions available in detail view */
-    .contacts-table td[data-col="actions"] {
-        display: none;
-    }
-
     .modal-content,
     .modal-large {
         width: 100%;
