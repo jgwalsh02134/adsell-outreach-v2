@@ -2986,6 +2986,14 @@ class OutreachTracker {
         }
 
         this.showPage('contact-detail');
+
+        // On mobile, ensure the contact detail view starts at the top so header and toolbar are visible
+        if (window.innerWidth <= 768) {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
     }
 
     editContact() {

@@ -1671,6 +1671,12 @@ form {
         display: none;
     }
 
+    /* Hide the row selection checkbox column in the contacts table on mobile */
+    .contacts-table tr > td:first-child,
+    .contacts-table tr > th:first-child {
+        display: none;
+    }
+
     .contacts-table tbody tr {
         display: block;
         padding: 0.75rem 0.85rem;
@@ -1807,6 +1813,28 @@ form {
 
     .modal-actions .btn + .btn {
         margin-top: 0.5rem;
+    }
+
+    /* Stack section headers and action buttons vertically on mobile */
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .page-header .header-actions,
+    .page-header .btn {
+        width: 100%;
+    }
+
+    .page-header .header-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .page-header .btn {
+        justify-content: center;
     }
 
     /* Calendar header tweaks */
