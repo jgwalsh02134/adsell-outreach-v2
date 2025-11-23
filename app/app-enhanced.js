@@ -132,6 +132,7 @@ class OutreachTracker {
         document.getElementById("ai-summarize-call")?.addEventListener("click", () => this.aiSummarizeCall());
         document.getElementById("ai-clean-csv")?.addEventListener("click", () => this.aiCleanCSV());
         document.getElementById("rr-enrich-contact")?.addEventListener("click", () => this.enrichCurrentContactWithRocketReach());
+        document.getElementById("rr-enrich-contact")?.addEventListener("click", () => this.enrichCurrentContactWithRocketReach());
         
         // Render initial page
         this.showPage('dashboard');
@@ -2479,6 +2480,60 @@ class OutreachTracker {
         this.updateStats();
         
         this.showNotification('Contact saved successfully!');
+    }
+
+    async enrichCurrentContactWithRocketReach() {
+        if (!this.currentContact || !this.currentContact.id) {
+            console.warn('[AdSell CRM] RocketReach enrich: no current contact selected');
+            return;
+        }
+
+        const contact = this.currentContact;
+        const payload = {
+            name: contact.contactName || "",
+            company: contact.vendorName || contact.companyName || "",
+            domain: contact.website || ""
+        };
+
+        try {
+            const res = await fetch("https://adsell-openai-proxy.jgregorywalsh.workers.dev/rocketreach/enrich", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const text = await res.text().catch(() => '');
+                console.error("RocketReach enrich failed", res.status, text);
+                return;
+            }
+
+            const data = await res.json();
+            if (!data || typeof data !== 'object') {
+                console.error("RocketReach enrich: unexpected response shape", data);
+                return;
+            }
+
+            // Merge only missing fields
+            if (!contact.email && data.email) contact.email = data.email;
+            if (!contact.phone && data.phone) contact.phone = data.phone;
+            if (!contact.title && data.title) contact.title = data.title;
+            if (!contact.linkedin && data.linkedin) contact.linkedin = data.linkedin;
+
+            // Update contact in main contacts array
+            const idx = this.contacts.findIndex(c => c.id === contact.id);
+            if (idx !== -1) {
+                this.contacts[idx] = { ...this.contacts[idx], ...contact };
+            }
+
+            await this.saveData();
+
+            // Re-render current contact detail
+            this.viewContact(contact.id);
+            this.showNotification('Contact enriched with RocketReach data (where available).');
+        } catch (err) {
+            console.error("RocketReach enrich failed", err);
+        }
     }
 
     viewContact(id) {
