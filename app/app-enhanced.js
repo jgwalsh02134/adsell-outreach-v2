@@ -131,6 +131,7 @@ class OutreachTracker {
         document.getElementById("ai-followup-email")?.addEventListener("click", () => this.aiFollowupEmail());
         document.getElementById("ai-summarize-call")?.addEventListener("click", () => this.aiSummarizeCall());
         document.getElementById("ai-clean-csv")?.addEventListener("click", () => this.aiCleanCSV());
+        document.getElementById("rr-enrich-contact")?.addEventListener("click", () => this.enrichCurrentContactWithRocketReach());
         
         // Render initial page
         this.showPage('dashboard');
