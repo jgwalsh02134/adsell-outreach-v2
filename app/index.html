@@ -478,14 +478,32 @@
                 </div>
             </div>
 
-            <div style="margin-bottom: 0.75rem;">
-                <button id="ai-outreach-script" class="btn btn-ai" type="button">AI Outreach Script</button>
-                <button id="ai-company-research" class="btn btn-ai" type="button">AI Company Research</button>
-                <button id="rr-enrich-contact" class="btn btn-ai" type="button">Enrich with RocketReach</button>
-            </div>
+            <div class="contact-assist-toolbar">
+                <button class="btn btn-secondary contact-assist-btn" id="ai-outreach-script" type="button">
+                    <span class="contact-assist-label">AI Outreach</span>
+                </button>
 
-            <div style="margin-bottom: 0.75rem">
-                <button id="rr-enrich-company" class="btn btn-ai" type="button">Enrich Company via RocketReach</button>
+                <button class="btn btn-secondary contact-assist-btn" id="ai-company-research" type="button">
+                    <span class="contact-assist-label">AI Company Research</span>
+                </button>
+
+                <button class="btn contact-assist-btn contact-assist-btn-rr" id="rr-enrich-contact" type="button">
+                    <img
+                        src="icons/rocketreach_icon.svg"
+                        alt="RocketReach"
+                        class="contact-assist-icon"
+                    />
+                    <span class="contact-assist-label">Find Contact (RR)</span>
+                </button>
+
+                <button class="btn contact-assist-btn contact-assist-btn-rr" id="rr-enrich-company" type="button">
+                    <img
+                        src="icons/rocketreach_icon.svg"
+                        alt="RocketReach"
+                        class="contact-assist-icon"
+                    />
+                    <span class="contact-assist-label">Enrich Company (RR)</span>
+                </button>
             </div>
 
             <div id="contact-detail-content"></div>

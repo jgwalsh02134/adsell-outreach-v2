@@ -1846,6 +1846,68 @@ form {
     }
 }
 
+/* Contact detail: AI / RocketReach assist toolbar */
+.contact-assist-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.contact-assist-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    line-height: 1.2;
+}
+
+/* Use the same visual language as secondary buttons for AI actions */
+.contact-assist-btn.btn-secondary {
+    background-color: var(--surface, #f5f5f7);
+    border: 1px solid var(--border, #dde1e7);
+}
+
+/* RocketReach-specific buttons: outline style with icon */
+.contact-assist-btn-rr {
+    background-color: #ffffff;
+    border: 1px solid var(--border, #dde1e7);
+}
+
+.contact-assist-btn-rr:hover {
+    border-color: var(--primary-color, #2563eb);
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+
+/* Icon inside RocketReach buttons */
+.contact-assist-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+}
+
+/* Label text inside assist buttons */
+.contact-assist-label {
+    white-space: nowrap;
+}
+
+/* Mobile adjustments: keep toolbar compact and scrollable if needed */
+@media (max-width: 768px) {
+    .contact-assist-toolbar {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+        padding-bottom: 0.25rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .contact-assist-btn {
+        flex: 0 0 auto;
+    }
+}
+
 @media (min-width: 769px) {
     .mobile-tabbar {
         display: none;
