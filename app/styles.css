@@ -1722,11 +1722,9 @@ form {
         display: none;
     }
 
-    /* Project line under company name */
+    /* Hide project text column; project pill inside vendor cell still shows */
     .contacts-table td[data-col="project"] {
-        font-size: 0.8rem;
-        color: #6b7280;
-        padding-bottom: 0.1rem;
+        display: none;
     }
 
     /* Status line under project (status pill stays visible) */
