@@ -2482,8 +2482,8 @@ class OutreachTracker {
     }
 
     async enrichCurrentContactWithRocketReach() {
-        if (!this.currentContact || !this.currentContact.id) {
-            console.error("No current contact set for RocketReach enrich");
+        if (!this.currentContact) {
+            console.error("RocketReach enrich: no current contact set");
             return;
         }
 
@@ -2504,12 +2504,14 @@ class OutreachTracker {
             });
 
             if (!res.ok) {
-                const text = await res.text().catch(() => '');
-                console.error("RocketReach enrich failed", res.status, text);
+                const errText = await res.text();
+                console.error("RocketReach enrich failed", res.status, errText);
                 return;
             }
 
             const data = await res.json();
+            console.log("RocketReach enrich response", data);
+
             if (!data || typeof data !== 'object') {
                 console.error("RocketReach enrich: unexpected response shape", data);
                 return;
