@@ -1868,8 +1868,8 @@ form {
 
 /* Icon inside RocketReach / assist buttons */
 .contact-assist-icon {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     display: inline-block;
 }
 
@@ -1903,13 +1903,14 @@ form {
 /* RocketReach buttons: white / purple accent using the RR icon */
 #rr-enrich-contact.contact-assist-btn-rr,
 #rr-enrich-company.contact-assist-btn-rr {
-    background-color: #ffffff;
+    background-color: #f3e8ff;
     color: #6d28d9;
     border-color: #c4b5fd;
 }
 
 #rr-enrich-contact.contact-assist-btn-rr:hover,
 #rr-enrich-company.contact-assist-btn-rr:hover {
+    background-color: #e9d5ff;
     border-color: #7c3aed;
     box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.15);
 }
