@@ -934,6 +934,19 @@ svg.nav-logo {
     background: #3453d3;
 }
 
+/* Buttons with leading icons (e.g., RocketReach) */
+.btn-with-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.btn-icon {
+    display: inline-block;
+    height: 14px;
+    width: auto;
+}
+
 .ai-csv-helper textarea {
     width: 100%;
     margin-top: 0.35rem;
