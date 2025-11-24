@@ -295,18 +295,45 @@ svg.nav-logo {
 }
 
 /* Recent Activity */
-.recent-activity {
-    background: var(--surface);
-    padding: 1.5rem;
-    border-radius: 0.75rem;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
+/* Dashboard sections and cards */
+.dashboard-section {
+    margin-bottom: 1.5rem;
 }
 
-.recent-activity h3 {
-    font-size: 1.25rem;
-    margin-bottom: 1rem;
-    color: var(--text-primary);
+.dashboard-card {
+    background: #ffffff;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    padding: 1rem 1.25rem;
+}
+
+.dashboard-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.dashboard-card-header h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Metrics grid: simple, legible cards */
+.dashboard-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+/* Ensure existing stat cards look like quiet metrics in the dashboard */
+.dashboard-metrics .stat-card {
+    background-color: #f9fafb;
+    border-radius: 0.75rem;
+    padding: 0.75rem 0.9rem;
+    box-shadow: none;
+    border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
 .activity-list {
@@ -342,6 +369,12 @@ svg.nav-logo {
 .activity-vendor {
     font-size: 0.875rem;
     color: var(--text-secondary);
+}
+
+/* Keep the recent activity list within a reasonable height on desktop */
+.dashboard-activity-card .activity-list {
+    max-height: 18rem;
+    overflow-y: auto;
 }
 
 /* Filters Bar */
@@ -1785,6 +1818,26 @@ form {
 
     .stat-card {
         padding: 1rem 1rem;
+    }
+
+    /* Make dashboard cards slightly tighter on mobile */
+    .dashboard-card {
+        padding: 0.85rem 1rem;
+        border-radius: 0.9rem;
+    }
+
+    .dashboard-section {
+        margin-bottom: 1rem;
+    }
+
+    /* Metrics: 2 columns on mobile to avoid horizontal scroll and crowding */
+    .dashboard-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* Ensure dashboard page does not cause sideways scroll */
+    #dashboard-page {
+        overflow-x: hidden;
     }
 
     /* Hide the row-level View button in Actions column on mobile */

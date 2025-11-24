@@ -197,39 +197,57 @@
                 <button class="btn btn-primary" onclick="app.showAddContactModal()">+ Add Contact</button>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-card dashboard-link" data-target="contacts">
+            <section class="dashboard-section">
+                <div class="dashboard-card dashboard-metrics-card">
+                    <div class="dashboard-card-header">
+                        <h3>Key metrics</h3>
+                    </div>
+                    <div class="dashboard-metrics">
+                        <div class="stat-card dashboard-link" data-target="contacts">
                     <div class="stat-value" id="stat-total">0</div>
                     <div class="stat-label">Total Contacts</div>
                 </div>
-                <div class="stat-card dashboard-link" data-target="contacts">
+                        <div class="stat-card dashboard-link" data-target="contacts">
                     <div class="stat-value" id="stat-not-started">0</div>
                     <div class="stat-label">Not Started</div>
                 </div>
-                <div class="stat-card dashboard-link" data-target="contacts">
+                        <div class="stat-card dashboard-link" data-target="contacts">
                     <div class="stat-value" id="stat-in-progress">0</div>
                     <div class="stat-label">In Progress</div>
                 </div>
-                <div class="stat-card dashboard-link" data-target="contacts">
+                        <div class="stat-card dashboard-link" data-target="contacts">
                     <div class="stat-value" id="stat-responded">0</div>
                     <div class="stat-label">Responded</div>
                 </div>
-                <div class="stat-card dashboard-link" data-target="contacts">
+                        <div class="stat-card dashboard-link" data-target="contacts">
                     <div class="stat-value" id="stat-signed-up">0</div>
                     <div class="stat-label">Signed Up</div>
                 </div>
             </div>
+                </div>
+            </section>
 
-            <div class="recent-activity">
+            <section class="dashboard-section">
+                <div class="dashboard-card dashboard-activity-card">
+                    <div class="dashboard-card-header">
                 <h3>Recent Activity</h3>
+                    </div>
                 <div id="recent-activity-list" class="activity-list">
                     <p class="empty-state">No recent activity</p>
+                    </div>
                 </div>
-            </div>
+            </section>
 
-            <div id="dashboard-tasks-widget" class="dashboard-tasks-widget">
-                <!-- Populated by renderDashboardTasks() -->
-            </div>
+            <section class="dashboard-section">
+                <div class="dashboard-card dashboard-tasks-card">
+                    <div class="dashboard-card-header">
+                        <h3>Today’s Follow-ups</h3>
+                    </div>
+                    <div id="dashboard-tasks-widget" class="dashboard-tasks-widget">
+                        <!-- Populated by renderDashboardTasks() -->
+                    </div>
+                </div>
+            </section>
         </div>
 
         <!-- Calendar Page -->
