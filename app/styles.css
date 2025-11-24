@@ -30,12 +30,18 @@ body {
 
 /* Navigation */
 .navbar {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    box-shadow: var(--shadow);
+    background-color: #f7f3ec; /* warm, paper-like */
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
     position: sticky;
     top: 0;
     z-index: 100;
+    /* subtle print-style grid */
+    background-image:
+        linear-gradient(to right, rgba(31, 59, 92, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(31, 59, 92, 0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: 0 0;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .nav-container {
@@ -76,10 +82,14 @@ svg.nav-logo {
     display: none;
 }
 
+.nav-logo.nav-logo-wordmark {
+    height: 32px;
+    width: auto;
+    margin-right: 0;
+}
+
 .nav-brand-text {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    display: none;
 }
 
 .nav-title {
@@ -98,7 +108,7 @@ svg.nav-logo {
 .nav-link {
     display: block;
     padding: 0.75rem 1.25rem;
-    color: var(--text-secondary);
+    color: #111827;
     text-decoration: none;
     border-radius: 0.5rem;
     transition: all 0.2s;
@@ -106,13 +116,15 @@ svg.nav-logo {
 }
 
 .nav-link:hover {
-    background: var(--background);
-    color: var(--primary-color);
+    background: transparent;
+    color: #1f3b5c;
 }
 
 .nav-link.active {
-    background: var(--primary-color);
-    color: white;
+    background: transparent;
+    color: #1f3b5c;
+    border-bottom: 2px solid #1f3b5c;
+    border-radius: 0;
 }
 
 /* Container */
@@ -170,12 +182,14 @@ svg.nav-logo {
 }
 
 .btn-primary {
-    background: var(--primary-color);
+    background-color: #1f3b5c;
+    border-color: #1f3b5c;
     color: white;
 }
 
 .btn-primary:hover {
-    background: var(--primary-hover);
+    background-color: #173049;
+    border-color: #173049;
 }
 
 .btn-secondary {
@@ -1641,7 +1655,7 @@ form {
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 0.75rem;
     }
 
     .nav-brand {
@@ -1702,8 +1716,8 @@ form {
     }
 
     /* Slightly reduce brand title size on mobile for better fit */
-    .nav-title {
-        font-size: 0.95rem;
+    .nav-logo.nav-logo-wordmark {
+        height: 24px;
     }
 
     .filters-bar {
