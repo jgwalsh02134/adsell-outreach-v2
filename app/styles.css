@@ -214,7 +214,7 @@ svg.nav-logo {
     color: var(--text-primary);
 }
 
-/* Bottom tab bar: full-width iOS-style strip on mobile */
+/* Bottom tab bar: iOS-style navigation */
 .mobile-tabbar {
     position: fixed;
     left: 0;
@@ -229,7 +229,7 @@ svg.nav-logo {
     z-index: 20;
 }
 
-/* Each tab takes equal space */
+/* Each tab: icon above label */
 .mobile-tabbar .tab-link {
     flex: 1;
     display: flex;
@@ -243,30 +243,32 @@ svg.nav-logo {
     cursor: pointer;
 }
 
-/* Icon placeholder above label */
+/* SVG icon */
 .mobile-tabbar .tab-icon {
     width: 22px;
     height: 22px;
-    border-radius: 6px;
-    border: 1.5px solid #9ca3af;
     margin-bottom: 2px;
 }
 
-/* Label below icon */
+/* Label */
 .mobile-tabbar .tab-label {
     font-size: 0.68rem;
     font-weight: 500;
     color: #6b7280;
 }
 
-/* Active state */
-.mobile-tabbar .tab-link.active .tab-icon {
-    border-color: #2563eb;
-    background-color: #eff6ff;
-}
-
+/* Active state (JS toggles .active on current tab) */
 .mobile-tabbar .tab-link.active .tab-label {
     color: #2563eb;
+}
+
+.mobile-tabbar .tab-link.active .tab-icon {
+    filter: drop-shadow(0 0 0 rgba(37, 99, 235, 0.0));
+}
+
+/* Optional: subtle background for active tab */
+.mobile-tabbar .tab-link.active {
+    background-color: #f3f4ff;
 }
 
 /* Contacts mobile toggles (hidden by default, shown in mobile media query) */
