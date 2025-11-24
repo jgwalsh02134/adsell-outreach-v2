@@ -214,13 +214,13 @@ svg.nav-logo {
     color: var(--text-primary);
 }
 
-/* Mobile bottom tab bar: full-width strip, only visible on small screens */
+/* Bottom tab bar: full-width iOS-style strip on mobile */
 .mobile-tabbar {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
-    height: 56px;
+    height: 64px;
     background: #ffffff;
     border-top: 1px solid #e5e7eb;
     display: flex;
@@ -229,23 +229,43 @@ svg.nav-logo {
     z-index: 20;
 }
 
+/* Each tab takes equal space */
 .mobile-tabbar .tab-link {
     flex: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
     border: none;
     background: transparent;
-    font-size: 0.72rem;
-    font-weight: 500;
-    color: #6b7280;
     text-align: center;
+    padding: 4px 0;
     cursor: pointer;
 }
 
-/* Active tab */
-.mobile-tabbar .tab-link.active {
+/* Icon placeholder above label */
+.mobile-tabbar .tab-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 1.5px solid #9ca3af;
+    margin-bottom: 2px;
+}
+
+/* Label below icon */
+.mobile-tabbar .tab-label {
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: #6b7280;
+}
+
+/* Active state */
+.mobile-tabbar .tab-link.active .tab-icon {
+    border-color: #2563eb;
+    background-color: #eff6ff;
+}
+
+.mobile-tabbar .tab-link.active .tab-label {
     color: #2563eb;
 }
 
@@ -1670,7 +1690,7 @@ form {
 
     /* Ensure content is not hidden behind bottom bar */
     .page {
-        padding-bottom: 80px; /* enough to clear the 56px tab bar + a bit of space */
+        padding-bottom: 88px; /* 64px tab bar + extra breathing space */
     }
 
     /* Prevent horizontal scroll on small screens */
