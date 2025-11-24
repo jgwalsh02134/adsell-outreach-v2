@@ -19,6 +19,10 @@
     --text-secondary: #64748b;
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+    /* Typographic grid + layout */
+    --grid-unit: 4px;         /* base spacing unit */
+    --page-max-width: 960px;  /* desktop content width */
 }
 
 body {
@@ -136,6 +140,12 @@ svg.nav-logo {
 
 /* Pages */
 .page {
+    max-width: var(--page-max-width);
+    margin: 0 auto;
+    padding-left: calc(var(--grid-unit) * 6);  /* 24px */
+    padding-right: calc(var(--grid-unit) * 6);
+    padding-top: calc(var(--grid-unit) * 8);   /* 32px */
+    padding-bottom: calc(var(--grid-unit) * 8);
     display: none;
 }
 
@@ -161,6 +171,25 @@ svg.nav-logo {
     font-size: 1.875rem;
     font-weight: 700;
     color: var(--text-primary);
+}
+
+/* Dashboard page header snapped to grid */
+#dashboard-page .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: calc(var(--grid-unit) * 6); /* 24px below header */
+}
+
+#dashboard-page .page-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.25;
+}
+
+#dashboard-page .page-header .btn-primary {
+    padding-inline: calc(var(--grid-unit) * 6);  /* 24px */
+    padding-block: calc(var(--grid-unit) * 2);   /* 8px */
 }
 
 .header-actions {
@@ -349,6 +378,15 @@ svg.nav-logo {
     padding: 1rem 1.25rem;
 }
 
+/* Dashboard-specific spacing aligned to grid */
+#dashboard-page .dashboard-section {
+    margin-bottom: calc(var(--grid-unit) * 6); /* 24px between sections */
+}
+
+#dashboard-page .dashboard-card {
+    padding: calc(var(--grid-unit) * 5) calc(var(--grid-unit) * 6); /* 20px x 24px */
+}
+
 .dashboard-card-header {
     display: flex;
     align-items: center;
@@ -376,6 +414,18 @@ svg.nav-logo {
     padding: 0.75rem 0.9rem;
     box-shadow: none;
     border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+/* Dashboard metrics aligned to grid */
+#dashboard-page .dashboard-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: calc(var(--grid-unit) * 4); /* 16px between stat cards */
+}
+
+#dashboard-page .dashboard-metrics .stat-card {
+    padding: calc(var(--grid-unit) * 4); /* 16px inside metrics card */
+    border-radius: 0.75rem;
 }
 
 .activity-list {
@@ -1706,6 +1756,9 @@ form {
 
     /* Ensure content is not hidden behind bottom bar */
     .page {
+        max-width: 100%;
+        padding-left: calc(var(--grid-unit) * 4);  /* 16px */
+        padding-right: calc(var(--grid-unit) * 4);
         padding-bottom: 88px; /* 64px tab bar + extra breathing space */
     }
 
@@ -1871,19 +1924,30 @@ form {
         padding: 1rem 1rem;
     }
 
-    /* Make dashboard cards slightly tighter on mobile */
-    .dashboard-card {
-        padding: 0.85rem 1rem;
+    /* Make dashboard cards slightly tighter on mobile, aligned to grid */
+    #dashboard-page .dashboard-card {
+        padding: calc(var(--grid-unit) * 4.5) calc(var(--grid-unit) * 5); /* 18px x 20px */
         border-radius: 0.9rem;
     }
 
-    .dashboard-section {
-        margin-bottom: 1rem;
+    #dashboard-page .dashboard-section {
+        margin-bottom: calc(var(--grid-unit) * 6); /* keep vertical rhythm */
     }
 
     /* Metrics: 2 columns on mobile to avoid horizontal scroll and crowding */
-    .dashboard-metrics {
+    #dashboard-page .dashboard-metrics {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #dashboard-page .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: calc(var(--grid-unit) * 3); /* 12px between title and button */
+    }
+
+    #dashboard-page .page-header .btn-primary {
+        width: 100%;
+        text-align: center;
     }
 
     /* Ensure dashboard page does not cause sideways scroll */
