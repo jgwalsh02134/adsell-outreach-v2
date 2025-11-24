@@ -34,26 +34,26 @@ body {
 
 /* Navigation */
 .navbar {
-    background-color: #f8f5f0; /* warm neutral, no grid */
-    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-    height: 64px;
+    background-color: #f3f0e8; /* slightly darker warm neutral */
+    border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+    height: 72px;            /* taller, consistent header height */
     display: flex;
-    align-items: center;
+    align-items: center;     /* center logo + nav vertically */
     z-index: 30;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 }
 
 .nav-container {
     width: 100%;
     max-width: 1120px;
     margin: 0 auto;
-    padding: 0 1.25rem;
+    padding: 0 1.5rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
 .nav-brand {
-    padding: 1rem 0;
     display: flex;
     align-items: center;
 }
@@ -77,7 +77,7 @@ body {
 }
 
 .nav-logo.nav-logo-wordmark {
-    height: 28px;
+    height: 32px;
     width: auto;
     display: block;
 }
@@ -96,24 +96,25 @@ body {
 .nav-menu {
     display: flex;
     list-style: none;
-    gap: 1.5rem;
+    gap: 1.75rem;
     align-items: center;
 }
 
 .nav-menu .nav-link {
     position: relative;
     display: inline-block;
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     font-weight: 500;
+    letter-spacing: 0.02em;
     color: #111827; /* dark slate/ink */
-    padding-bottom: 0.35rem;
+    padding-bottom: 0.4rem;
     text-decoration: none;
     border-radius: 0;
     transition: color 0.2s ease;
 }
 
 .nav-menu .nav-link:hover {
-    color: #1f3b5c;
+    color: #1f2937;
 }
 
 .nav-menu .nav-link.active {
@@ -1700,6 +1701,11 @@ form {
 
 /* Mobile styles */
 @media (max-width: 768px) {
+    .navbar {
+        height: 64px;              /* slightly shorter on mobile */
+        box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+    }
+
     .nav-container {
         position: relative;
         flex-direction: row;
