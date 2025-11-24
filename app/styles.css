@@ -214,33 +214,39 @@ svg.nav-logo {
     color: var(--text-primary);
 }
 
-/* Mobile bottom tab bar */
+/* Mobile bottom tab bar: full-width strip, only visible on small screens */
 .mobile-tabbar {
-    display: none; /* shown only in mobile media query */
     position: fixed;
-    bottom: 0;
     left: 0;
     right: 0;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    box-shadow: 0 -2px 8px rgba(15, 23, 42, 0.08);
-    z-index: 40;
+    bottom: 0;
+    height: 56px;
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    z-index: 20;
 }
 
 .mobile-tabbar .tab-link {
     flex: 1;
-    padding: 0.6rem 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
     border: none;
     background: transparent;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 500;
-    color: var(--text-secondary);
+    color: #6b7280;
     text-align: center;
     cursor: pointer;
 }
 
+/* Active tab */
 .mobile-tabbar .tab-link.active {
-    color: var(--primary-color);
+    color: #2563eb;
 }
 
 /* Contacts mobile toggles (hidden by default, shown in mobile media query) */
@@ -1640,6 +1646,8 @@ form {
         padding: 0.5rem 0;
         box-shadow: var(--shadow-lg);
         z-index: 20;
+        flex-wrap: wrap;
+        justify-content: center;
     }
 
     .nav-container.nav-open .nav-menu {
@@ -1660,8 +1668,15 @@ form {
         display: flex;
     }
 
-    .container {
-        padding-bottom: 4rem; /* space for bottom tab bar */
+    /* Ensure content is not hidden behind bottom bar */
+    .page {
+        padding-bottom: 80px; /* enough to clear the 56px tab bar + a bit of space */
+    }
+
+    /* Prevent horizontal scroll on small screens */
+    html,
+    body {
+        overflow-x: hidden;
     }
 
     /* Slightly reduce brand title size on mobile for better fit */
