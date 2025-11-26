@@ -552,7 +552,7 @@ body {
 }
 
 .contacts-table td {
-    padding: 1rem;
+    padding: 0.5rem 0.75rem;
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
 }
@@ -638,7 +638,7 @@ body {
 }
 
 .contacts-table tbody tr:hover {
-    background: var(--background);
+    background-color: #f9fafb;
 }
 
 .contacts-table tbody tr:last-child td {
@@ -1869,7 +1869,7 @@ form {
     .contacts-table td[data-col="status"] {
         display: flex;
         justify-content: flex-end;
-        margin-top: 0.15rem;
+        margin-top: 0.2rem;
     }
 
     .contacts-table td[data-col="status"] .status-badge,
