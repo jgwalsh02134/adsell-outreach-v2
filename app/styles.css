@@ -94,13 +94,19 @@ body {
 .nav-menu {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 2rem;
     flex-wrap: nowrap;
     list-style: none;
+    margin: 0;
+    padding: 0;
+    margin-left: auto;
 }
 
 .nav-menu .nav-link {
     position: relative;
+    display: inline-flex;
+    align-items: center;
     font-size: 0.95rem;
     font-weight: 500;
     letter-spacing: 0.02em;
@@ -108,6 +114,7 @@ body {
     padding-bottom: 0.4rem;
     text-decoration: none;
     cursor: pointer;
+    transition: color 0.2s ease;
 }
 
 .nav-menu .nav-link:hover {
