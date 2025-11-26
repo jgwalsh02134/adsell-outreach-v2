@@ -1811,71 +1811,6 @@ form {
         width: 100%;
     }
 
-    .table-container {
-        overflow-x: visible;
-    }
-
-    .contacts-table {
-        border-collapse: separate;
-        border-spacing: 0 0.75rem;
-    }
-
-    .contacts-table thead {
-        display: none;
-    }
-
-    .contacts-table tbody tr {
-        display: block;
-        margin: 0 0 0.75rem 0;
-        padding: 0.6rem 0.75rem;
-        border-radius: 1rem;
-        background: #ffffff;
-        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
-    }
-
-    .contacts-table td {
-        display: block;
-        padding: 0.05rem 0;
-        border: none;
-        overflow-wrap: anywhere;
-        word-break: break-word;
-    }
-
-    /* Primary line: Company / Organization (vendor cell) */
-    .contacts-table td[data-col="vendor"] {
-        font-size: 1rem;
-        font-weight: 600;
-        padding-bottom: 0.15rem;
-    }
-
-    /* Hide the "Company / Organization" label above vendor cell */
-    .contacts-table td[data-col="vendor"]::before {
-        display: none;
-    }
-
-    /* Secondary line (campaign/tag pill) lives inside vendor cell already;
-       hide other non-essential columns in the mobile list view */
-    .contacts-table td[data-col="contact"],
-    .contacts-table td[data-col="email"],
-    .contacts-table td[data-col="phone"],
-    .contacts-table td[data-col="category"],
-    .contacts-table td[data-col="project"],
-    .contacts-table td[data-col="lastContact"],
-    .contacts-table td[data-col="actions"] {
-        display: none;
-    }
-
-    /* Status cell: small pill/text aligned to the right under the card */
-    .contacts-table td[data-col="status"] {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 0.2rem;
-    }
-
-    .contacts-table td[data-col="status"] .status-badge,
-    .contacts-table td[data-col="status"] span {
-        font-size: 0.72rem;
-    }
     .modal-content,
     .modal-large {
         width: 100%;
@@ -2207,4 +2142,100 @@ form {
     .mobile-tabbar {
         display: none;
     }
+}
+
+/* ===================== CONTACTS LIST - DESKTOP ===================== */
+
+.contacts-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.contacts-table td {
+  padding: 0.5rem 0.75rem;
+}
+
+/* ===================== CONTACTS LIST - MOBILE ====================== */
+
+@media (max-width: 768px) {
+  /* Never allow sideways scroll on contacts */
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Hide the table header on mobile */
+  .contacts-table thead {
+    display: none;
+  }
+
+  /* Each contact row becomes a compact card */
+  .contacts-table tbody tr {
+    display: block;
+    margin: 0 0 0.75rem 0;
+    padding: 0.6rem 0.75rem;
+    border-radius: 1rem;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  }
+
+  .contacts-table tbody tr td {
+    display: block;
+    padding: 0.05rem 0;
+  }
+
+  /* Primary line: Company / Organization */
+  .contacts-table td[data-col="vendor"] {
+    font-size: 1rem;
+    font-weight: 600;
+    padding-bottom: 0.15rem;
+  }
+
+  /* Hide the "Company / Organization" label inside the cell */
+  .contacts-table td[data-col="vendor"]::before {
+    display: none;
+  }
+
+  /* Hide the checkbox itself but keep name + pill */
+  .contacts-table td[data-col="vendor"] .row-select {
+    display: none;
+  }
+
+  /*
+    On mobile we only want:
+    - Company/Organization (data-col="vendor")
+    - Status (data-col="status")
+    Everything else (contact/email/phone/category/project/lastContact/actions)
+    gets hidden to avoid horizontal scroll and clutter.
+  */
+  .contacts-table td[data-col="contact"],
+  .contacts-table td[data-col="email"],
+  .contacts-table td[data-col="phone"],
+  .contacts-table td[data-col="category"],
+  .contacts-table td[data-col="project"],
+  .contacts-table td[data-col="lastContact"],
+  .contacts-table td[data-col="actions"] {
+    display: none;
+  }
+
+  /* Status: small pill/text at bottom-right of card */
+  .contacts-table td[data-col="status"] {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.2rem;
+  }
+
+  .contacts-table td[data-col="status"] span {
+    font-size: 0.72rem;
+  }
+
+  /* Tighten contacts page padding on mobile */
+  #contacts-page.page {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Make sure contacts table container isn't forcing horizontal scroll */
+  #contacts-page .table-container {
+    overflow-x: visible;
+  }
 }
