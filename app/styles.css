@@ -1784,6 +1784,12 @@ form {
         overflow-x: hidden;
     }
 
+    /* Slightly reduce side padding on the Contacts page container for mobile */
+    #contacts-page.page {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
     /* Slightly reduce brand title size on mobile for better fit */
     .nav-logo.nav-logo-wordmark {
         height: 24px;
@@ -1819,35 +1825,22 @@ form {
 
     .contacts-table tbody tr {
         display: block;
-        padding: 0.75rem;
-        margin-bottom: 0.5rem;
+        margin: 0 0 0.75rem 0;
+        padding: 0.6rem 0.75rem;
         border-radius: 1rem;
-        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
         background: #ffffff;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
     }
-
-.contact-row {
-    cursor: pointer;
-}
-
-.contact-row:hover {
-    background-color: rgba(148, 163, 184, 0.06);
-}
 
     .contacts-table td {
         display: block;
-        padding: 0.1rem 0;
+        padding: 0.05rem 0;
         border: none;
         overflow-wrap: anywhere;
         word-break: break-word;
     }
 
-    /* Show ONLY the Company / Organization cell and hide all others */
-    .contacts-table tbody tr td:not([data-col="vendor"]) {
-        display: none;
-    }
-
-    /* Title line: Company / Organization */
+    /* Primary line: Company / Organization (vendor cell) */
     .contacts-table td[data-col="vendor"] {
         font-size: 1rem;
         font-weight: 600;
@@ -1857,6 +1850,30 @@ form {
     /* Hide the "Company / Organization" label above vendor cell */
     .contacts-table td[data-col="vendor"]::before {
         display: none;
+    }
+
+    /* Secondary line (campaign/tag pill) lives inside vendor cell already;
+       hide other non-essential columns in the mobile list view */
+    .contacts-table td[data-col="contact"],
+    .contacts-table td[data-col="email"],
+    .contacts-table td[data-col="phone"],
+    .contacts-table td[data-col="category"],
+    .contacts-table td[data-col="project"],
+    .contacts-table td[data-col="lastContact"],
+    .contacts-table td[data-col="actions"] {
+        display: none;
+    }
+
+    /* Status cell: small pill/text aligned to the right under the card */
+    .contacts-table td[data-col="status"] {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 0.15rem;
+    }
+
+    .contacts-table td[data-col="status"] .status-badge,
+    .contacts-table td[data-col="status"] span {
+        font-size: 0.72rem;
     }
     .modal-content,
     .modal-large {
