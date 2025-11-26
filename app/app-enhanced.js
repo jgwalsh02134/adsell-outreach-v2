@@ -133,6 +133,15 @@ class OutreachTracker {
         document.getElementById("ai-clean-csv")?.addEventListener("click", () => this.aiCleanCSV());
         document.getElementById("rr-enrich-contact")?.addEventListener("click", () => this.enrichCurrentContactWithRocketReach());
         document.getElementById("rr-enrich-company")?.addEventListener("click", () => this.enrichCurrentCompanyWithRocketReach());
+        const csvInput = document.getElementById("csv-file-input");
+        if (csvInput) {
+            csvInput.addEventListener("change", (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (file) {
+                    this.handleCSVUpload(file);
+                }
+            });
+        }
         
         // Render initial page
         this.showPage('dashboard');
