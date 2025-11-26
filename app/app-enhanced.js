@@ -2654,6 +2654,54 @@ class OutreachTracker {
         const primaryPhoneDetail = phoneParts[0] || '';
         const telHrefDetail = primaryPhoneDetail ? primaryPhoneDetail.replace(/[^0-9+]/g, '') : '';
 
+        // Populate contact detail header (company/person/pills/channels)
+        const setHeaderText = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.textContent = value || '';
+            }
+        };
+        const setHeaderHTML = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.innerHTML = value || '';
+            }
+        };
+
+        const companyText = this.currentContact.companyName || this.currentContact.vendorName || 'No Company Name';
+        const contactName = this.currentContact.contactName || '';
+        const contactTitle = this.currentContact.title || '';
+        const personText = contactName
+            ? (contactTitle ? `${contactName} — ${contactTitle}` : contactName)
+            : '';
+
+        setHeaderText('cdh-company', companyText);
+        setHeaderText('cdh-person', personText);
+        setHeaderText('cdh-category', this.currentContact.category || '');
+        setHeaderText('cdh-project', this.currentContact.project || '');
+        setHeaderText('cdh-status', this.currentContact.status || '');
+
+        setHeaderHTML('cdh-email', emailParts.length ? `<a href="mailto:${emailParts[0]}">${emailParts[0]}</a>` : '');
+        setHeaderHTML('cdh-phone', primaryPhoneDetail ? `<a href="tel:${telHrefDetail}">${primaryPhoneDetail}</a>` : '');
+        setHeaderHTML('cdh-website', this.currentContact.website ? `<a href="${this.currentContact.website}" target="_blank">Website</a>` : '');
+        setHeaderHTML('cdh-linkedin', this.currentContact.linkedin ? `<a href="${this.currentContact.linkedin}" target="_blank">LinkedIn</a>` : '');
+        setHeaderHTML('cdh-facebook', this.currentContact.facebook ? `<a href="${this.currentContact.facebook}" target="_blank">Facebook</a>` : '');
+        setHeaderHTML('cdh-x', this.currentContact.twitter ? `<a href="${this.currentContact.twitter}" target="_blank">X (Twitter)</a>` : '');
+
+        const addressParts = [
+            this.currentContact.address,
+            this.currentContact.city,
+            this.currentContact.state,
+            this.currentContact.zipCode
+        ].filter(Boolean);
+        if (addressParts.length) {
+            const fullAddress = addressParts.join(', ');
+            const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+            setHeaderHTML('cdh-maps', `<a href="${mapsHref}" target="_blank">Maps</a>`);
+        } else {
+            setHeaderHTML('cdh-maps', '');
+        }
+
         const contactActivities = this.activities
             .filter(a => a.contactId === id)
             .sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -2666,16 +2714,6 @@ class OutreachTracker {
 
         const content = `
             <div class="contact-detail">
-                <div class="contact-header">
-                    <div>
-                        <h2 class="contact-name">${this.currentContact.contactName || 'No Contact Name'}</h2>
-                        ${this.currentContact.title ? `<p class="contact-title">${this.currentContact.title}</p>` : ''}
-                        <p class="contact-company">${this.currentContact.companyName || this.currentContact.vendorName}</p>
-                    </div>
-                    <div class="contact-tags">
-                        ${contactTags}
-                    </div>
-                </div>
                 <div class="contact-body">
                     <!-- Contact Information -->
                     <div class="detail-section">
