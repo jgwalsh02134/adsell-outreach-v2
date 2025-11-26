@@ -2038,6 +2038,87 @@ form {
     margin-bottom: 1rem;
 }
 
+/* Contact Detail Header */
+.contact-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: #ffffff;
+  padding: 1.25rem 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(15,23,42,0.08);
+  margin-bottom: 1.5rem;
+}
+
+.cdh-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cdh-company {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.cdh-person {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.cdh-pills {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.cdh-pill {
+  background: #eef2f7;
+  color: #1f3b5c;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+}
+
+.cdh-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.cdh-channels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  text-align: right;
+}
+
+.cdh-channel {
+  font-size: 0.75rem;
+  color: #1f3b5c;
+}
+
+/* Mobile version */
+@media (max-width: 768px) {
+  .contact-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem 1.25rem;
+    gap: 0.75rem;
+  }
+
+  .cdh-right {
+    align-items: flex-start;
+  }
+
+  .cdh-channels {
+    text-align: left;
+  }
+}
+
 .contact-assist-btn {
     display: inline-flex;
     align-items: center;
