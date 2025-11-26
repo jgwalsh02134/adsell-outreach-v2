@@ -34,13 +34,12 @@ body {
 
 /* Navigation */
 .navbar {
-    background-color: #f3f0e8; /* slightly darker warm neutral */
+    background-color: #f3f0e8;
     border-bottom: 1px solid rgba(15, 23, 42, 0.12);
-    height: 72px;            /* taller, consistent header height */
+    height: 72px;
     display: flex;
-    align-items: center;     /* center logo + nav vertically */
+    align-items: center;
     z-index: 30;
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
 }
 
 .nav-container {
@@ -50,26 +49,23 @@ body {
     padding: 0 1.5rem;
     display: flex;
     align-items: center;
-    justify-content: flex-start; /* align left, control nav spacing via brand margin */
+    justify-content: space-between;
 }
 
 .nav-brand {
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    margin-right: 2.5rem; /* space between logo and nav links */
+    margin-right: 2.5rem;
 }
 
 .brand-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
     padding: 0;
-    margin: 0;
     border: none;
     background: transparent;
     cursor: pointer;
-    text-align: left;
 }
 
 .nav-logo {
@@ -97,23 +93,21 @@ body {
 
 .nav-menu {
     display: flex;
-    list-style: none;
-    gap: 2rem;           /* horizontal space between links */
     align-items: center;
+    gap: 2rem;
     flex-wrap: nowrap;
+    list-style: none;
 }
 
 .nav-menu .nav-link {
     position: relative;
-    display: inline-block;
     font-size: 0.95rem;
     font-weight: 500;
     letter-spacing: 0.02em;
     color: #111827; /* dark slate/ink */
     padding-bottom: 0.4rem;
     text-decoration: none;
-    border-radius: 0;
-    transition: color 0.2s ease;
+    cursor: pointer;
 }
 
 .nav-menu .nav-link:hover {
