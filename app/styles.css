@@ -120,6 +120,12 @@ p, .text-body {
     font-weight: 400;
 }
 
+.text-body-strong {
+    font-size: var(--font-size-body);
+    line-height: 20px;
+    font-weight: 600;
+}
+
 .text-caption {
     font-size: var(--font-size-caption);
     line-height: 16px;
@@ -127,6 +133,15 @@ p, .text-body {
 }
 
 .text-muted {
+    color: var(--color-text-muted);
+}
+
+.overline-label {
+    font-size: var(--font-size-caption);
+    line-height: 16px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     color: var(--color-text-muted);
 }
 
