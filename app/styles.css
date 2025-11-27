@@ -54,7 +54,7 @@
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
     --radius-card: 10px;
-    --radius-button: 9999px;
+    --radius-button: 8px;
     --radius-input: 8px;
 
     /* Typography */
@@ -404,9 +404,9 @@ p, .text-body {
     left: 0;
     right: 0;
     bottom: 0;
-    height: 64px;
-    background: #ffffff;
-    border-top: 1px solid #e5e7eb;
+    height: 56px;
+    background: var(--color-bg-surface);
+    border-top: 1px solid var(--color-border-subtle);
     display: flex;
     align-items: center;
     justify-content: space-around;
@@ -436,9 +436,9 @@ p, .text-body {
 
 /* Label */
 .mobile-tabbar .tab-label {
-    font-size: 0.68rem;
+    font-size: var(--font-size-caption);
     font-weight: 500;
-    color: #6b7280;
+    color: var(--color-text-muted);
 }
 
 /* Active state (JS toggles .active on current tab) */
@@ -458,6 +458,28 @@ p, .text-body {
 /* Contacts mobile toggles (hidden by default, shown in mobile media query) */
 .contacts-mobile-toggles {
     display: none;
+}
+
+/* Segmented control (used for Filters / Quick Add) */
+.segmented-control {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.segmented-control .segmented-button {
+    flex: 1;
+    border-radius: 12px;
+    border: 1px solid var(--color-border-subtle);
+    background: var(--color-bg-surface);
+    font-size: var(--font-size-body);
+    font-weight: 500;
+    padding: 0.5rem 0.75rem;
+}
+
+.segmented-control .segmented-button[aria-pressed="true"] {
+    background: var(--color-brand-soft);
+    border-color: var(--color-brand);
+    color: var(--color-brand-strong);
 }
 
 /* Stats Grid */
@@ -1968,9 +1990,9 @@ form {
     /* Ensure content is not hidden behind bottom bar */
     .page {
         max-width: 100%;
-        padding-left: calc(var(--grid-unit) * 4);  /* 16px */
-        padding-right: calc(var(--grid-unit) * 4);
-        padding-bottom: 88px; /* 64px tab bar + extra breathing space */
+        padding-left: var(--space-4);  /* 16px */
+        padding-right: var(--space-4);
+        padding-bottom: 88px; /* tab bar + breathing space */
     }
 
     /* Prevent horizontal scroll on small screens */
@@ -2133,11 +2155,6 @@ form {
         display: flex;
         gap: 0.5rem;
         margin-bottom: 0.75rem;
-    }
-
-    .contacts-mobile-toggles .btn {
-        flex: 1;
-        justify-content: center;
     }
 
     /* Hide filters and quick add by default on mobile */
