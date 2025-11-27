@@ -792,6 +792,54 @@ body {
     margin-right: 0.25rem;
 }
 
+/* Contacts list: inline chips for channels + primary action */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid transparent;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.chip-channel {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #e2e8f0;
+}
+
+.chip-channel:hover {
+    background: #e5edf6;
+}
+
+.chip-primary {
+    background: #1f3b5c;
+    color: #ffffff;
+    border-color: #1f3b5c;
+}
+
+.chip-primary:hover {
+    background: #173049;
+}
+
+.contact-card-channels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.35rem;
+}
+
+.contact-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
 /* Contact Detail */
 .contact-detail {
     background: var(--surface);
@@ -2050,6 +2098,16 @@ form {
 .cdh-channel {
   font-size: 0.75rem;
   color: #1f3b5c;
+}
+
+/* Make status in header feel like the same badge system */
+#cdh-status {
+  background: #eef2f7;
+  color: #1f3b5c;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 /* Mobile version */

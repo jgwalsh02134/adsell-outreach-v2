@@ -1833,9 +1833,22 @@ class OutreachTracker {
             const primaryPhone = fullPhone.split(/[;,]/)[0].trim();
             const telHref = primaryPhone ? primaryPhone.replace(/[^0-9+]/g, '') : '';
 
+            const smsHref = telHref ? `sms:${telHref}` : '';
+            const websiteHref = contact.website || '';
+
             const statusText = contact.status || 'Not Started';
             const statusSlug = this.slugify(statusText);
             const last = contact.lastContact ? this.formatDate(contact.lastContact) : 'Never';
+
+            const channelsHtml = `
+                <div class="contact-card-channels">
+                    ${primaryPhone ? `<a href="tel:${telHref}" class="chip chip-channel">Call</a>` : ''}
+                    ${primaryPhone ? `<a href="${smsHref}" class="chip chip-channel">SMS</a>` : ''}
+                    ${primaryEmail ? `<a href="mailto:${primaryEmail}" class="chip chip-channel">Email</a>` : ''}
+                    ${websiteHref ? `<a href="${websiteHref}" target="_blank" rel="noopener" class="chip chip-channel">Website</a>` : ''}
+                    <button type="button" class="chip chip-primary" onclick="app.viewContact('${contact.id}')">Profile</button>
+                </div>
+            `;
 
             return `
             <tr class="contact-row" data-id="${contact.id}">
@@ -1870,9 +1883,11 @@ class OutreachTracker {
                 </td>
                 <td data-col="lastContact" data-label="Last Contact">${last}</td>
                 <td data-col="actions" data-label="Actions">
-                    <button class="btn btn-secondary action-btn btn-view" onclick="app.viewContact('${contact.id}')">View</button>
-                    <button class="btn btn-secondary action-btn" onclick="app.logActivity('${contact.id}')">Log Activity</button>
-                    <button class="btn btn-secondary action-btn" onclick="app.openTaskForContact('${contact.id}')">Add Task</button>
+                    ${channelsHtml}
+                    <div class="contact-card-actions">
+                        <button class="btn btn-secondary action-btn" onclick="app.logActivity('${contact.id}')">Log Activity</button>
+                        <button class="btn btn-secondary action-btn" onclick="app.openTaskForContact('${contact.id}')">Add Task</button>
+                    </div>
                 </td>
             </tr>
         `}).join('');
