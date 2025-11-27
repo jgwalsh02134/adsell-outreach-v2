@@ -255,6 +255,17 @@ body {
     }
 }
 
+/* Responsive nav visibility */
+@media (max-width: 767px) {
+    .app-nav {
+        display: none;
+    }
+
+    .mobile-tabbar {
+        display: flex;
+    }
+}
+
 .app-nav-toggle {
     background: transparent;
     border: 1px solid var(--color-border-subtle);
@@ -542,7 +553,7 @@ body {
     height: 56px;
     background: var(--color-bg-surface);
     border-top: 1px solid var(--color-border-subtle);
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: space-around;
     z-index: 20;
@@ -2118,10 +2129,6 @@ form {
         background: var(--background);
     }
 
-    .mobile-tabbar {
-        display: flex;
-    }
-
     /* Ensure content is not hidden behind bottom bar */
     .page {
         max-width: 100%;
@@ -2491,12 +2498,6 @@ form {
 
     .contact-assist-btn {
         flex: 0 0 auto;
-    }
-}
-
-@media (min-width: 769px) {
-    .mobile-tabbar {
-        display: none;
     }
 }
 
