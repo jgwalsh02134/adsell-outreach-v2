@@ -1,0 +1,7 @@
+name = "adsell-openai-proxy"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+[[kv_namespaces]]
+binding = "ADSELL_DATA"
+id = "<placeholder>"
