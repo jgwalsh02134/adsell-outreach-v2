@@ -1,181 +1,255 @@
-# AdSell.ai Outreach Tracker
+# AdSell Sales Desk
 
-A comprehensive web application for managing sales outreach and tracking customer engagement for AdSell.ai's ski magazine campaign.
+AdSell Sales Desk is a mobile-first, AI-assisted sales-outreach platform built to **source**, **qualify**, **enrich**, and **activate** new advertising prospects for the AdSell.ai print-media advertising marketplace.
 
-## Features
+This repository contains the browser-based application (SPA) that powers the sales workflow: contact discovery, enrichment, outreach execution, activity logging, pipeline progression, and campaign-level reporting.
 
-✅ **Contact Management**
-- Add, edit, and delete contacts
-- Import contacts from CSV files
-- Filter and search contacts
-- Track contact status (Not Started, In Progress, Responded, Signed Up)
+──────────────────────────────────────────
 
-✅ **Activity Tracking**
-- Log emails sent, phone calls, meetings, and notes
-- View activity timeline for each contact
-- Track follow-up dates
-- Recent activity dashboard
+## ▣ Official Links
 
-✅ **Scripts Library**
-- Pre-written email and call scripts
-- Copy scripts to clipboard
-- Add custom scripts
-- Organize by type (Email, Phone Call, LinkedIn)
+| Resource            | Link                                                                 |
+|---------------------|----------------------------------------------------------------------|
+| Live App            | https://adsell-outreach-v2.pages.dev                                 |
+| AdSell.ai           | https://adsell.ai                                                    |
+| GitHub Repository   | https://github.com/jgwalsh02134/adsell-outreach-v2                  |
+| Cloudflare Worker   | https://adsell-openai-proxy.jgregorywalsh.workers.dev               |
 
-✅ **Analytics & Reporting**
-- Status breakdown charts
-- Category distribution
-- Follow-up queue
-- Key performance metrics
+──────────────────────────────────────────
 
-✅ **CSV Import**
-- Upload contacts from spreadsheets
-- Preview before importing
-- Automatic field mapping
+## ▣ Purpose
 
-## Getting Started
+AdSell Sales Desk is **not** a general CRM.  
+It is a focused **outreach cockpit** designed for:
 
-### Quick Start
+- identifying new advertisers and publishers  
+- qualifying prospect records  
+- enriching missing data  
+- organizing structured, campaign-based outreach  
+- recording contact attempts and outcomes  
+- executing multi-channel communication  
+- routing prospects into the AdSell.ai advertising platform  
 
-1. Open `index.html` in your web browser
-2. The app runs entirely in your browser - no server needed!
-3. All data is stored locally in your browser's localStorage
+Success is measured by:
 
-### Importing Your Existing Contacts
+**new, high-quality prospects reached, enriched, and converted.**
 
-1. Navigate to the "Import CSV" page
-2. Click "Choose CSV File"
-3. Select either:
-   - `AdsellAI_Outreach_Tracker_Populated.csv`
-   - `albany_ski_expo_vendor_contacts_UPDATED.csv`
-4. Preview the contacts
-5. Click "Import Contacts"
+──────────────────────────────────────────
 
-### CSV Format
+## ▣ Design Philosophy
 
-Your CSV should include these columns:
-- Vendor Name (required)
-- Contact Name
-- Email (required)
-- Phone
-- Website
-- Category
-- Segment
-- Status
-- Notes
+### ◆ Print-Heritage Craft  
+Inspired by the visual language of print media:
 
-## Usage Guide
+- editorial-style typography  
+- grid-aligned layout and spacing  
+- low-glare, paper-toned surfaces  
+- masthead-style headers  
+- clean dividers and restrained visual hierarchy  
 
-### Dashboard
-- View key metrics (total contacts, status breakdown)
-- See recent activity at a glance
-- Quick access to add new contacts
+This aesthetic honors AdSell’s roots in traditional print advertising.
 
-### Contacts Page
-- View all contacts in a sortable table
-- Search by name, email, or phone
-- Filter by status, category, or segment
-- Click "View" to see full contact details
-- Click "Log Activity" to record interactions
+### ◆ Modern Mobile Interaction  
+Optimized for speed and clarity:
 
-### Contact Detail Page
-- Complete contact information
-- Full activity timeline
-- Log new activities
-- Edit or delete contact
+- mobile-first interface  
+- tap-driven actions (minimal required typing)  
+- zero horizontal scrolling  
+- card-based list and detail views  
+- large, reliable touch targets  
+- smooth transitions and predictable behavior  
 
-### Scripts Page
-- Browse email and call scripts
-- Copy scripts to use in outreach
-- Add custom scripts for your team
-- Edit existing scripts
+The result: a tool that **looks editorial, but behaves like a fast, modern app.**
 
-### Analytics Page
-- Status breakdown showing conversion funnel
-- Category distribution of your contacts
-- Follow-up queue showing upcoming tasks
-- Track outreach performance
+──────────────────────────────────────────
 
-## Tips for Success
+## ▣ Core Features
 
-### Email Outreach
-1. Use the provided email templates in the Scripts page
-2. Personalize the {Vendor Name} and {Contact Name} placeholders
-3. Log activity after sending each email
-4. Set follow-up dates (typically 3-5 days)
+### ◆ Prospect Profiles  
+A complete sales-outreach cockpit centered on a single organization or contact.
 
-### Phone Calls
-1. Review the call script before dialing
-2. Have the contact's details open
-3. Log the call immediately after
-4. Note any objections or next steps
+Includes:
 
-### Status Management
-- **Not Started**: Contact hasn't been reached yet
-- **In Progress**: Initial outreach sent, awaiting response
-- **Responded**: Contact has replied/engaged
-- **Signed Up**: Successfully converted to customer
+- identity fields (company, person, title, segment, project, lead source)  
+- social links (LinkedIn, Facebook, X)  
+- website, phone, email, full address  
+- device-native deep links (`tel:`, `sms:`, `mailto:`, maps)  
+- AI enrichment panel  
+- structured log of all activities  
+- associated tasks (overdue, today, upcoming, completed)
 
-### Follow-up Best Practices
-- Set follow-up dates for every interaction
-- Check the Follow-up Queue daily
-- Aim for 2-3 touchpoints before marking as unresponsive
-- Use different channels (email, then phone, then LinkedIn)
+### ◆ CSV Ingestion Pipeline  
+A robust lead-intake system for large lists:
 
-## Data Management
+- flexible column mapping  
+- deduplication  
+- project assignment  
+- enrichment queueing  
+- data normalization and cleanup  
 
-### Backup Your Data
-Your data is stored in browser localStorage. To backup:
-1. Export contacts regularly by copying from the browser
-2. Consider using browser sync features
-3. Keep CSV backups of your contact lists
+CSV import behaves as a **pipeline**, not a basic file dump.
 
-### Clear Data
-To reset the application:
-```javascript
-// Open browser console (F12) and run:
-localStorage.clear()
+### ◆ Projects & Campaigns  
+Organize outreach by:
+
+- expo  
+- region  
+- season  
+- vertical  
+- thematic push  
+
+Each project aggregates performance based on its prospects.
+
+### ◆ AI Outreach Tools  
+Powered by OpenAI Responses API:
+
+- outreach scripts  
+- summaries and briefings  
+- enrichment intelligence  
+- field inference and cleanup  
+- classification and prioritization  
+
+### ◆ Multi-Provider Enrichment  
+Current + future sources:
+
+- RocketReach  
+- Additional APIs (planned)  
+- AI-based inference  
+- public-data integrations  
+
+Enrichment flows through the Worker and is merged into profiles safely.
+
+──────────────────────────────────────────
+
+## ▣ System Architecture (High-Level)
+
+### ▪ Front-End SPA (Browser / Mobile)
+- `app/index.html`  
+- `app/styles.css`  
+- `app/app-enhanced.js`  
+Handles UI, state, navigation, contact rendering, CSV upload, enrichment triggers, and device-native actions.
+
+### ▪ Cloudflare Worker (Backend API)
+Provides endpoints for:
+
+- contacts retrieval & updates  
+- CSV validation and structured import  
+- enrichment calls  
+- OpenAI Responses API proxy  
+
+### ▪ Cloudflare KV Storage  
+Stores unified application state as a single structured snapshot:
+
+```json
+{
+  "contacts": [],
+  "activities": [],
+  "tasks": [],
+  "projects": [],
+  "tags": [],
+  "customFields": [],
+  "version": 1
+}
 ```
 
-## Promo Code Information
+### ▪ External Providers  
+- RocketReach (current)  
+- OpenAI Responses API  
+- Additional enrichment APIs (future)  
 
-All contacts should use promo code **2104** when signing up at www.adsell.ai
+### ▪ Device-Native Actions  
+Executed on the client:
 
-**What AdSell.ai Provides:**
-- AI-powered platform for print advertising
-- Direct access to newspapers and magazines
-- Self-service ad creation and placement
-- 50-70% cost savings vs traditional agencies
-- Analytics and ROI tracking
+- `tel:`  
+- `sms:`  
+- `mailto:`  
+- Maps links  
 
-**Your Role:**
-Help ski industry businesses understand how they can use AdSell.ai to advertise their own resorts, shops, and clubs in print publications to reach more customers.
+──────────────────────────────────────────
 
-## Technical Notes
+## ▣ File Structure
 
-### Browser Compatibility
-- Works in all modern browsers (Chrome, Firefox, Safari, Edge)
-- Requires JavaScript enabled
-- localStorage must be available
-
-### File Structure
 ```
-index.html       - Main HTML structure
-styles.css       - All styling and layout
-app-enhanced.js  - Application logic and functionality
+adsell-outreach-v2/
+│
+├── app/
+│   ├── icons/
+│   ├── images/
+│   ├── app-enhanced.js
+│   ├── data-loader.html
+│   ├── favicon.png
+│   ├── favicon.svg
+│   ├── index.html
+│   └── styles.css
+│
+├── assets/
+│
+├── campaign/
+│   ├── CAMPAIGN_BRIEF.md
+│   └── SALES_CHEAT_SHEET.md
+│
+├── data/
+│   ├── backups/
+│   ├── exports/
+│   └── imports/
+│
+├── docs/
+│   ├── CUSTOM_SETUP_JGW.md
+│   ├── ENHANCED_FEATURES.md
+│   ├── QUICKSTART.md
+│   ├── README.md
+│   └── START_HERE.md
+│
+└── (Cloudflare Worker source to be added)
 ```
 
-### Customization
-- Colors can be adjusted in `styles.css` CSS variables
-- Default scripts can be modified in `app-enhanced.js` (`addDefaultScripts()`)
-- Contact fields can be extended in the data model
+──────────────────────────────────────────
 
-## Support
+## ▣ Deployment
 
-For questions or issues with the AdSell.ai platform, contact:
-- Email: support@adsell.ai
-- Website: www.adsell.ai
+1. GitHub → Cloudflare Pages hosts the front-end SPA.  
+2. Cloudflare Worker powers the backend API.  
+3. Cloudflare KV stores persistent data.  
+4. Deployments update automatically on each push to `main`.
 
-## License
+Worker source will be added to this repository in a dedicated directory.
 
-Internal use only - AdSell.ai Sales Team
+──────────────────────────────────────────
+
+## ▣ Roadmap
+
+### Immediate
+- Contact list redesign  
+- Prospect Profile header + channels bar  
+- Social & location integration  
+- Enrichment panel upgrades  
+- Desktop header improvements  
+
+### Near-Term
+- Project analytics  
+- Pipeline visualization  
+- Task manager improvements  
+- AI-guided prioritization  
+
+### Long-Term
+- “Contacts Near Me” (geo-based discovery)  
+- Multi-user + permissions  
+- Shared team workspaces  
+- CRM export + optional two-way sync  
+
+──────────────────────────────────────────
+
+## ▣ Contribution Workflow
+
+1. Clone the repository  
+   `git clone https://github.com/jgwalsh02134/adsell-outreach-v2`
+
+2. Open in **Cursor IDE**.  
+3. Use **Codex** for surgical, single-file changes.  
+4. Use **Cursor Chat** for multi-file or conceptual refactors.  
+5. Test on both desktop and mobile breakpoints.  
+6. Push to GitHub; Cloudflare handles deployment.
+
+──────────────────────────────────────────
+
+End of README.
