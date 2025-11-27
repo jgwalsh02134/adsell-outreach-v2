@@ -1021,6 +1021,11 @@ body {
     display: none;
 }
 
+/* Generic hidden utility for dynamic views */
+.hidden {
+    display: none !important;
+}
+
 /* Filters: column chooser dropdown */
 .filter-dropdown {
     position: relative;
@@ -2476,6 +2481,233 @@ form {
     gap: 0.5rem;
     align-items: center;
     margin-bottom: 1rem;
+}
+
+/* =====================
+   Prospect Profile View
+   ===================== */
+
+#prospect-profile-view {
+  padding: 16px;
+  background-color: var(--color-bg-page);
+}
+
+.prospect-card {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.prospect-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.prospect-channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.prospect-channel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border-subtle);
+  background-color: var(--color-bg-surface);
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.prospect-channel-btn:hover {
+  color: var(--color-brand);
+  border-color: var(--color-brand-soft);
+}
+
+.prospect-channel-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.prospect-channel-label {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.prospect-two-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.prospect-meta {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+.prospect-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.prospect-section-title {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.prospect-header-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.prospect-quick-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-subtle);
+  background-color: var(--color-bg-surface);
+}
+
+.prospect-quick-label {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.prospect-quick-select {
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-primary);
+  padding: 0;
+  min-width: 80px;
+}
+
+.prospect-quick-select:focus {
+  outline: none;
+}
+
+.prospect-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px 16px;
+}
+
+.prospect-detail-item-label {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.prospect-detail-item-value {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-text-primary);
+}
+
+.prospect-detail-item-value a {
+  color: var(--color-brand-strong);
+  text-decoration: none;
+}
+
+.prospect-detail-item-value a:hover {
+  text-decoration: underline;
+}
+
+.prospect-activity-list,
+.prospect-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prospect-activity-item,
+.prospect-task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.prospect-activity-icon,
+.prospect-task-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  color: var(--color-text-muted);
+}
+
+.prospect-activity-main,
+.prospect-task-main {
+  flex: 1;
+}
+
+.prospect-activity-meta,
+.prospect-task-meta {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-muted);
+}
+
+.prospect-card .empty-state {
+  text-align: center;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-muted);
+  padding: 8px 0;
+}
+
+.overline {
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+@media (min-width: 768px) {
+  #prospect-profile-view {
+    padding: 24px;
+  }
+
+  .prospect-two-column {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .prospect-two-column > .prospect-card {
+    flex: 1;
+  }
+
+  .prospect-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* On wider screens, show channel labels next to icons */
+  .prospect-channel-label {
+    display: inline;
+  }
 }
 
 /* Contact Detail Header */

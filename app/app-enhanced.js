@@ -93,6 +93,7 @@ class OutreachTracker {
         this.tasks = [];
         this.projects = [];
         this.currentContact = null;
+        this.activeContactId = null;
         this.contactsSearchTerm = '';
         this.editingContactId = null;
         this.editingScriptId = null;
@@ -148,7 +149,7 @@ class OutreachTracker {
         this.showPage('dashboard');
         this.updateStats();
         this.renderRecentActivity();
-
+        
         // Add default scripts if none exist
         if (this.scripts.length === 0) {
             this.addDefaultScripts();
@@ -192,7 +193,7 @@ class OutreachTracker {
                 e.preventDefault();
                 const page = btn.dataset.page || e.target.dataset.page;
                 if (page) {
-                    this.showPage(page);
+                this.showPage(page);
                 }
 
                 // Close mobile dropdown if open
@@ -823,6 +824,16 @@ class OutreachTracker {
     // Navigation
     showPage(pageName) {
         console.log('[AdSell CRM] showPage()', pageName);
+
+        // Leaving prospect profile view when navigating away from Contacts
+        // (keep profile state intact when we stay on 'contacts', e.g. showProspectProfile)
+        if (pageName !== 'contacts') {
+            const profileView = document.getElementById('prospect-profile-view');
+            if (profileView) {
+                profileView.classList.add('hidden');
+            }
+            this.activeContactId = null;
+        }
 
         // Update nav links
         document.querySelectorAll('.nav-link').forEach(link => {
@@ -1838,7 +1849,7 @@ class OutreachTracker {
         // Empty states for both desktop table and mobile rolodex
         if (filteredContacts.length === 0) {
             if (tbody) {
-                tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No contacts found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No contacts found</td></tr>';
             }
             if (rolodex) {
                 rolodex.innerHTML = '<p class="empty-state">No contacts found</p>';
@@ -1929,38 +1940,38 @@ class OutreachTracker {
         if (tbody) {
             tbody.innerHTML = tableRowsHtml;
 
-            // Make entire row clickable on mobile (except checkbox, action buttons, and links)
-            tbody.querySelectorAll('.contact-row').forEach(row => {
-                row.addEventListener('click', (e) => {
-                    if (window.innerWidth > 768) return;
+        // Make entire row clickable on mobile (except checkbox, action buttons, and links)
+        tbody.querySelectorAll('.contact-row').forEach(row => {
+            row.addEventListener('click', (e) => {
+                if (window.innerWidth > 768) return;
 
-                    const target = e.target;
-                    if (
-                        target.closest('input.row-select') ||
-                        target.closest('.action-btn') ||
-                        target.closest('a')
-                    ) {
-                        return;
-                    }
-                    const id = row.getAttribute('data-id');
-                    if (id) {
-                        this.viewContact(id);
-                    }
-                });
+                const target = e.target;
+                if (
+                    target.closest('input.row-select') ||
+                    target.closest('.action-btn') ||
+                    target.closest('a')
+                ) {
+                    return;
+                }
+                const id = row.getAttribute('data-id');
+                if (id) {
+                    this.viewContact(id);
+                }
             });
+        });
 
-            // Explicitly make vendor name clickable without triggering checkbox
-            tbody.querySelectorAll('.contact-name-link').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const row = el.closest('.contact-row');
-                    const id = row ? row.getAttribute('data-id') : null;
-                    if (id) {
-                        this.viewContact(id);
-                    }
-                });
+        // Explicitly make vendor name clickable without triggering checkbox
+        tbody.querySelectorAll('.contact-name-link').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const row = el.closest('.contact-row');
+                const id = row ? row.getAttribute('data-id') : null;
+                if (id) {
+                    this.viewContact(id);
+                }
             });
+        });
         }
 
         // --- Mobile rolodex cards ---
@@ -2015,6 +2026,7 @@ class OutreachTracker {
                             <div class="contact-card-quick-actions">
                                 ${primaryPhone ? `<a href="tel:${telHref}" class="chip chip-primary">Call</a>` : ''}
                                 ${primaryEmail ? `<a href="mailto:${primaryEmail}" class="chip chip-channel">Email</a>` : ''}
+                                <button type="button" class="chip chip-channel" onclick="app.showProspectProfile('${contact.id}')">Profile</button>
                             </div>
                         </div>
                     </article>
@@ -2042,7 +2054,7 @@ class OutreachTracker {
 
     getFilteredContacts() {
         let filtered = [...this.contacts];
-
+        
         const search = (this.contactsSearchTerm || '').toString().toLowerCase();
         if (search) {
             filtered = filtered.filter(contact => 
@@ -2170,6 +2182,21 @@ class OutreachTracker {
         }
 
         return filtered;
+    }
+
+    // Prospect profile helpers
+    getActiveContact() {
+        if (!this.activeContactId) return null;
+        const targetId = String(this.activeContactId);
+        const contact = (this.contacts || []).find(c => String(c.id) === targetId) || null;
+        return contact;
+    }
+
+    getActivitiesForContact(contactId) {
+        if (!contactId) return [];
+        return (this.activities || [])
+            .filter(a => a.contactId === contactId)
+            .sort((a, b) => new Date(b.date) - new Date(a.date));
     }
 
     filterContacts() {
@@ -2676,6 +2703,11 @@ class OutreachTracker {
         this.updateStats();
         
         this.showNotification('Contact saved successfully!');
+
+        // If we are currently viewing this contact in the prospect profile, refresh it
+        if (this.activeContactId === contact.id) {
+            this.renderProspectProfileView();
+        }
     }
 
     async enrichCurrentContactWithRocketReach() {
@@ -2735,8 +2767,12 @@ class OutreachTracker {
 
             await this.saveData();
 
-            // Re-render current contact detail
-            this.viewContact(contact.id);
+            // Re-render prospect profile view if open
+            if (this.activeContactId === contact.id) {
+                this.renderProspectProfileView();
+            } else {
+                this.renderContacts();
+            }
         } catch (err) {
             console.error("RocketReach enrich failed", err);
         }
@@ -2803,432 +2839,8 @@ class OutreachTracker {
     }
 
     viewContact(id) {
-        this.currentContact = this.contacts.find(c => c.id === id);
-        if (!this.currentContact) return;
-
-        const emailString = this.currentContact.email || '';
-        const emailParts = emailString
-            ? emailString.split(/[;,]/).map(e => e.trim()).filter(Boolean)
-            : [];
-
-        const phoneString = this.currentContact.phone || '';
-        const phoneParts = phoneString
-            ? phoneString.split(/[;,]/).map(p => p.trim()).filter(Boolean)
-            : [];
-        const primaryPhoneDetail = phoneParts[0] || '';
-        const telHrefDetail = primaryPhoneDetail ? primaryPhoneDetail.replace(/[^0-9+]/g, '') : '';
-
-        // Populate contact detail header (company/person/pills/channels)
-        const setHeaderText = (id, value) => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.textContent = value || '';
-            }
-        };
-        const setHeaderHTML = (id, value) => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.innerHTML = value || '';
-            }
-        };
-
-        const companyText = this.currentContact.companyName || this.currentContact.vendorName || 'No Company Name';
-        const contactName = this.currentContact.contactName || '';
-        const contactTitle = this.currentContact.title || '';
-        const personText = contactName
-            ? (contactTitle ? `${contactName} — ${contactTitle}` : contactName)
-            : '';
-
-        setHeaderText('cdh-company', companyText);
-        setHeaderText('cdh-person', personText);
-        setHeaderText('cdh-category', this.currentContact.category || '');
-        setHeaderText('cdh-project', this.currentContact.project || '');
-        setHeaderText('cdh-status', this.currentContact.status || '');
-
-        setHeaderHTML('cdh-email', emailParts.length ? `<a href="mailto:${emailParts[0]}">${emailParts[0]}</a>` : '');
-        setHeaderHTML('cdh-phone', primaryPhoneDetail ? `<a href="tel:${telHrefDetail}">${primaryPhoneDetail}</a>` : '');
-        setHeaderHTML('cdh-sms', telHrefDetail ? `<a href="sms:${telHrefDetail}">SMS</a>` : '');
-        setHeaderHTML('cdh-website', this.currentContact.website ? `<a href="${this.currentContact.website}" target="_blank">Website</a>` : '');
-        setHeaderHTML('cdh-linkedin', this.currentContact.linkedin ? `<a href="${this.currentContact.linkedin}" target="_blank">LinkedIn</a>` : '');
-        setHeaderHTML('cdh-facebook', this.currentContact.facebook ? `<a href="${this.currentContact.facebook}" target="_blank">Facebook</a>` : '');
-        setHeaderHTML('cdh-x', this.currentContact.twitter ? `<a href="${this.currentContact.twitter}" target="_blank">X (Twitter)</a>` : '');
-
-        const addressParts = [
-            this.currentContact.address,
-            this.currentContact.city,
-            this.currentContact.state,
-            this.currentContact.zipCode
-        ].filter(Boolean);
-        if (addressParts.length) {
-            const fullAddress = addressParts.join(', ');
-            const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
-            setHeaderHTML('cdh-maps', `<a href="${mapsHref}" target="_blank">Maps</a>`);
-        } else {
-            setHeaderHTML('cdh-maps', '');
-        }
-
-        const contactActivities = this.activities
-            .filter(a => a.contactId === id)
-            .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        // Get tags
-        const contactTags = this.currentContact.tags ? this.currentContact.tags.map(tagId => {
-            const tag = this.tags.find(t => t.id === tagId);
-            return tag ? `<span class="tag-badge" style="background: ${tag.color}; color: white;">${tag.name}</span>` : '';
-        }).join('') : '<span class="text-muted">No tags</span>';
-
-        const content = `
-            <div class="contact-detail">
-                <div class="contact-body">
-                    <!-- Contact Information -->
-                    <div class="detail-section">
-                        <h3>Contact Information</h3>
-                        <div class="detail-grid">
-                            <div class="detail-item">
-                                <span class="detail-label">Email</span>
-                                <span class="detail-value">
-                                    ${
-                                        emailParts.length
-                                            ? emailParts.map(e => `<div><a href="mailto:${e}" class="contact-link">${e}</a></div>`).join('')
-                                            : '—'
-                                    }
-                                </span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Phone</span>
-                                <span class="detail-value">
-                                    ${
-                                        primaryPhoneDetail
-                                            ? `<a href="tel:${telHrefDetail}" class="contact-link">${primaryPhoneDetail}</a>`
-                                            : '—'
-                                    }
-                                </span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Website</span>
-                                <span class="detail-value">
-                                    ${this.currentContact.website ? `<a href="${this.currentContact.website}" target="_blank">${this.currentContact.website}</a>` : '—'}
-                                </span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">LinkedIn</span>
-                                <span class="detail-value">
-                                    ${this.currentContact.linkedin ? `<a href="${this.currentContact.linkedin}" target="_blank">View Profile</a>` : '—'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Business Information -->
-                    <div class="detail-section">
-                        <h3>Business Information</h3>
-                        <div class="detail-grid">
-                            <div class="detail-item">
-                                <span class="detail-label">Category</span>
-                                <span class="detail-value">${this.currentContact.category || '—'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Segment</span>
-                                <span class="detail-value">${this.currentContact.segment || '—'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Project</span>
-                                <span class="detail-value">${this.currentContact.project || '—'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Company Size</span>
-                                <span class="detail-value">${this.currentContact.companySize || '—'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Annual Revenue</span>
-                                <span class="detail-value">${this.currentContact.annualRevenue || '—'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Status</span>
-                                <span class="detail-value">
-                                    <select id="contact-status-select" class="status-select">
-                                        ${['Not Started', 'In Progress', 'Responded', 'Signed Up'].map(s => `
-                                            <option value="${s}" ${this.currentContact.status === s ? 'selected' : ''}>${s}</option>
-                                        `).join('')}
-                                    </select>
-                                </span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Lead Source</span>
-                                <span class="detail-value">${this.currentContact.leadSource || '—'}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    ${this.currentContact.address ? `
-                    <!-- Location -->
-                    <div class="detail-section">
-                        <h3>Location</h3>
-                        <div class="detail-grid">
-                            <div class="detail-item">
-                                <span class="detail-label">Address</span>
-                                <span class="detail-value">${this.currentContact.address}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">City, State</span>
-                                <span class="detail-value">${this.currentContact.city || '—'}, ${this.currentContact.state || '—'} ${this.currentContact.zipCode || ''}</span>
-                            </div>
-                        </div>
-                    </div>
-                    ` : ''}
-
-                    ${this.currentContact.dealStage || this.currentContact.dealValue ? `
-                    <!-- Deal Information -->
-                    <div class="detail-section">
-                        <h3>Deal Information</h3>
-                        <div class="detail-grid">
-                            <div class="detail-item">
-                                <span class="detail-label">Deal Stage</span>
-                                <span class="detail-value">${this.currentContact.dealStage || '—'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Deal Value</span>
-                                <span class="detail-value">${this.currentContact.dealValue ? '$' + this.currentContact.dealValue : '—'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Probability</span>
-                                <span class="detail-value">${this.currentContact.dealProbability ? this.currentContact.dealProbability + '%' : '—'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Expected Close</span>
-                                <span class="detail-value">${this.currentContact.expectedCloseDate ? this.formatDate(this.currentContact.expectedCloseDate) : '—'}</span>
-                            </div>
-                        </div>
-                    </div>
-                    ` : ''}
-
-                    ${this.currentContact.decisionMaker || this.currentContact.authority ? `
-                    <!-- Decision Making -->
-                    <div class="detail-section">
-                        <h3>Decision Making</h3>
-                        <div class="detail-grid">
-                            <div class="detail-item">
-                                <span class="detail-label">Decision Maker</span>
-                                <span class="detail-value">${this.currentContact.decisionMaker ? '✓ Yes' : 'No'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Authority Level</span>
-                                <span class="detail-value">${this.currentContact.authority || '—'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Budget</span>
-                                <span class="detail-value">${this.currentContact.budget || '—'}</span>
-                            </div>
-                        </div>
-                    </div>
-                    ` : ''}
-
-                    ${this.currentContact.notes || this.currentContact.internalNotes || this.currentContact.nextSteps ? `
-                    <!-- Notes & Next Steps -->
-                    <div class="detail-section">
-                        <h3>Notes & Next Steps</h3>
-                        ${this.currentContact.notes ? `
-                            <div class="notes-box">
-                                <strong>Public Notes:</strong>
-                                <p>${this.currentContact.notes}</p>
-                            </div>
-                        ` : ''}
-                        ${this.currentContact.internalNotes ? `
-                            <div class="notes-box internal-notes">
-                                <strong>Internal Notes:</strong>
-                                <p>${this.currentContact.internalNotes}</p>
-                            </div>
-                        ` : ''}
-                        ${this.currentContact.nextSteps ? `
-                            <div class="notes-box">
-                                <strong>Next Steps:</strong>
-                                <p>${this.currentContact.nextSteps}</p>
-                            </div>
-                        ` : ''}
-                    </div>
-                    ` : ''}
-
-                    <!-- Tasks for this Contact -->
-                    <div class="detail-section" id="contact-tasks-section">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <h3>Tasks</h3>
-                            <button type="button" class="btn btn-primary contact-tasks-add">+ Add Task</button>
-                        </div>
-                        ${(() => {
-                            const tasks = this.getTasksForContact(id);
-                            if (!tasks.length) {
-                                return '<p class="empty-state">No tasks for this contact.</p>';
-                            }
-                            return `
-                                <div class="tasks-list">
-                                    ${tasks.map(t => {
-                                        const today = new Date();
-                                        today.setHours(0,0,0,0);
-                                        const todayKey = today.toISOString().slice(0,10);
-                                        const isOverdue = t.status === 'open' && t.dueDate && t.dueDate < todayKey;
-                                        const priorityClass = 'task-priority-' + (t.priority || 'Medium').toLowerCase();
-                                        const classes = [
-                                            'task-row',
-                                            priorityClass,
-                                            t.status === 'completed' ? 'task-completed' : '',
-                                            isOverdue ? 'task-overdue' : ''
-                                        ].filter(Boolean).join(' ');
-                                        const dueLabel = t.dueDate ? this.formatDate(t.dueDate) : 'No due date';
-                                        return `
-                                            <div class="${classes}" data-task-id="${t.id}">
-                                                <div class="task-main">
-                                                    <div class="task-title">${t.title}</div>
-                                                    <div class="task-meta">
-                                                        ${(t.priority || 'Medium')} • ${dueLabel}
-                                                    </div>
-                                                </div>
-                                                <div class="task-controls">
-                                                    <button type="button" class="btn btn-secondary btn-sm task-complete-btn">${t.status === 'completed' ? 'Reopen' : 'Complete'}</button>
-                                                    <button type="button" class="btn btn-secondary btn-sm task-edit-btn">Edit</button>
-                                                    <button type="button" class="btn btn-danger btn-sm task-delete-btn">Delete</button>
-                                                </div>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            `;
-                        })()}
-                    </div>
-
-                    <!-- Activity Timeline -->
-                    <div class="detail-section">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h3>Activity Timeline</h3>
-                            <button class="btn btn-primary" onclick="app.logActivity('${id}')">+ Log Activity</button>
-                        </div>
-                        ${contactActivities.length > 0 ? `
-                            <div class="activity-timeline">
-                                ${contactActivities.map(activity => `
-                                    <div class="timeline-item">
-                                        <div class="timeline-content">
-                                            <div class="timeline-header">
-                                                <span class="timeline-type">${activity.type}</span>
-                                                <span class="timeline-date">${this.formatDate(activity.date)}</span>
-                                                <button
-                                                    type="button"
-                                                    class="btn btn-secondary btn-sm timeline-delete-btn action-btn"
-                                                    data-id="${activity.id}"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
-                                            <p class="timeline-notes">${activity.notes}</p>
-                                            ${activity.followUpDate ? `<p class="timeline-notes" style="margin-top: 0.5rem;"><strong>Follow-up:</strong> ${this.formatDate(activity.followUpDate)}</p>` : ''}
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : '<p class="empty-state">No activity logged yet</p>'}
-                    </div>
-                </div>
-            </div>
-        `;
-
-        document.getElementById('contact-detail-content').innerHTML = content;
-
-        // Wire RocketReach enrich button for this contact
-        const rrBtn = document.getElementById('rr-enrich-contact');
-        if (rrBtn) {
-            rrBtn.onclick = () => {
-                this.enrichCurrentContactWithRocketReach();
-            };
-        }
-
-        // Wire delete buttons for activities
-        const timelineDeleteButtons = document.querySelectorAll('.timeline-delete-btn');
-        timelineDeleteButtons.forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const activityId = btn.getAttribute('data-id');
-                if (!activityId) return;
-                const confirmed = window.confirm('Delete this activity? This cannot be undone.');
-                if (!confirmed) return;
-                await this.deleteActivity(activityId);
-            });
-        });
-
-        // Wire tasks section buttons (if any)
-        const contactTasksSection = document.getElementById('contact-tasks-section');
-        if (contactTasksSection) {
-            contactTasksSection.querySelectorAll('.task-row').forEach(row => {
-                const taskId = row.getAttribute('data-task-id');
-                if (!taskId) return;
-                const completeBtn = row.querySelector('.task-complete-btn');
-                const editBtn = row.querySelector('.task-edit-btn');
-                const deleteBtn = row.querySelector('.task-delete-btn');
-
-                if (completeBtn) {
-                    completeBtn.addEventListener('click', async () => {
-                        const task = this.tasks.find(t => t.id === taskId);
-                        if (!task) return;
-                        const newStatus = task.status === 'completed' ? 'open' : 'completed';
-                        await this.updateTask(taskId, { status: newStatus });
-                    });
-                }
-
-                if (editBtn) {
-                    editBtn.addEventListener('click', () => {
-                        this.openTaskModal(taskId);
-                    });
-                }
-
-                if (deleteBtn) {
-                    deleteBtn.addEventListener('click', async () => {
-                        const confirmed = window.confirm('Delete this task? This cannot be undone.');
-                        if (!confirmed) return;
-                        await this.deleteTask(taskId);
-                    });
-                }
-            });
-
-            const contactTasksAddBtn = contactTasksSection.querySelector('.contact-tasks-add');
-            if (contactTasksAddBtn) {
-                contactTasksAddBtn.addEventListener('click', () => {
-                    this.openTaskModal();
-                });
-            }
-        }
-
-        // Wire status dropdown change
-        const statusSelect = document.getElementById('contact-status-select');
-        if (statusSelect) {
-            statusSelect.addEventListener('change', async () => {
-                const newStatus = statusSelect.value || 'Not Started';
-
-                // Update currentContact
-                if (this.currentContact) {
-                    this.currentContact.status = newStatus;
-                }
-
-                // Update the contact in the main contacts array
-                const idx = this.contacts.findIndex(c => c.id === id);
-                if (idx !== -1) {
-                    this.contacts[idx].status = newStatus;
-                }
-
-                // Persist and refresh dependent views
-                await this.saveData();
-                this.updateStats();
-                this.renderPipeline();
-                this.showNotification(`Status updated to ${newStatus}`);
-            });
-        }
-
-        this.showPage('contact-detail');
-
-        // On mobile, ensure the contact detail view starts at the top so header and toolbar are visible
-        if (window.innerWidth <= 768) {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        }
+        // Backwards-compatible wrapper: route to the new prospect profile view
+        this.showProspectProfile(id);
     }
 
     editContact() {
@@ -3352,6 +2964,11 @@ class OutreachTracker {
         this.updateStats();
         
         this.showNotification('Activity logged successfully!');
+
+        // Refresh prospect profile view if open
+        if (this.activeContactId === this.currentContact.id) {
+            this.renderProspectProfileView();
+        }
     }
 
     async deleteActivity(activityId) {
@@ -3364,8 +2981,8 @@ class OutreachTracker {
 
         await this.saveData();
 
-        if (this.currentContact && this.currentContact.id) {
-            this.viewContact(this.currentContact.id);
+        if (this.currentContact && this.currentContact.id && this.activeContactId === this.currentContact.id) {
+            this.renderProspectProfileView();
         }
         this.renderRecentActivity();
     }
@@ -3679,6 +3296,460 @@ AdSell.ai`,
         return (this.tasks || []).filter(t => t.contactId === contactId);
     }
 
+    showProspectProfile(contactId) {
+        if (!contactId) return;
+        this.activeContactId = contactId;
+        this.currentContact = this.contacts.find(c => c.id === contactId) || null;
+
+        const profileView = document.getElementById('prospect-profile-view');
+        if (!profileView) return;
+
+        // Conceptually treat prospect profile as part of Contacts
+        this.showPage('contacts');
+        const contactsPage = document.getElementById('contacts-page');
+        if (contactsPage) {
+            contactsPage.classList.remove('active');
+        }
+        profileView.classList.remove('hidden');
+
+        this.renderProspectProfileView();
+    }
+
+    exitProspectProfile() {
+        this.activeContactId = null;
+        const profileView = document.getElementById('prospect-profile-view');
+        if (profileView) {
+            profileView.classList.add('hidden');
+            profileView.innerHTML = '';
+        }
+        this.showPage('contacts');
+    }
+
+    renderProspectProfileView() {
+        const container = document.getElementById('prospect-profile-view');
+        if (!container) return;
+
+        const contact = this.getActiveContact();
+        if (!contact) {
+            container.classList.add('hidden');
+            container.innerHTML = '';
+            return;
+        }
+
+        container.classList.remove('hidden');
+
+        const displayCompany = (contact.vendorName || contact.companyName || '').trim();
+        const displayContact = (contact.contactName || '').trim();
+        const displayTitle = (contact.title || '').trim();
+
+        const primaryName = displayCompany || displayContact || '(No name)';
+        const secondaryLine = displayContact && displayTitle
+            ? `${displayContact} · ${displayTitle}`
+            : (displayContact || displayTitle || '');
+
+        const metaParts = [];
+        if (contact.category) metaParts.push(contact.category);
+        if (contact.segment) metaParts.push(contact.segment);
+        if (contact.project) metaParts.push(contact.project);
+        if (contact.status) metaParts.push(contact.status);
+        const metaLine = metaParts.join(' • ');
+
+        const emailString = contact.email || '';
+        const emailParts = emailString
+            ? emailString.split(/[;,]/).map(e => e.trim()).filter(Boolean)
+            : [];
+        const primaryEmail = emailParts[0] || '';
+
+        const phoneString = contact.phone || '';
+        const phoneParts = phoneString
+            ? phoneString.split(/[;,]/).map(p => p.trim()).filter(Boolean)
+            : [];
+        const primaryPhone = phoneParts[0] || '';
+        const telHref = primaryPhone ? primaryPhone.replace(/[^0-9+]/g, '') : '';
+
+        const addressParts = [
+            contact.address,
+            contact.city,
+            contact.state,
+            contact.zipCode
+        ].filter(Boolean);
+        const fullAddress = addressParts.join(', ');
+        const mapsHref = fullAddress
+            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`
+            : '';
+
+        const websiteHref = contact.website || '';
+
+        const activities = this.getActivitiesForContact(contact.id);
+        const tasks = this.getTasksForContact(contact.id);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayKey = today.toISOString().slice(0, 10);
+
+        const overdueTasks = tasks.filter(t => t.dueDate && t.dueDate < todayKey && t.status !== 'completed');
+        const todayTasks = tasks.filter(t => t.dueDate === todayKey && t.status !== 'completed');
+        const upcomingTasks = tasks.filter(t => t.dueDate && t.dueDate > todayKey && t.status !== 'completed');
+
+        const renderTaskGroup = (label, group) => {
+            if (!group.length) return '';
+            return `
+                <div class="prospect-task-group">
+                    <div class="prospect-task-meta">${label}</div>
+                    <div class="prospect-tasks-list">
+                        ${group.map(t => {
+                            const dueLabel = t.dueDate ? this.formatDate(t.dueDate) : 'No due date';
+                            return `
+                                <div class="prospect-task-item">
+                                    <div class="prospect-task-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                        </svg>
+                                    </div>
+                                    <div class="prospect-task-main">
+                                        <div class="text-body-strong">${t.title}</div>
+                                        <div class="prospect-task-meta">${dueLabel}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        };
+
+        const channelsHtml = `
+            <div class="prospect-channels">
+                ${primaryPhone ? `
+                    <a href="tel:${telHref}" class="prospect-channel-btn" aria-label="Call ${displayContact || primaryName}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2.25 6.75c0 8.284 6.716 15 15 15h1.5a2.25 2.25 0 0 0 2.25-2.25v-1.086c0-.516-.351-.966-.852-1.091l-3.423-.856a1.125 1.125 0 0 0-1.173.417l-.97 1.293a1.125 1.125 0 0 1-1.21.38 12.035 12.035 0 0 1-7.143-7.143 1.125 1.125 0 0 1 .38-1.21l1.293-.97a1.125 1.125 0 0 0 .417-1.173L7.677 3.102A1.125 1.125 0 0 0 6.586 2.25H5.25A3 3 0 0 0 2.25 5.25v1.5Z" />
+                        </svg>
+                        <span class="prospect-channel-label">Call</span>
+                    </a>
+                ` : ''}
+                ${telHref ? `
+                    <a href="sms:${telHref}" class="prospect-channel-btn" aria-label="SMS ${displayContact || primaryName}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 8.25A2.25 2.25 0 0 1 5.25 6h13.5A2.25 2.25 0 0 1 21 8.25v7.5A2.25 2.25 0 0 1 18.75 18H8.664a2.25 2.25 0 0 0-1.59.66L4.5 21v-3.75A2.25 2.25 0 0 1 3 15.75v-7.5Z" />
+                        </svg>
+                        <span class="prospect-channel-label">SMS</span>
+                    </a>
+                ` : ''}
+                ${primaryEmail ? `
+                    <a href="mailto:${primaryEmail}" class="prospect-channel-btn" aria-label="Email ${displayContact || primaryName}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.75 6.75v10.5A2.25 2.25 0 0 1 19.5 19.5h-15A2.25 2.25 0 0 1 2.25 17.25V6.75A2.25 2.25 0 0 1 4.5 4.5h15A2.25 2.25 0 0 1 21.75 6.75Z" />
+                            <path d="M5.25 6.75 12 12l6.75-5.25" />
+                        </svg>
+                        <span class="prospect-channel-label">Email</span>
+                    </a>
+                ` : ''}
+                ${websiteHref ? `
+                    <a href="${websiteHref}" target="_blank" rel="noopener" class="prospect-channel-btn" aria-label="Open website">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
+                            <path d="M3.6 9h16.8M3.6 15h16.8M12 3a15.3 15.3 0 0 1 4.5 9A15.3 15.3 0 0 1 12 21a15.3 15.3 0 0 1-4.5-9A15.3 15.3 0 0 1 12 3Z" />
+                        </svg>
+                        <span class="prospect-channel-label">Website</span>
+                    </a>
+                ` : ''}
+                ${mapsHref ? `
+                    <a href="${mapsHref}" target="_blank" rel="noopener" class="prospect-channel-btn" aria-label="Open maps">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 21.75s-6.75-4.5-6.75-10.125A6.75 6.75 0 0 1 12 4.125a6.75 6.75 0 0 1 6.75 7.5C18.75 17.25 12 21.75 12 21.75Z" />
+                            <path d="M12 13.5a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z" />
+                        </svg>
+                        <span class="prospect-channel-label">Map</span>
+                    </a>
+                ` : ''}
+                ${contact.linkedin ? `
+                    <a href="${contact.linkedin}" target="_blank" rel="noopener" class="prospect-channel-btn" aria-label="Open LinkedIn">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M7.5 20.25v-9h3v9h-3Z" />
+                            <path d="M6 7.5a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Z" />
+                            <path d="M13.5 20.25v-5.25a3 3 0 0 1 6 0v5.25h-3v-5.25" />
+                        </svg>
+                        <span class="prospect-channel-label">LinkedIn</span>
+                    </a>
+                ` : ''}
+                ${contact.facebook ? `
+                    <a href="${contact.facebook}" target="_blank" rel="noopener" class="prospect-channel-btn" aria-label="Open Facebook">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9.75 21.75h4.5v-8.25h3L17.25 9h-3V7.5a1.5 1.5 0 0 1 1.5-1.5H17.25V3.75H15A3.75 3.75 0 0 0 11.25 7.5V9h-2.25v4.5h2.25v8.25Z" />
+                        </svg>
+                        <span class="prospect-channel-label">Facebook</span>
+                    </a>
+                ` : ''}
+                ${contact.twitter ? `
+                    <a href="${contact.twitter}" target="_blank" rel="noopener" class="prospect-channel-btn" aria-label="Open X (Twitter)">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4.5 4.5 19.5 19.5" />
+                            <path d="M19.5 4.5 4.5 19.5" />
+                        </svg>
+                        <span class="prospect-channel-label">X</span>
+                    </a>
+                ` : ''}
+            </div>
+        `;
+
+        const activitiesHtml = activities.length
+            ? `
+                <div class="prospect-activity-list">
+                    ${activities.map(a => {
+                        const icon = (() => {
+                            const type = (a.type || '').toLowerCase();
+                            if (type.includes('email')) return `
+                                <svg xmlns="http://www.w3.org/2000/svg" class="prospect-activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21.75 6.75v10.5A2.25 2.25 0 0 1 19.5 19.5h-15A2.25 2.25 0 0 1 2.25 17.25V6.75A2.25 2.25 0 0 1 4.5 4.5h15A2.25 2.25 0 0 1 21.75 6.75Z" />
+                                    <path d="M5.25 6.75 12 12l6.75-5.25" />
+                                </svg>`;
+                            if (type.includes('phone') || type.includes('call')) return `
+                                <svg xmlns="http://www.w3.org/2000/svg" class="prospect-activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2.25 6.75c0 8.284 6.716 15 15 15h1.5a2.25 2.25 0 0 0 2.25-2.25v-1.086c0-.516-.351-.966-.852-1.091l-3.423-.856a1.125 1.125 0 0 0-1.173.417l-.97 1.293a1.125 1.125 0 0 1-1.21.38 12.035 12.035 0 0 1-7.143-7.143 1.125 1.125 0 0 1 .38-1.21l1.293-.97a1.125 1.125 0 0 0 .417-1.173L7.677 3.102A1.125 1.125 0 0 0 6.586 2.25H5.25A3 3 0 0 0 2.25 5.25v1.5Z" />
+                                </svg>`;
+                            return `
+                                <svg xmlns="http://www.w3.org/2000/svg" class="prospect-activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5.25 5.25h13.5v13.5H5.25z" />
+                                </svg>`;
+                        })();
+                        return `
+                            <div class="prospect-activity-item">
+                                <div class="prospect-activity-icon">
+                                    ${icon}
+                                </div>
+                                <div class="prospect-activity-main">
+                                    <div class="text-body-strong">${a.type || 'Activity'}</div>
+                                    <div class="prospect-activity-meta">${this.formatDate(a.date)}</div>
+                                    <div class="text-body">${this.truncateText(a.notes || '', 140)}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `
+            : `<p class="empty-state">No activity logged yet</p>`;
+
+        const tasksHtml = (overdueTasks.length || todayTasks.length || upcomingTasks.length)
+            ? `
+                ${renderTaskGroup('Overdue', overdueTasks)}
+                ${renderTaskGroup('Today', todayTasks)}
+                ${renderTaskGroup('Upcoming', upcomingTasks)}
+            `
+            : `<p class="empty-state">No tasks for this contact.</p>`;
+
+        container.innerHTML = `
+            <div class="prospect-card" style="margin-bottom: 16px;">
+                <div class="prospect-section-header">
+                    <button type="button" class="btn btn-secondary" onclick="app.exitProspectProfile()">← Back to Contacts</button>
+                    <div class="overline">Prospect</div>
+                </div>
+                <div style="margin-top: 8px;">
+                    <div class="heading-h2">${primaryName}</div>
+                    ${secondaryLine ? `<div class="text-body" style="margin-top:4px;">${secondaryLine}</div>` : ''}
+                    ${metaLine ? `<div class="prospect-meta">${metaLine}</div>` : ''}
+                    <div class="prospect-header-quick">
+                        <div class="prospect-quick-pill">
+                            <span class="prospect-quick-label">Status</span>
+                            <select id="prospect-status-${contact.id}" class="prospect-quick-select">
+                                ${['Not Started','In Progress','Responded','Signed Up'].map(s => `
+                                    <option value="${s}" ${contact.status === s ? 'selected' : ''}>${s}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                        <div class="prospect-quick-pill">
+                            <span class="prospect-quick-label">Project</span>
+                            <select id="prospect-project-${contact.id}" class="prospect-quick-select">
+                                <option value="">No Project</option>
+                                ${(this.getProjectNames ? this.getProjectNames() : []).map(name => `
+                                    <option value="${name}" ${contact.project === name ? 'selected' : ''}>${name}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="prospect-header-actions">
+                    <button type="button" class="btn btn-secondary" onclick="app.logActivity('${contact.id}')">Log Activity</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.editContact()">Edit Profile</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.openTaskForContact('${contact.id}')">Add Task</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.aiCompanyResearch()">AI Summary</button>
+                </div>
+            </div>
+
+            ${channelsHtml}
+
+            <div class="prospect-two-column">
+                <div class="prospect-card">
+                    <div class="prospect-section-header">
+                        <div class="prospect-section-title">Contact Details</div>
+                    </div>
+                    <div class="prospect-detail-grid">
+                        <div>
+                            <div class="prospect-detail-item-label">Company / Organization</div>
+                            <div class="prospect-detail-item-value">${displayCompany || '—'}</div>
+                        </div>
+                        <div>
+                            <div class="prospect-detail-item-label">Contact</div>
+                            <div class="prospect-detail-item-value">${displayContact || '—'}</div>
+                        </div>
+                        <div>
+                            <div class="prospect-detail-item-label">Title / Role</div>
+                            <div class="prospect-detail-item-value">${displayTitle || '—'}</div>
+                        </div>
+                        <div>
+                            <div class="prospect-detail-item-label">Email</div>
+                            <div class="prospect-detail-item-value">
+                                ${primaryEmail ? `<a href="mailto:${primaryEmail}">${primaryEmail}</a>` : '—'}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="prospect-detail-item-label">Phone</div>
+                            <div class="prospect-detail-item-value">
+                                ${primaryPhone ? `<a href="tel:${telHref}">${primaryPhone}</a>` : '—'}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="prospect-detail-item-label">Website</div>
+                            <div class="prospect-detail-item-value">
+                                ${websiteHref ? `<a href="${websiteHref}" target="_blank" rel="noopener">${websiteHref}</a>` : '—'}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="prospect-detail-item-label">Category</div>
+                            <div class="prospect-detail-item-value">${contact.category || '—'}</div>
+                        </div>
+                        <div>
+                            <div class="prospect-detail-item-label">Segment</div>
+                            <div class="prospect-detail-item-value">${contact.segment || '—'}</div>
+                        </div>
+                        <div>
+                            <div class="prospect-detail-item-label">Project</div>
+                            <div class="prospect-detail-item-value">${contact.project || '—'}</div>
+                        </div>
+                        <div>
+                            <div class="prospect-detail-item-label">Lead Source</div>
+                            <div class="prospect-detail-item-value">${contact.leadSource || '—'}</div>
+                        </div>
+                        <div>
+                            <div class="prospect-detail-item-label">Address</div>
+                            <div class="prospect-detail-item-value">
+                                ${fullAddress || '—'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="prospect-card">
+                    <div class="prospect-section-header">
+                        <div class="prospect-section-title">Activity</div>
+                        <button type="button" class="btn btn-secondary" onclick="app.logActivity('${contact.id}')">+ Log Activity</button>
+                    </div>
+                    ${activitiesHtml}
+                </div>
+            </div>
+
+            <div class="prospect-card">
+                <div class="prospect-section-header">
+                    <div class="prospect-section-title">Tasks</div>
+                    <button type="button" class="btn btn-secondary" onclick="app.openTaskForContact('${contact.id}')">+ Add Task</button>
+                </div>
+                ${tasksHtml}
+            </div>
+
+            <div class="prospect-card">
+                <div class="prospect-section-header">
+                    <div>
+                        <div class="overline">AI &amp; Enrichment</div>
+                        <div class="prospect-meta">AI helpers for this contact</div>
+                    </div>
+                    <div class="prospect-activity-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9.813 15.904 9 21l3.75-2.25L16.5 21l-.809-5.104M6.75 9 3 6.75 6.75 4.5 9 0l2.25 4.5 3.75 2.25L11.25 9 9 13.5 6.75 9Z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="prospect-header-actions">
+                    <button type="button" class="btn btn-secondary" onclick="app.aiOutreach()">AI Outreach</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.aiCompanyResearch()">AI Summary</button>
+                    <button type="button" class="btn btn-secondary" onclick="app.aiEnrichContactPlaceholder()">AI Enrich Contact</button>
+                </div>
+            </div>
+        `;
+
+        // Scroll to top on mobile so header and channels are visible
+        if (window.innerWidth <= 768) {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Wire quick status and project controls
+        const statusSelectEl = document.getElementById(`prospect-status-${contact.id}`);
+        if (statusSelectEl) {
+            statusSelectEl.addEventListener('change', () => {
+                const newStatus = statusSelectEl.value || 'Not Started';
+                this.updateContactStatusInline(contact.id, newStatus);
+            });
+        }
+
+        const projectSelectEl = document.getElementById(`prospect-project-${contact.id}`);
+        if (projectSelectEl) {
+            projectSelectEl.addEventListener('change', () => {
+                const newProject = projectSelectEl.value || '';
+                this.updateContactProjectInline(contact.id, newProject);
+            });
+        }
+    }
+
+    async updateContactStatusInline(contactId, newStatus) {
+        const targetId = String(contactId);
+        const idx = this.contacts.findIndex(c => String(c.id) === targetId);
+        if (idx === -1) return;
+        this.contacts[idx].status = newStatus;
+        if (this.currentContact && String(this.currentContact.id) === targetId) {
+            this.currentContact.status = newStatus;
+        }
+        await this.saveData();
+        this.updateStats();
+        this.renderContacts();
+        this.renderProspectProfileView();
+        this.showNotification(`Status updated to ${newStatus}`);
+    }
+
+    async updateContactProjectInline(contactId, projectName) {
+        const targetId = String(contactId);
+        const idx = this.contacts.findIndex(c => String(c.id) === targetId);
+        if (idx === -1) return;
+        const normalized = (projectName || '').trim();
+        this.contacts[idx].project = normalized;
+        if (this.currentContact && String(this.currentContact.id) === targetId) {
+            this.currentContact.project = normalized;
+        }
+        if (normalized && typeof this.ensureProjectExists === 'function') {
+            this.ensureProjectExists(normalized);
+        }
+        await this.saveData();
+        this.renderContacts();
+        if (typeof this.renderProjectFilterOptions === 'function') {
+            this.renderProjectFilterOptions();
+        }
+        if (typeof this.renderProjectsPage === 'function') {
+            this.renderProjectsPage();
+        }
+        this.renderProspectProfileView();
+        this.showNotification('Project updated.');
+    }
+
+    aiEnrichContactPlaceholder() {
+        const contact = this.getActiveContact();
+        if (!contact) {
+            console.warn('AI Enrich Contact: no active contact selected.');
+            return;
+        }
+        this.showNotification('AI enrichment coming soon.');
+    }
+
     getTasksForDate(dateKey) {
         if (!dateKey) return [];
         return (this.tasks || []).filter(
@@ -3722,6 +3793,11 @@ AdSell.ai`,
         this.tasks.push(task);
         await this.saveData();
         this.afterTasksChanged();
+
+        // If a prospect profile is open for this contact, refresh it
+        if (task.contactId && this.activeContactId === task.contactId) {
+            this.renderProspectProfileView();
+        }
         return task;
     }
 
@@ -3741,6 +3817,10 @@ AdSell.ai`,
         this.tasks[idx] = next;
         await this.saveData();
         this.afterTasksChanged();
+
+        if (next.contactId && this.activeContactId === next.contactId) {
+            this.renderProspectProfileView();
+        }
     }
 
     async completeTask(taskId) {
@@ -3753,6 +3833,12 @@ AdSell.ai`,
         if (this.tasks.length === before) return;
         await this.saveData();
         this.afterTasksChanged();
+
+        // Refresh prospect profile if it was showing this contact's tasks
+        const contactId = this.currentContact ? this.currentContact.id : null;
+        if (contactId && this.activeContactId === contactId) {
+            this.renderProspectProfileView();
+        }
     }
 
     // CSV Import - robust header mapping
