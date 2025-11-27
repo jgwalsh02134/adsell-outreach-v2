@@ -178,6 +178,20 @@ body {
     color: var(--text-primary);
 }
 
+/* Page title block with editorial subtitle */
+.page-title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.page-subtitle {
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
 /* Dashboard page header snapped to grid */
 #dashboard-page .page-header {
     display: flex;
@@ -2159,6 +2173,19 @@ form {
 /* ===================== CONTACTS LIST - MOBILE ====================== */
 
 @media (max-width: 768px) {
+  /* Allow contacts table to shrink to viewport width */
+  #contacts-page .table-container {
+    overflow-x: visible;
+    box-shadow: none;
+    border: none;
+    background: transparent;
+  }
+
+  #contacts-page .contacts-table {
+    min-width: 0;
+    width: 100%;
+  }
+
   /* Never allow sideways scroll on contacts */
   html,
   body {
@@ -2173,16 +2200,32 @@ form {
   /* Each contact row becomes a compact card */
   .contacts-table tbody tr {
     display: block;
-    margin: 0 0 0.75rem 0;
-    padding: 0.6rem 0.75rem;
+    margin: 0 0 0.9rem 0;
+    padding: 0.85rem 1rem;
     border-radius: 1rem;
     background: #ffffff;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--border);
   }
 
   .contacts-table tbody tr td {
-    display: block;
-    padding: 0.05rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.1rem 0;
+    font-size: 0.85rem;
+  }
+
+  /* Small label on the left: uses data-label from each cell */
+  .contacts-table tbody tr td::before {
+    content: attr(data-label);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    flex: 0 0 auto;
+    margin-right: 0.5rem;
   }
 
   /* Primary line: Company / Organization */
@@ -2190,6 +2233,7 @@ form {
     font-size: 1rem;
     font-weight: 600;
     padding-bottom: 0.15rem;
+    display: block;
   }
 
   /* Hide the "Company / Organization" label inside the cell */
@@ -2203,23 +2247,8 @@ form {
   }
 
   /*
-    On mobile we only want:
-    - Company/Organization (data-col="vendor")
-    - Status (data-col="status")
-    Everything else (contact/email/phone/category/project/lastContact/actions)
-    gets hidden to avoid horizontal scroll and clutter.
+    Status row: small pill aligned under main content
   */
-  .contacts-table td[data-col="contact"],
-  .contacts-table td[data-col="email"],
-  .contacts-table td[data-col="phone"],
-  .contacts-table td[data-col="category"],
-  .contacts-table td[data-col="project"],
-  .contacts-table td[data-col="lastContact"],
-  .contacts-table td[data-col="actions"] {
-    display: none;
-  }
-
-  /* Status: small pill/text at bottom-right of card */
   .contacts-table td[data-col="status"] {
     display: flex;
     justify-content: flex-end;
@@ -2234,10 +2263,5 @@ form {
   #contacts-page.page {
     padding-left: 1rem;
     padding-right: 1rem;
-  }
-
-  /* Make sure contacts table container isn't forcing horizontal scroll */
-  #contacts-page .table-container {
-    overflow-x: visible;
   }
 }
