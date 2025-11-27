@@ -88,46 +88,45 @@
    ===================== */
 body {
     font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.5;
     background-color: var(--color-bg-page);
     color: var(--color-text-primary);
-    line-height: var(--line-height-relaxed);
 }
 
-h1, .heading-h1 {
-    font-size: var(--font-size-h1);
+/* Type utilities */
+.heading-h1 {
+    font-size: 28px;
     line-height: 32px;
     font-weight: 700;
-    color: var(--color-text-primary);
 }
 
-h2, .heading-h2 {
-    font-size: var(--font-size-h2);
+.heading-h2 {
+    font-size: 22px;
     line-height: 28px;
     font-weight: 600;
-    color: var(--color-text-primary);
 }
 
-h3, .heading-h3 {
-    font-size: var(--font-size-h3);
+.heading-h3 {
+    font-size: 18px;
     line-height: 24px;
     font-weight: 600;
-    color: var(--color-text-primary);
 }
 
-p, .text-body {
-    font-size: var(--font-size-body);
+.text-body {
+    font-size: 14px;
     line-height: 20px;
     font-weight: 400;
 }
 
 .text-body-strong {
-    font-size: var(--font-size-body);
+    font-size: 14px;
     line-height: 20px;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .text-caption {
-    font-size: var(--font-size-caption);
+    font-size: 12px;
     line-height: 16px;
     font-weight: 400;
 }
@@ -137,7 +136,7 @@ p, .text-body {
 }
 
 .overline-label {
-    font-size: var(--font-size-caption);
+    font-size: 12px;
     line-height: 16px;
     font-weight: 600;
     text-transform: uppercase;
@@ -151,14 +150,122 @@ p, .text-body {
 .app-shell {
     min-height: 100vh;
     background-color: var(--color-bg-page);
+    color: var(--color-text-primary);
     display: flex;
     flex-direction: column;
+}
+
+.app-shell-main {
+    flex: 1 1 auto;
+    padding: 16px;
+}
+
+@media (min-width: 768px) {
+    .app-shell-main {
+        padding: 24px 32px;
+    }
 }
 
 .container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: var(--space-6);
+}
+
+/* =====================
+   App header & navigation
+   ===================== */
+.app-header {
+    border-bottom: 1px solid var(--color-border-subtle);
+    background-color: var(--color-bg-page);
+}
+
+.app-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+}
+
+@media (min-width: 768px) {
+    .app-header-inner {
+        padding: 16px 32px;
+    }
+}
+
+.app-brand {
+    display: flex;
+    align-items: center;
+}
+
+.app-logo {
+    height: 24px;
+    width: auto;
+    display: block;
+}
+
+@media (min-width: 768px) {
+    .app-logo {
+        height: 28px;
+    }
+}
+
+.app-nav {
+    display: none;
+}
+
+.app-nav .nav-link {
+    margin-left: 16px;
+    font-size: 14px;
+    text-decoration: none;
+    color: var(--color-text-muted);
+}
+
+.app-nav .nav-link.active {
+    color: var(--color-text-primary);
+    font-weight: 500;
+    border-bottom: 2px solid var(--color-brand);
+    padding-bottom: 4px;
+}
+
+.app-nav-toggle {
+    background: transparent;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 9999px;
+    padding: 6px 10px;
+    font-size: 14px;
+}
+
+.app-nav-mobile {
+    border-top: 1px solid var(--color-border-subtle);
+    background-color: var(--color-bg-page);
+    padding: 8px 16px;
+}
+
+.app-nav-mobile .nav-link {
+    display: inline-block;
+    margin-right: 12px;
+    margin-bottom: 4px;
+    font-size: 14px;
+    text-decoration: none;
+    color: var(--color-text-muted);
+}
+
+.app-nav-mobile .nav-link.active {
+    color: var(--color-text-primary);
+    font-weight: 500;
+}
+
+@media (min-width: 900px) {
+    .app-nav-toggle {
+        display: none;
+    }
+    .app-nav-mobile {
+        display: none;
+    }
+    .app-nav {
+        display: flex;
+        align-items: center;
+    }
 }
 
 /* Navigation */
