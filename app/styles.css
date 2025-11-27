@@ -175,8 +175,8 @@ body {
    App header & navigation
    ===================== */
 .app-header {
-    border-bottom: 1px solid var(--color-border-subtle);
     background-color: var(--color-bg-page);
+    border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .app-header-inner {
@@ -198,33 +198,61 @@ body {
 }
 
 .app-logo {
-    height: 24px;
+    height: 32px;
     width: auto;
     display: block;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
     .app-logo {
-        height: 28px;
+        height: 36px;
     }
 }
 
+/* Top nav */
 .app-nav {
-    display: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
 }
 
-.app-nav .nav-link {
-    margin-left: 16px;
+.app-nav a,
+.app-nav button {
+    background: none;
+    border: none;
+    padding: 0 0 6px 0;
+    margin: 0;
+    font: inherit;
     font-size: 14px;
-    text-decoration: none;
     color: var(--color-text-muted);
+    cursor: pointer;
+    text-decoration: none;
 }
 
-.app-nav .nav-link.active {
+.app-nav a:hover,
+.app-nav button:hover {
+    color: var(--color-text-primary);
+}
+
+/* Active nav item */
+.app-nav .nav-link.active,
+.app-nav .is-active {
     color: var(--color-text-primary);
     font-weight: 500;
     border-bottom: 2px solid var(--color-brand);
-    padding-bottom: 4px;
+}
+
+/* On small screens, let nav wrap under the logo */
+@media (max-width: 600px) {
+    .app-header-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .app-nav {
+        gap: 16px;
+    }
 }
 
 .app-nav-toggle {
