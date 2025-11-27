@@ -272,17 +272,20 @@ body {
         margin-left: auto;
     }
 
-    .mobile-tabbar {
+    /* Hide bottom nav on desktop */
+    .mobile-tabbar.bottom-nav {
         display: none;
     }
 }
 
 @media (max-width: 767px) {
+    /* Hide top nav on mobile */
     .app-nav {
         display: none;
     }
 
-    .mobile-tabbar {
+    /* Show bottom nav as primary on mobile */
+    .mobile-tabbar.bottom-nav {
         display: flex;
     }
 }
@@ -572,8 +575,8 @@ body {
     color: var(--text-primary);
 }
 
-/* Bottom tab bar: iOS-style navigation */
-.mobile-tabbar {
+/* Bottom tab bar: iOS-style navigation (mobile primary nav) */
+.mobile-tabbar.bottom-nav {
     position: fixed;
     left: 0;
     right: 0;
@@ -581,14 +584,13 @@ body {
     height: 56px;
     background: var(--color-bg-surface);
     border-top: 1px solid var(--color-border-subtle);
-    display: none;
     align-items: center;
-    justify-content: space-around;
-    z-index: 20;
+    justify-content: space-between;
+    z-index: 100;
 }
 
 /* Each tab: icon above label */
-.mobile-tabbar .tab-link {
+.mobile-tabbar.bottom-nav .tab-link {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -597,35 +599,32 @@ body {
     border: none;
     background: transparent;
     text-align: center;
-    padding: 4px 0;
+    padding: 6px 0;
     cursor: pointer;
 }
 
 /* SVG icon */
-.mobile-tabbar .tab-icon {
+.mobile-tabbar.bottom-nav .tab-icon {
     width: 22px;
     height: 22px;
     margin-bottom: 2px;
 }
 
 /* Label */
-.mobile-tabbar .tab-label {
+.mobile-tabbar.bottom-nav .tab-label {
     font-size: var(--font-size-caption);
     font-weight: 500;
     color: var(--color-text-muted);
 }
 
-/* Active state (JS toggles .active on current tab) */
-.mobile-tabbar .tab-link.active .tab-label {
+/* Active state (JS toggles .is-active on current tab) */
+.mobile-tabbar.bottom-nav .tab-link.is-active .tab-label {
     color: #2563eb;
-}
-
-.mobile-tabbar .tab-link.active .tab-icon {
-    filter: drop-shadow(0 0 0 rgba(37, 99, 235, 0.0));
+    font-weight: 600;
 }
 
 /* Optional: subtle background for active tab */
-.mobile-tabbar .tab-link.active {
+.mobile-tabbar.bottom-nav .tab-link.is-active {
     background-color: #f3f4ff;
 }
 

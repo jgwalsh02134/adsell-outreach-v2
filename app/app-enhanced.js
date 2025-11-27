@@ -198,19 +198,13 @@ class OutreachTracker {
                 e.preventDefault();
                 const page = btn.dataset.page || e.target.dataset.page;
                 if (page) {
-                this.showPage(page);
+                    this.showPage(page);
                 }
 
                 // Close mobile dropdown if open
                 if (navContainer && navContainer.classList.contains('nav-open')) {
                     navContainer.classList.remove('nav-open');
                 }
-
-                // Sync mobile tabbar active state
-                const tabLinks = document.querySelectorAll('.mobile-tabbar .tab-link');
-                tabLinks.forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.page === page);
-                });
             });
         });
 
@@ -230,9 +224,6 @@ class OutreachTracker {
                 if (!page) return;
 
                 this.showPage(page);
-
-                // Update active state on tabbar
-                tabLinks.forEach(b => b.classList.toggle('active', b === btn));
 
                 // Also close the hamburger menu if it's open
                 if (navContainer && navContainer.classList.contains('nav-open')) {
@@ -845,6 +836,12 @@ class OutreachTracker {
             if (link.dataset.page === pageName) {
                 link.classList.add('active');
             }
+        });
+
+        // Sync bottom mobile tab bar active state
+        const bottomTabs = document.querySelectorAll('.mobile-tabbar .tab-link');
+        bottomTabs.forEach(btn => {
+            btn.classList.toggle('is-active', btn.dataset.page === pageName);
         });
 
         // Update pages
