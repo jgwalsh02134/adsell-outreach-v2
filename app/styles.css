@@ -5,31 +5,145 @@
     box-sizing: border-box;
 }
 
+/* =====================
+   Design tokens
+   ===================== */
 :root {
-    --primary-color: #2563eb;
-    --primary-hover: #1d4ed8;
-    --secondary-color: #64748b;
-    --success-color: #10b981;
-    --warning-color: #f59e0b;
-    --danger-color: #ef4444;
-    --background: #f8fafc;
-    --surface: #ffffff;
-    --border: #e2e8f0;
-    --text-primary: #0f172a;
-    --text-secondary: #64748b;
+    /* Core background & ink (paper-inspired) */
+    --color-bg-page:       #F7F5F0;
+    --color-bg-surface:    #FFFFFF;
+    --color-bg-subtle:     #F3F4F6;
+
+    --color-text-primary:  #111827;
+    --color-text-muted:    #6B7280;
+
+    --color-border-subtle: #E5E7EB;
+    --color-border-strong: #D1D5DB;
+
+    /* Brand */
+    --color-brand:         #1D4ED8;
+    --color-brand-soft:    #DBEAFE;
+    --color-brand-strong:  #1E40AF;
+
+    /* Semantic */
+    --color-success:       #16A34A;
+    --color-success-soft:  #DCFCE7;
+    --color-warning:       #F59E0B;
+    --color-warning-soft:  #FEF3C7;
+    --color-danger:        #DC2626;
+    --color-danger-soft:   #FEE2E2;
+    --color-info:          #0EA5E9;
+    --color-info-soft:     #E0F2FE;
+
+    /* Legacy aliases (for existing styles) */
+    --primary-color: var(--color-brand);
+    --primary-hover: var(--color-brand-strong);
+    --secondary-color: var(--color-text-muted);
+    --success-color: var(--color-success);
+    --warning-color: var(--color-warning);
+    --danger-color: var(--color-danger);
+    --background: var(--color-bg-page);
+    --surface: var(--color-bg-surface);
+    --border: var(--color-border-subtle);
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-muted);
+
+    /* Elevation & radii */
+    --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.05);
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
-    /* Typographic grid + layout */
+    --radius-card: 10px;
+    --radius-button: 9999px;
+    --radius-input: 8px;
+
+    /* Typography */
+    --font-ui: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+
+    --font-size-h1: 28px;
+    --font-size-h2: 22px;
+    --font-size-h3: 18px;
+    --font-size-body: 14px;
+    --font-size-caption: 12px;
+
+    --line-height-tight: 1.2;
+    --line-height-normal: 1.4;
+    --line-height-relaxed: 1.6;
+
+    /* Spacing */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    /* Typographic grid + layout (existing) */
     --grid-unit: 4px;         /* base spacing unit */
     --page-max-width: 960px;  /* desktop content width */
 }
 
+/* =====================
+   Typography
+   ===================== */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: var(--background);
-    color: var(--text-primary);
-    line-height: 1.6;
+    font-family: var(--font-ui);
+    background-color: var(--color-bg-page);
+    color: var(--color-text-primary);
+    line-height: var(--line-height-relaxed);
+}
+
+h1, .heading-h1 {
+    font-size: var(--font-size-h1);
+    line-height: 32px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+h2, .heading-h2 {
+    font-size: var(--font-size-h2);
+    line-height: 28px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+h3, .heading-h3 {
+    font-size: var(--font-size-h3);
+    line-height: 24px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+p, .text-body {
+    font-size: var(--font-size-body);
+    line-height: 20px;
+    font-weight: 400;
+}
+
+.text-caption {
+    font-size: var(--font-size-caption);
+    line-height: 16px;
+    font-weight: 400;
+}
+
+.text-muted {
+    color: var(--color-text-muted);
+}
+
+/* =====================
+   Layout and spacing
+   ===================== */
+.app-shell {
+    min-height: 100vh;
+    background-color: var(--color-bg-page);
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--space-6);
 }
 
 /* Navigation */
@@ -136,13 +250,6 @@ body {
     border-radius: 999px;
 }
 
-/* Container */
-.container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
 /* Pages */
 .page {
     max-width: var(--page-max-width);
@@ -220,8 +327,8 @@ body {
 .btn {
     padding: 0.625rem 1.25rem;
     border: none;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
+    border-radius: var(--radius-button);
+    font-size: var(--font-size-body);
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -230,33 +337,33 @@ body {
 }
 
 .btn-primary {
-    background-color: #1f3b5c;
-    border-color: #1f3b5c;
-    color: white;
+    background-color: var(--color-brand);
+    border-color: var(--color-brand);
+    color: #ffffff;
 }
 
 .btn-primary:hover {
-    background-color: #173049;
-    border-color: #173049;
+    background-color: var(--color-brand-strong);
+    border-color: var(--color-brand-strong);
 }
 
 .btn-secondary {
-    background: var(--surface);
-    color: var(--text-primary);
-    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-subtle);
 }
 
 .btn-secondary:hover {
-    background: var(--background);
+    background: var(--color-bg-subtle);
 }
 
 .btn-danger {
-    background: var(--danger-color);
-    color: white;
+    background: var(--color-danger);
+    color: #ffffff;
 }
 
 .btn-danger:hover {
-    background: #dc2626;
+    background: #b91c1c;
 }
 
 .btn-large {
@@ -385,16 +492,21 @@ body {
 }
 
 /* Recent Activity */
-/* Dashboard sections and cards */
-.dashboard-section {
-    margin-bottom: 1.5rem;
+/* =====================
+   Cards
+   ===================== */
+.card,
+.dashboard-card {
+    background: var(--color-bg-surface);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: var(--shadow-soft);
+    padding: var(--space-4);
 }
 
-.dashboard-card {
-    background: #ffffff;
-    border-radius: 1rem;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-    padding: 1rem 1.25rem;
+/* Dashboard sections and cards */
+.dashboard-section {
+    margin-bottom: var(--space-5);
 }
 
 /* Dashboard-specific spacing aligned to grid */
@@ -755,33 +867,36 @@ body {
     gap: 0.5rem;
 }
 
-/* Status Badge */
+/* Status Badge / Chips */
 .status-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0  var(--space-2);
+    min-height: 20px;
     border-radius: 9999px;
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption);
     font-weight: 600;
 }
 
 .status-not-started {
-    background: #f1f5f9;
-    color: #64748b;
+    background: var(--color-bg-subtle);
+    color: var(--color-text-muted);
 }
 
 .status-in-progress {
-    background: #dbeafe;
-    color: #1e40af;
+    background: var(--color-brand-soft);
+    color: var(--color-brand-strong);
 }
 
 .status-responded {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--color-info-soft);
+    color: var(--color-info);
 }
 
 .status-signed-up {
-    background: #d1fae5;
-    color: #065f46;
+    background: var(--color-success-soft);
+    color: var(--color-success);
 }
 
 /* Action Buttons in Table */
@@ -1361,18 +1476,18 @@ form {
 .form-group textarea {
     width: 100%;
     padding: 0.625rem 1rem;
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    background: var(--surface);
-    color: var(--text-primary);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-input);
+    font-size: var(--font-size-body);
+    background: var(--color-bg-surface);
+    color: var(--color-text-primary);
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--color-brand);
 }
 
 .modal-actions {
