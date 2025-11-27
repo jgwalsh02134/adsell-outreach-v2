@@ -149,12 +149,6 @@ class OutreachTracker {
         this.updateStats();
         this.renderRecentActivity();
 
-        // Set default active tab in mobile tabbar
-        const defaultTab = document.querySelector('.mobile-tabbar .tab-link[data-page="dashboard"]');
-        if (defaultTab) {
-            defaultTab.classList.add('active');
-        }
-        
         // Add default scripts if none exist
         if (this.scripts.length === 0) {
             this.addDefaultScripts();
@@ -215,8 +209,8 @@ class OutreachTracker {
             });
         }
 
-        // Bottom mobile tab bar
-        const tabLinks = document.querySelectorAll('.mobile-tabbar .tab-link');
+        // Bottom mobile nav (mobile primary tabs)
+        const tabLinks = document.querySelectorAll('.mobile-nav.bottom-nav .bottom-nav-item');
         tabLinks.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -839,7 +833,7 @@ class OutreachTracker {
         });
 
         // Sync bottom mobile tab bar active state
-        const bottomTabs = document.querySelectorAll('.mobile-tabbar .tab-link');
+        const bottomTabs = document.querySelectorAll('.mobile-nav.bottom-nav .bottom-nav-item');
         bottomTabs.forEach(btn => {
             btn.classList.toggle('is-active', btn.dataset.page === pageName);
         });

@@ -160,7 +160,7 @@ body {
     padding: 16px;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
     .app-shell-main {
         padding: 24px 32px;
     }
@@ -273,19 +273,19 @@ body {
     }
 
     /* Hide bottom nav on desktop */
-    .mobile-tabbar.bottom-nav {
+    .mobile-nav.bottom-nav {
         display: none;
     }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
     /* Hide top nav on mobile */
     .app-nav {
         display: none;
     }
 
     /* Show bottom nav as primary on mobile */
-    .mobile-tabbar.bottom-nav {
+    .mobile-nav.bottom-nav {
         display: flex;
     }
 }
@@ -576,12 +576,13 @@ body {
 }
 
 /* Bottom tab bar: iOS-style navigation (mobile primary nav) */
-.mobile-tabbar.bottom-nav {
+.mobile-nav.bottom-nav {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
     height: 56px;
+    padding-bottom: env(safe-area-inset-bottom);
     background: var(--color-bg-surface);
     border-top: 1px solid var(--color-border-subtle);
     align-items: center;
@@ -589,8 +590,8 @@ body {
     z-index: 100;
 }
 
-/* Each tab: icon above label */
-.mobile-tabbar.bottom-nav .tab-link {
+/* Each tab: icon-only button */
+.mobile-nav.bottom-nav .bottom-nav-item {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -604,28 +605,31 @@ body {
 }
 
 /* SVG icon */
-.mobile-tabbar.bottom-nav .tab-icon {
+.mobile-nav.bottom-nav .tab-icon {
     width: 22px;
     height: 22px;
     margin-bottom: 2px;
 }
 
-/* Label */
-.mobile-tabbar.bottom-nav .tab-label {
-    font-size: var(--font-size-caption);
-    font-weight: 500;
+/* Active state (JS toggles .is-active on current tab) */
+.mobile-nav.bottom-nav .bottom-nav-item {
     color: var(--color-text-muted);
 }
 
-/* Active state (JS toggles .is-active on current tab) */
-.mobile-tabbar.bottom-nav .tab-link.is-active .tab-label {
-    color: #2563eb;
-    font-weight: 600;
+.mobile-nav.bottom-nav .bottom-nav-item.is-active {
+    color: var(--color-brand);
+    position: relative;
 }
 
-/* Optional: subtle background for active tab */
-.mobile-tabbar.bottom-nav .tab-link.is-active {
-    background-color: #f3f4ff;
+.mobile-nav.bottom-nav .bottom-nav-item.is-active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 25%;
+    right: 25%;
+    height: 2px;
+    background: var(--color-brand);
+    border-radius: 999px;
 }
 
 /* Contacts mobile toggles (hidden by default, shown in mobile media query) */
