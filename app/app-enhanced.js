@@ -3296,6 +3296,45 @@ AdSell.ai`,
         return (this.tasks || []).filter(t => t.contactId === contactId);
     }
 
+    renderPhoneNumbers(rawPhone) {
+        const value = (rawPhone || '').toString().trim();
+        if (!value) return '—';
+
+        try {
+            const parts = value.split(/[\/,]/).map(p => p.trim()).filter(Boolean);
+            if (!parts.length) return value;
+
+            const itemsHtml = parts.map((chunk, idx) => {
+                const m = chunk.match(/^(.*?)(?:\s*(?:x|ext\.?)\s*(\d+))?\s*$/i);
+                const base = (m && m[1] ? m[1] : chunk).trim();
+                const ext = m && m[2] ? m[2] : '';
+                const digits = base.replace(/[^0-9+]/g, '');
+                const display = ext ? `${base} x${ext}` : base;
+                const label = idx === 0 ? '' : 'Alt';
+
+                if (!digits) {
+                    return `
+                        <div class="prospect-phone-item">
+                            <span class="prospect-phone-text">${display}</span>
+                            ${label ? `<span class="prospect-phone-meta">${label}</span>` : ''}
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="prospect-phone-item">
+                        <a href="tel:${digits}" class="prospect-phone-text">${display}</a>
+                        ${label ? `<span class="prospect-phone-meta">${label}</span>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            return `<div class="prospect-phone-list">${itemsHtml}</div>`;
+        } catch {
+            return value;
+        }
+    }
+
     showProspectProfile(contactId) {
         if (!contactId) return;
         this.activeContactId = contactId;
@@ -3465,28 +3504,19 @@ AdSell.ai`,
                 ` : ''}
                 ${contact.linkedin ? `
                     <a href="${contact.linkedin}" target="_blank" rel="noopener" class="prospect-channel-btn" aria-label="Open LinkedIn">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M7.5 20.25v-9h3v9h-3Z" />
-                            <path d="M6 7.5a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Z" />
-                            <path d="M13.5 20.25v-5.25a3 3 0 0 1 6 0v5.25h-3v-5.25" />
-                        </svg>
+                        <img src="icons/linkedin-icon.svg" alt="" class="channel-icon" />
                         <span class="prospect-channel-label">LinkedIn</span>
                     </a>
                 ` : ''}
                 ${contact.facebook ? `
                     <a href="${contact.facebook}" target="_blank" rel="noopener" class="prospect-channel-btn" aria-label="Open Facebook">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9.75 21.75h4.5v-8.25h3L17.25 9h-3V7.5a1.5 1.5 0 0 1 1.5-1.5H17.25V3.75H15A3.75 3.75 0 0 0 11.25 7.5V9h-2.25v4.5h2.25v8.25Z" />
-                        </svg>
+                        <img src="icons/facebook-icon.svg" alt="" class="channel-icon" />
                         <span class="prospect-channel-label">Facebook</span>
                     </a>
                 ` : ''}
                 ${contact.twitter ? `
                     <a href="${contact.twitter}" target="_blank" rel="noopener" class="prospect-channel-btn" aria-label="Open X (Twitter)">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4.5 4.5 19.5 19.5" />
-                            <path d="M19.5 4.5 4.5 19.5" />
-                        </svg>
+                        <img src="icons/x-icon.svg" alt="" class="channel-icon" />
                         <span class="prospect-channel-label">X</span>
                     </a>
                 ` : ''}
@@ -3567,16 +3597,15 @@ AdSell.ai`,
                             </select>
                         </div>
                     </div>
-                </div>
-                <div class="prospect-header-actions">
-                    <button type="button" class="btn btn-secondary" onclick="app.logActivity('${contact.id}')">Log Activity</button>
-                    <button type="button" class="btn btn-secondary" onclick="app.editContact()">Edit Profile</button>
-                    <button type="button" class="btn btn-secondary" onclick="app.openTaskForContact('${contact.id}')">Add Task</button>
-                    <button type="button" class="btn btn-secondary" onclick="app.aiCompanyResearch()">AI Summary</button>
+                    <div class="prospect-header-actions">
+                        <button type="button" class="btn btn-secondary" onclick="app.logActivity('${contact.id}')">Log Activity</button>
+                        <button type="button" class="btn btn-secondary" onclick="app.editContact()">Edit Profile</button>
+                        <button type="button" class="btn btn-secondary" onclick="app.openTaskForContact('${contact.id}')">Add Task</button>
+                        <button type="button" class="btn btn-secondary" onclick="app.aiCompanyResearch()">AI Summary</button>
+                    </div>
+                    ${channelsHtml}
                 </div>
             </div>
-
-            ${channelsHtml}
 
             <div class="prospect-two-column">
                 <div class="prospect-card">
@@ -3605,7 +3634,7 @@ AdSell.ai`,
                         <div>
                             <div class="prospect-detail-item-label">Phone</div>
                             <div class="prospect-detail-item-value">
-                                ${primaryPhone ? `<a href="tel:${telHref}">${primaryPhone}</a>` : '—'}
+                                ${this.renderPhoneNumbers(contact.phone)}
                             </div>
                         </div>
                         <div>
@@ -3650,14 +3679,6 @@ AdSell.ai`,
 
             <div class="prospect-card">
                 <div class="prospect-section-header">
-                    <div class="prospect-section-title">Tasks</div>
-                    <button type="button" class="btn btn-secondary" onclick="app.openTaskForContact('${contact.id}')">+ Add Task</button>
-                </div>
-                ${tasksHtml}
-            </div>
-
-            <div class="prospect-card">
-                <div class="prospect-section-header">
                     <div>
                         <div class="overline">AI &amp; Enrichment</div>
                         <div class="prospect-meta">AI helpers for this contact</div>
@@ -3673,6 +3694,14 @@ AdSell.ai`,
                     <button type="button" class="btn btn-secondary" onclick="app.aiCompanyResearch()">AI Summary</button>
                     <button type="button" class="btn btn-secondary" onclick="app.aiEnrichContactPlaceholder()">AI Enrich Contact</button>
                 </div>
+            </div>
+
+            <div class="prospect-card">
+                <div class="prospect-section-header">
+                    <div class="prospect-section-title">Tasks</div>
+                    <button type="button" class="btn btn-secondary" onclick="app.openTaskForContact('${contact.id}')">+ Add Task</button>
+                </div>
+                ${tasksHtml}
             </div>
         `;
 

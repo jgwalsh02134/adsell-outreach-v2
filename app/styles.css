@@ -2541,6 +2541,12 @@ form {
   line-height: 16px;
 }
 
+.channel-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
 .prospect-two-column {
   display: flex;
   flex-direction: column;
@@ -2675,6 +2681,39 @@ form {
   line-height: 16px;
   color: var(--color-text-muted);
   padding: 8px 0;
+}
+
+.prospect-phone-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prospect-phone-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.prospect-phone-text {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-text-primary);
+}
+
+.prospect-phone-text[href] {
+  color: var(--color-brand-strong);
+  text-decoration: none;
+}
+
+.prospect-phone-text[href]:hover {
+  text-decoration: underline;
+}
+
+.prospect-phone-meta {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-muted);
 }
 
 .overline {
