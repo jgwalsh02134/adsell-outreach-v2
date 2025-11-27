@@ -22,7 +22,7 @@ This repository contains the browser-based application (SPA) that powers the sal
 AdSell Sales Desk is **not** a general CRM.  
 It is a focused **outreach cockpit** designed for:
 
-- identifying new advertisers and publishers  
+- discovering and onboarding new advertisers and publishers 
 - qualifying prospect records  
 - enriching missing data  
 - organizing structured, campaign-based outreach  

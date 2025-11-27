@@ -93,6 +93,7 @@ class OutreachTracker {
         this.tasks = [];
         this.projects = [];
         this.currentContact = null;
+        this.contactsSearchTerm = '';
         this.editingContactId = null;
         this.editingScriptId = null;
         this.pendingImport = null;
@@ -382,8 +383,11 @@ class OutreachTracker {
 
         // (AI CSV cleanup handled via init() aiCleanCSV binding)
 
-        // Advanced filters actions (delegation within details)
+        // Export / Advanced Filters dropdown behavior and advanced filter actions
+        const exportDetails = document.getElementById('export-menu');
         const advDetails = document.getElementById('advanced-filters');
+
+        // Advanced filters actions (delegation within details)
         if (advDetails) {
             advDetails.addEventListener('change', (e) => {
                 const el = e.target;
@@ -440,6 +444,39 @@ class OutreachTracker {
             });
         }
 
+        // Ensure only one of Export / Advanced Filters is open at a time
+        if (exportDetails && advDetails) {
+            exportDetails.addEventListener('toggle', () => {
+                if (exportDetails.open && advDetails.open) {
+                    advDetails.open = false;
+                }
+            });
+            advDetails.addEventListener('toggle', () => {
+                if (advDetails.open && exportDetails.open) {
+                    exportDetails.open = false;
+                }
+            });
+        }
+
+        // Close panels when clicking outside (desktop only)
+        if (exportDetails || advDetails) {
+            document.addEventListener('click', (e) => {
+                const target = e.target;
+                if (!(target instanceof HTMLElement)) return;
+
+                // Ignore clicks inside export/advanced filter areas
+                if (target.closest('#export-menu') || target.closest('#advanced-filters')) {
+                    return;
+                }
+
+                // On desktop, clicking outside closes both panels
+                if (window.innerWidth >= 769) {
+                    if (exportDetails) exportDetails.open = false;
+                    if (advDetails) advDetails.open = false;
+                }
+            });
+        }
+
         // Contact form
         const contactForm = document.getElementById('contact-form');
         if (contactForm) {
@@ -490,7 +527,10 @@ class OutreachTracker {
         // Search and filters
         const searchInput = document.getElementById('search-input');
         if (searchInput) {
-            searchInput.addEventListener('input', () => this.filterContacts());
+            searchInput.addEventListener('input', () => {
+                this.contactsSearchTerm = (searchInput.value || '').toString();
+                this.filterContacts();
+            });
         }
         const statusFilter = document.getElementById('status-filter');
         if (statusFilter) {
@@ -500,11 +540,6 @@ class OutreachTracker {
         if (categoryFilter) {
             categoryFilter.addEventListener('change', () => this.filterContacts());
         }
-        const segmentFilter = document.getElementById('segment-filter');
-        if (segmentFilter) {
-            segmentFilter.addEventListener('change', () => this.filterContacts());
-        }
-
         const projectFilter = document.getElementById('project-filter');
         if (projectFilter) {
             projectFilter.addEventListener('change', () => this.filterContacts());
@@ -2016,15 +2051,17 @@ class OutreachTracker {
 
     getFilteredContacts() {
         let filtered = [...this.contacts];
-        
-        const search = document.getElementById('search-input').value.toLowerCase();
+
+        const search = (this.contactsSearchTerm || '').toString().toLowerCase();
         if (search) {
             filtered = filtered.filter(contact => 
                 contact.vendorName.toLowerCase().includes(search) ||
                 (contact.contactName && contact.contactName.toLowerCase().includes(search)) ||
                 (contact.companyName && contact.companyName.toLowerCase().includes(search)) ||
-                contact.email.toLowerCase().includes(search) ||
-                (contact.phone && contact.phone.includes(search))
+                (contact.email && contact.email.toLowerCase().includes(search)) ||
+                (contact.phone && contact.phone.toLowerCase().includes(search)) ||
+                (contact.category && contact.category.toLowerCase().includes(search)) ||
+                (contact.project && contact.project.toLowerCase().includes(search))
             );
         }
 
@@ -2036,11 +2073,6 @@ class OutreachTracker {
         const category = document.getElementById('category-filter').value;
         if (category) {
             filtered = filtered.filter(contact => contact.category === category);
-        }
-
-        const segment = document.getElementById('segment-filter').value;
-        if (segment) {
-            filtered = filtered.filter(contact => contact.segment === segment);
         }
 
         const projectFilter = document.getElementById('project-filter');

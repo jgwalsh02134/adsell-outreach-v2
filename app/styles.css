@@ -838,6 +838,16 @@ body {
     min-width: 150px;
 }
 
+/* Contacts search row */
+.contacts-search {
+    margin-bottom: 0.75rem;
+}
+
+.contacts-search .search-input {
+    width: 100%;
+    max-width: 480px;
+}
+
 .search-input:focus,
 .filter-select:focus {
     outline: none;
@@ -2346,6 +2356,29 @@ form {
     .bulk-actions {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    /* Hide desktop-only Columns control on mobile */
+    .columns-desktop-only {
+        display: none !important;
+    }
+
+    /* On mobile, make export/advanced filters behave like accordions under their headers */
+    .filter-dropdown[open] .dropdown-content {
+        position: static;
+        top: auto;
+        left: auto;
+        width: 100%;
+        box-shadow: none;
+        margin-top: 0.5rem;
+        border-radius: 0.5rem;
+        display: block;
+    }
+
+    /* Mobile-friendly layout for export/advanced filter content */
+    #export-menu .dropdown-content,
+    #advanced-filters .dropdown-content {
+        grid-template-columns: 1fr !important;
     }
 
     .pipeline-board {

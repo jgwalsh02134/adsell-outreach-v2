@@ -332,13 +332,23 @@
                 </div>
             </div>
 
+            <!-- Contacts search bar -->
+            <div class="contacts-search">
+                <input
+                    type="text"
+                    id="search-input"
+                    class="search-input"
+                    placeholder="Search contacts by company, person, email, phone, category, or project..."
+                    autocomplete="off"
+                />
+            </div>
+
             <div class="contacts-mobile-toggles">
                 <button type="button" id="contacts-mobile-filters-btn" class="btn btn-secondary">Filters</button>
                 <button type="button" id="contacts-mobile-quickadd-btn" class="btn btn-secondary">Quick Add</button>
             </div>
 
             <div class="filters-bar">
-                <input type="text" id="search-input" placeholder="Search by name, email, phone, company..." class="search-input">
                 <select id="status-filter" class="filter-select">
                     <option value="">All Statuses</option>
                     <option value="Not Started">Not Started</option>
@@ -355,16 +365,10 @@
                     <option value="Prospect / Lead">Prospect / Lead</option>
                     <option value="Other">Other</option>
                 </select>
-                <select id="segment-filter" class="filter-select">
-                    <option value="">All Segments</option>
-                    <option value="Expo">Expo</option>
-                    <option value="NE">Northeast</option>
-                    <option value="Club">Club</option>
-                </select>
                 <select id="project-filter" class="filter-select">
                     <option value="">All Projects</option>
                 </select>
-                <details id="columns-chooser" class="filter-dropdown">
+                <details id="columns-chooser" class="filter-dropdown columns-desktop-only">
                     <summary>Columns</summary>
                     <div class="dropdown-content">
                         <label class="dropdown-check">
