@@ -155,7 +155,7 @@
 <body>
     <div class="app-shell">
         <header class="app-header">
-            <div class="app-header-inner">
+            <div class="app-header-inner nav-container">
                 <div class="app-brand">
                     <button class="brand-link" type="button" data-page="dashboard">
                         <img
@@ -166,7 +166,9 @@
                     </button>
                 </div>
 
-                <nav class="app-nav">
+                <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+
+                <nav class="app-nav nav-menu">
                     <a href="#" class="nav-link active" data-page="dashboard">Dashboard</a>
                     <a href="#" class="nav-link" data-page="contacts">Contacts</a>
                     <a href="#" class="nav-link" data-page="projects">Projects</a>
@@ -179,17 +181,6 @@
                 </nav>
             </div>
         </header>
-        <nav class="app-nav-mobile">
-            <a href="#" class="nav-link active" data-page="dashboard">Dashboard</a>
-            <a href="#" class="nav-link" data-page="contacts">Contacts</a>
-            <a href="#" class="nav-link" data-page="projects">Projects</a>
-            <a href="#" class="nav-link" data-page="pipeline">Pipeline</a>
-            <a href="#" class="nav-link" data-page="calendar">Calendar</a>
-            <a href="#" class="nav-link" data-page="tasks">Tasks</a>
-            <a href="#" class="nav-link" data-page="scripts">Scripts</a>
-            <a href="#" class="nav-link" data-page="upload">Import CSV</a>
-            <a href="#" class="nav-link" data-page="analytics">Analytics</a>
-        </nav>
 
     <main class="app-shell-main">
         <div class="container">

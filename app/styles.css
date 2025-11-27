@@ -211,9 +211,10 @@ body {
 
 /* Top nav */
 .app-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
 }
 
 .app-nav a,
@@ -242,6 +243,11 @@ body {
     border-bottom: 2px solid var(--color-brand);
 }
 
+/* Nav toggle state */
+.nav-container.nav-open .app-nav {
+    display: flex;
+}
+
 /* On small screens, let nav wrap under the logo */
 @media (max-width: 600px) {
     .app-header-inner {
@@ -259,6 +265,11 @@ body {
 @media (min-width: 768px) {
     .app-nav {
         display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 20px;
+        margin-top: 0;
+        margin-left: auto;
     }
 
     .mobile-tabbar {
@@ -377,15 +388,10 @@ body {
 }
 
 .nav-menu {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 2rem;
-    flex-wrap: nowrap;
     list-style: none;
     margin: 0;
     padding: 0;
-    margin-left: auto;
+    gap: 2rem;
 }
 
 .nav-menu .nav-link {
@@ -2083,7 +2089,7 @@ form {
 }
 
 /* Mobile styles */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .navbar {
         height: 64px;              /* slightly shorter on mobile */
         box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
