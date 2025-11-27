@@ -1806,14 +1806,21 @@ class OutreachTracker {
     // Contact Management
     renderContacts() {
         const tbody = document.getElementById('contacts-table-body');
+        const rolodex = document.getElementById('contacts-rolodex');
         const filteredContacts = this.getFilteredContacts();
 
+        // Empty states for both desktop table and mobile rolodex
         if (filteredContacts.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No contacts found</td></tr>';
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No contacts found</td></tr>';
+            }
+            if (rolodex) {
+                rolodex.innerHTML = '<p class="empty-state">No contacts found</p>';
+            }
             return;
         }
 
-        tbody.innerHTML = filteredContacts.map(contact => {
+        const tableRowsHtml = filteredContacts.map(contact => {
             const tags = contact.tags ? contact.tags.map(tagId => {
                 const tag = this.tags.find(t => t.id === tagId);
                 return tag ? `<span class="tag-badge" style="background: ${tag.color}20; color: ${tag.color};">${tag.name}</span>` : '';
@@ -1890,40 +1897,121 @@ class OutreachTracker {
                     </div>
                 </td>
             </tr>
-        `}).join('');
+        `;
+        }).join('');
 
-        // Make entire row clickable on mobile (except checkbox, action buttons, and links)
-        tbody.querySelectorAll('.contact-row').forEach(row => {
-            row.addEventListener('click', (e) => {
-                if (window.innerWidth > 768) return;
+        if (tbody) {
+            tbody.innerHTML = tableRowsHtml;
 
-                const target = e.target;
-                if (
-                    target.closest('input.row-select') ||
-                    target.closest('.action-btn') ||
-                    target.closest('a')
-                ) {
-                    return;
-                }
-                const id = row.getAttribute('data-id');
-                if (id) {
-                    this.viewContact(id);
-                }
+            // Make entire row clickable on mobile (except checkbox, action buttons, and links)
+            tbody.querySelectorAll('.contact-row').forEach(row => {
+                row.addEventListener('click', (e) => {
+                    if (window.innerWidth > 768) return;
+
+                    const target = e.target;
+                    if (
+                        target.closest('input.row-select') ||
+                        target.closest('.action-btn') ||
+                        target.closest('a')
+                    ) {
+                        return;
+                    }
+                    const id = row.getAttribute('data-id');
+                    if (id) {
+                        this.viewContact(id);
+                    }
+                });
             });
-        });
 
-        // Explicitly make vendor name clickable without triggering checkbox
-        tbody.querySelectorAll('.contact-name-link').forEach(el => {
-            el.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const row = el.closest('.contact-row');
-                const id = row ? row.getAttribute('data-id') : null;
-                if (id) {
-                    this.viewContact(id);
-                }
+            // Explicitly make vendor name clickable without triggering checkbox
+            tbody.querySelectorAll('.contact-name-link').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const row = el.closest('.contact-row');
+                    const id = row ? row.getAttribute('data-id') : null;
+                    if (id) {
+                        this.viewContact(id);
+                    }
+                });
             });
-        });
+        }
+
+        // --- Mobile rolodex cards ---
+        if (rolodex) {
+            const rolodexHtml = filteredContacts.map(contact => {
+                const tags = contact.tags ? contact.tags.map(tagId => {
+                    const tag = this.tags.find(t => t.id === tagId);
+                    return tag ? `<span class="tag-badge" style="background: ${tag.color}20; color: ${tag.color};">${tag.name}</span>` : '';
+                }).join('') : '';
+
+                const fullEmail = contact.email || '';
+                const primaryEmail = fullEmail.split(/[;,]/)[0].trim();
+
+                const fullPhone = contact.phone || '';
+                const primaryPhone = fullPhone.split(/[;,]/)[0].trim();
+                const telHref = primaryPhone ? primaryPhone.replace(/[^0-9+]/g, '') : '';
+
+                const statusText = contact.status || 'Not Started';
+                const statusSlug = this.slugify(statusText);
+
+                // Organization / company name for primary heading
+                const orgName = contact.vendorName || contact.companyName || '';
+
+                // Contact label/person (e.g., "President", "Info", or a person's name)
+                const emailLocal =
+                    primaryEmail && primaryEmail.includes('@')
+                        ? primaryEmail.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, ch => ch.toUpperCase())
+                        : '';
+                const label = contact.contactName || contact.title || emailLocal;
+
+                // Segment / role / project (e.g., "Ski Expo")
+                const segmentOrProject = contact.segment || contact.project || '';
+
+                let secondaryLine = '';
+                if (label && segmentOrProject) {
+                    secondaryLine = `${label} · ${segmentOrProject}`;
+                } else {
+                    secondaryLine = label || segmentOrProject;
+                }
+
+                return `
+                    <article class="contact-card" data-id="${contact.id}">
+                        <div class="contact-card-main">
+                            <div class="contact-card-header">
+                                <div class="contact-card-name">${orgName || '(No organization)'}</div>
+                                ${statusText ? `<span class="status-badge status-${statusSlug}">${statusText}</span>` : ''}
+                            </div>
+                            ${secondaryLine ? `<div class="contact-card-company">${secondaryLine}</div>` : ''}
+                            ${tags ? `<div class="contact-card-tags tags-inline">${tags}</div>` : ''}
+                        </div>
+                        <div class="contact-card-footer">
+                            <div class="contact-card-quick-actions">
+                                ${primaryPhone ? `<a href="tel:${telHref}" class="chip chip-primary">Call</a>` : ''}
+                                ${primaryEmail ? `<a href="mailto:${primaryEmail}" class="chip chip-channel">Email</a>` : ''}
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            rolodex.innerHTML = rolodexHtml;
+
+            // Card tap → open prospect profile (but let quick action links work)
+            rolodex.querySelectorAll('.contact-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const target = e.target;
+                    if (target.closest('a')) {
+                        // Allow tel: / mailto: to work without opening profile
+                        return;
+                    }
+                    const id = card.getAttribute('data-id');
+                    if (id) {
+                        this.viewContact(id);
+                    }
+                });
+            });
+        }
     }
 
     getFilteredContacts() {
@@ -1980,7 +2068,45 @@ class OutreachTracker {
         }
         
         // Apply sorting
-        if (this.sortBy) {
+        const hasExplicitSort = !!this.sortBy;
+
+        if (!hasExplicitSort) {
+            // Default sort: by organization/company name A–Z (case-insensitive),
+            // pushing contacts with no org name to the bottom. Stable-ish secondary
+            // sort by createdAt, then contact label/person.
+            const getOrgKey = (c) => ((c.vendorName || c.companyName || '') || '').trim().toLowerCase();
+
+            filtered.sort((a, b) => {
+                const aOrg = getOrgKey(a);
+                const bOrg = getOrgKey(b);
+
+                // Both have organization names
+                if (aOrg && bOrg) {
+                    if (aOrg !== bOrg) {
+                        return aOrg < bOrg ? -1 : 1;
+                    }
+                } else if (!aOrg && !bOrg) {
+                    // both missing org name → fall through to secondary
+                } else {
+                    // exactly one missing org name → push missing to bottom
+                    if (!aOrg) return 1;
+                    if (!bOrg) return -1;
+                }
+
+                // Secondary: createdAt (older first)
+                const aCreated = a.createdAt || '';
+                const bCreated = b.createdAt || '';
+                if (aCreated !== bCreated) {
+                    return aCreated < bCreated ? -1 : 1;
+                }
+
+                // Tertiary: contact label/person for stable ordering
+                const aLabel = (a.contactName || '').toLowerCase();
+                const bLabel = (b.contactName || '').toLowerCase();
+                if (aLabel === bLabel) return 0;
+                return aLabel < bLabel ? -1 : 1;
+            });
+        } else {
             const sortKey = this.sortBy;
             const dir = this.sortDir === 'desc' ? -1 : 1;
 
@@ -2698,6 +2824,7 @@ class OutreachTracker {
 
         setHeaderHTML('cdh-email', emailParts.length ? `<a href="mailto:${emailParts[0]}">${emailParts[0]}</a>` : '');
         setHeaderHTML('cdh-phone', primaryPhoneDetail ? `<a href="tel:${telHrefDetail}">${primaryPhoneDetail}</a>` : '');
+        setHeaderHTML('cdh-sms', telHrefDetail ? `<a href="sms:${telHrefDetail}">SMS</a>` : '');
         setHeaderHTML('cdh-website', this.currentContact.website ? `<a href="${this.currentContact.website}" target="_blank">Website</a>` : '');
         setHeaderHTML('cdh-linkedin', this.currentContact.linkedin ? `<a href="${this.currentContact.linkedin}" target="_blank">LinkedIn</a>` : '');
         setHeaderHTML('cdh-facebook', this.currentContact.facebook ? `<a href="${this.currentContact.facebook}" target="_blank">Facebook</a>` : '');

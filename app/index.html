@@ -469,32 +469,40 @@
                 </form>
             </div>
 
-            <div class="table-container">
-                <table class="contacts-table">
-                    <thead class="contacts-header">
-                        <tr>
-                            <th data-col="vendor" data-sort="vendorName" class="sticky-col">Company / Organization</th>
-                            <th data-col="contact" data-sort="contactName">Contact</th>
-                            <th data-col="email" data-sort="email">Email</th>
-                            <th data-col="phone" data-sort="phone">Phone</th>
-                            <th data-col="category" data-sort="category">Category</th>
-                            <th data-col="project" data-sort="project">Project</th>
-                            <th data-col="status" data-sort="status">Status</th>
-                            <th data-col="lastContact" data-sort="lastContact">Last Contact</th>
-                            <th data-col="actions">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="contacts-table-body">
-                        <tr>
-                            <td colspan="9" class="empty-state">No contacts found</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Mobile-first rolodex list (cards). Desktop table is hidden on small screens via CSS. -->
+            <div id="contacts-rolodex" class="contacts-rolodex mobile-only">
+                <!-- Populated by app.renderContacts() for mobile -->
+            </div>
+
+            <!-- Desktop contacts table (hidden on mobile) -->
+            <div class="contacts-table-wrapper desktop-only">
+                <div class="table-container">
+                    <table class="contacts-table">
+                        <thead class="contacts-header">
+                            <tr>
+                                <th data-col="vendor" data-sort="vendorName" class="sticky-col">Company / Organization</th>
+                                <th data-col="contact" data-sort="contactName">Contact</th>
+                                <th data-col="email" data-sort="email">Email</th>
+                                <th data-col="phone" data-sort="phone">Phone</th>
+                                <th data-col="category" data-sort="category">Category</th>
+                                <th data-col="project" data-sort="project">Project</th>
+                                <th data-col="status" data-sort="status">Status</th>
+                                <th data-col="lastContact" data-sort="lastContact">Last Contact</th>
+                                <th data-col="actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contacts-table-body">
+                            <tr>
+                                <td colspan="9" class="empty-state">No contacts found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <!-- Contact Detail Page -->
-        <div id="contact-detail-page" class="page">
+        <div id="contact-detail-page" class="page prospect-profile">
             <div class="page-header">
                 <button class="btn btn-secondary" onclick="app.showPage('contacts')">← Back to Contacts</button>
                 <div class="header-actions">
@@ -531,7 +539,7 @@
                 </button>
             </div>
 
-            <div id="contact-detail-header" class="contact-detail-header">
+            <div id="contact-detail-header" class="contact-detail-header prospect-header">
                 <div class="cdh-left">
                     <div class="cdh-company" id="cdh-company"></div>
                     <div class="cdh-person" id="cdh-person"></div>
@@ -543,9 +551,10 @@
                 </div>
 
                 <div class="cdh-right">
-                    <div class="cdh-channels">
+                    <div class="cdh-channels prospect-channels">
                         <span class="cdh-channel" id="cdh-email"></span>
                         <span class="cdh-channel" id="cdh-phone"></span>
+                        <span class="cdh-channel" id="cdh-sms"></span>
                         <span class="cdh-channel" id="cdh-website"></span>
                         <span class="cdh-channel" id="cdh-linkedin"></span>
                         <span class="cdh-channel" id="cdh-facebook"></span>
