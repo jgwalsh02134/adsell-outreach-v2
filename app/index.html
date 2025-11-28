@@ -665,7 +665,11 @@
         </div>
 
         <!-- Prospect Profile View -->
-        <section id="prospect-profile-view" class="hidden"></section>
+        <section
+            id="prospect-profile-view"
+            class="prospect-profile hidden"
+            data-view="prospect-profile"
+        ></section>
 
     </main>
 
@@ -684,109 +688,121 @@
         </a>
     </nav>
 
-    <!-- Enhanced Contact Modal with Tabs -->
-    <div id="contact-modal" class="modal">
-        <div class="modal-content modal-large">
-            <div class="modal-header">
-                <h3 id="modal-title">Add Contact</h3>
-                <button class="modal-close" onclick="app.closeContactModal()">&times;</button>
-            </div>
-            
-            <!-- Tab Navigation -->
-            <div class="modal-tabs">
-                <button class="modal-tab active" onclick="switchTab(event, 'basic-info')">Basic Info</button>
-                <button class="modal-tab" onclick="switchTab(event, 'business-info')">Business</button>
-                <button class="modal-tab" onclick="switchTab(event, 'contact-details')">Contact Details</button>
-                <button class="modal-tab" onclick="switchTab(event, 'deal-info')">Deal Info</button>
-                <button class="modal-tab" onclick="switchTab(event, 'notes-tags')">Notes & Tags</button>
-            </div>
+    <!-- Contact Sheet Modal (Add/Edit Contact) -->
+    <div id="contact-modal" class="modal contact-sheet">
+        <div class="modal-content modal-large contact-sheet-content">
+            <header class="modal-header contact-sheet-header">
+                <h2 id="modal-title" class="contact-sheet-title">Add Contact</h2>
+                <button class="modal-close" type="button" onclick="app.closeContactModal()">&times;</button>
+            </header>
 
-            <form id="contact-form">
-                <!-- Tab 1: Basic Info -->
-                <div id="basic-info" class="tab-content active">
-                <div class="form-row">
-                    <div class="form-group">
-                            <label>Business/Vendor Name *</label>
-                        <input type="text" name="vendorName" required>
-                        </div>
+            <form id="contact-form" class="contact-sheet-form">
+                <!-- Essentials section -->
+                <section class="contact-section contact-essentials">
+                    <div class="overline-label">Essentials</div>
+                    <div class="form-row">
                         <div class="form-group">
-                            <label>Company Name (if different)</label>
-                            <input type="text" name="companyName">
+                            <label>Business/Vendor Name *</label>
+                            <input type="text" name="vendorName" required>
                         </div>
                     </div>
                     <div class="form-row">
-                    <div class="form-group">
+                        <div class="form-group">
                             <label>Contact Person Name</label>
-                        <input type="text" name="contactName">
-                    </div>
+                            <input type="text" name="contactName">
+                        </div>
                         <div class="form-group">
                             <label>Title/Position</label>
                             <input type="text" name="title" placeholder="e.g., Owner, Marketing Director">
+                        </div>
                     </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Email *</label>
-                        <input type="email" name="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Phone</label>
-                        <input type="tel" name="phone">
-                    </div>
-                </div>
-                    <div class="form-group">
-                        <label>Website</label>
-                        <input type="url" name="website" placeholder="https://example.com">
-                    </div>
-                </div>
-
-                <!-- Tab 2: Business Info -->
-                <div id="business-info" class="tab-content">
                     <div class="form-row">
-                    <div class="form-group">
-                        <label>Category</label>
-                        <select name="category">
+                        <div class="form-group">
+                            <label>Email *</label>
+                            <input type="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" name="phone">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select name="category">
                                 <option value="">Select category</option>
                                 <option value="Vendor / Supplier">Vendor / Supplier</option>
                                 <option value="Customer / Advertiser">Customer / Advertiser</option>
                                 <option value="Partner">Partner</option>
                                 <option value="Media / Press">Media / Press</option>
                                 <option value="Prospect / Lead">Prospect / Lead</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Segment</label>
-                        <select name="segment">
-                            <option value="">Select Segment</option>
-                            <option value="Expo">Expo</option>
-                            <option value="NE">Northeast</option>
-                            <option value="Club">Club</option>
-                        </select>
-                    </div>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-row">
-                    <div class="form-group">
-                        <label>Status</label>
-                        <select name="status">
-                            <option value="Not Started">Not Started</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Responded">Responded</option>
-                            <option value="Signed Up">Signed Up</option>
-                        </select>
-                    </div>
-                </div>
-                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select name="status">
+                                <option value="Not Started">Not Started</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Responded">Responded</option>
+                                <option value="Signed Up">Signed Up</option>
+                            </select>
+                        </div>
                         <div class="form-group">
                             <label>Project / Campaign</label>
                             <input type="text" name="project" placeholder="e.g., Albany Ski Expo Free Trial">
                         </div>
-                        <div class=" form-group">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Segment (if applicable)</label>
+                            <select name="segment">
+                                <option value="">Select Segment</option>
+                                <option value="Expo">Expo</option>
+                                <option value="NE">Northeast</option>
+                                <option value="Club">Club</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Advanced fields toggle -->
+                <button
+                    type="button"
+                    class="contact-advanced-toggle"
+                    id="contact-advanced-toggle"
+                    aria-expanded="false"
+                    aria-controls="contact-advanced-section"
+                >
+                    Show advanced fields
+                </button>
+
+                <!-- Advanced section -->
+                <section
+                    id="contact-advanced-section"
+                    class="contact-section contact-advanced collapsed"
+                    hidden
+                >
+                    <div class="overline-label">Advanced</div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Company Name (if different)</label>
+                            <input type="text" name="companyName">
+                        </div>
+                        <div class="form-group">
+                            <label>Website</label>
+                            <input type="url" name="website" placeholder="https://example.com">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
                             <label>Lead Source</label>
                             <input type="text" name="leadSource" value="Albany Ski Expo">
                         </div>
-                    </div>
-                    <div class="form-row">
                         <div class="form-group">
                             <label>Company Size</label>
                             <select name="companySize">
@@ -798,6 +814,9 @@
                                 <option value="500+">500+ employees</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div class="form-row">
                         <div class="form-group">
                             <label>Annual Revenue</label>
                             <select name="annualRevenue">
@@ -809,60 +828,12 @@
                                 <option value="$50M+">$50M+</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Referred By</label>
-                        <input type="text" name="referredBy" placeholder="Name or source of referral">
-                    </div>
-                </div>
-
-                <!-- Tab 3: Contact Details -->
-                <div id="contact-details" class="tab-content">
-                    <h4 class="form-section-title">Social Media</h4>
-                    <div class="form-row">
                         <div class="form-group">
-                            <label>LinkedIn Profile</label>
-                            <input type="url" name="linkedin" placeholder="https://linkedin.com/in/...">
-                        </div>
-                        <div class="form-group">
-                            <label>Twitter/X Handle</label>
-                            <input type="text" name="twitter" placeholder="@username">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Facebook Page</label>
-                            <input type="url" name="facebook" placeholder="https://facebook.com/...">
-                        </div>
-                        <div class="form-group">
-                            <label>Instagram Handle</label>
-                            <input type="text" name="instagram" placeholder="@username">
+                            <label>Referred By</label>
+                            <input type="text" name="referredBy" placeholder="Name or source of referral">
                         </div>
                     </div>
 
-                    <h4 class="form-section-title">Address</h4>
-                    <div class="form-group">
-                        <label>Street Address</label>
-                        <input type="text" name="address" placeholder="123 Main St">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>City</label>
-                            <input type="text" name="city">
-                        </div>
-                        <div class="form-group">
-                            <label>State</label>
-                            <input type="text" name="state" placeholder="NY">
-                        </div>
-                        <div class="form-group">
-                            <label>ZIP Code</label>
-                            <input type="text" name="zipCode">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tab 4: Deal Info -->
-                <div id="deal-info" class="tab-content">
                     <h4 class="form-section-title">Sales Pipeline</h4>
                     <div class="form-row">
                         <div class="form-group">
@@ -917,10 +888,50 @@
                         <label>Budget Info</label>
                         <input type="text" name="budget" placeholder="e.g., $5K-10K annual marketing budget">
                     </div>
-                </div>
 
-                <!-- Tab 5: Notes & Tags -->
-                <div id="notes-tags" class="tab-content">
+                    <h4 class="form-section-title">Social Media</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>LinkedIn Profile</label>
+                            <input type="url" name="linkedin" placeholder="https://linkedin.com/in/...">
+                        </div>
+                        <div class="form-group">
+                            <label>Twitter/X Handle</label>
+                            <input type="text" name="twitter" placeholder="@username">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Facebook Page</label>
+                            <input type="url" name="facebook" placeholder="https://facebook.com/...">
+                        </div>
+                        <div class="form-group">
+                            <label>Instagram Handle</label>
+                            <input type="text" name="instagram" placeholder="@username">
+                        </div>
+                    </div>
+
+                    <h4 class="form-section-title">Address</h4>
+                    <div class="form-group">
+                        <label>Street Address</label>
+                        <input type="text" name="address" placeholder="123 Main St">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" name="city">
+                        </div>
+                        <div class="form-group">
+                            <label>State</label>
+                            <input type="text" name="state" placeholder="NY">
+                        </div>
+                        <div class="form-group">
+                            <label>ZIP Code</label>
+                            <input type="text" name="zipCode">
+                        </div>
+                    </div>
+
+                    <h4 class="form-section-title">Notes & Tags</h4>
                     <div class="form-group">
                         <label>Public Notes</label>
                         <textarea name="notes" rows="3" placeholder="Notes that can be shared with the client..."></textarea>
@@ -932,21 +943,29 @@
                     <div class="form-group">
                         <label>Next Steps</label>
                         <textarea name="nextSteps" rows="2" placeholder="What needs to happen next..."></textarea>
-                </div>
-                <div class="form-group">
+                    </div>
+                    <div class="form-group">
                         <label>Follow-Up Date</label>
                         <input type="date" name="followUpDate">
                     </div>
-                    
+
                     <h4 class="form-section-title">Tags</h4>
                     <div id="tag-selector" class="tag-selector">
                         <!-- Tags will be populated by JavaScript -->
                     </div>
-                </div>
+                </section>
 
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="app.closeContactModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Contact</button>
+                <div class="modal-actions contact-sheet-actions">
+                    <button
+                        type="button"
+                        class="btn btn-secondary contact-sheet-cancel"
+                        onclick="app.closeContactModal()"
+                    >
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary contact-sheet-save">
+                        Save Contact
+                    </button>
                 </div>
             </form>
         </div>

@@ -1,51 +1,29 @@
 export default {
-    async fetch(request, env) {
-      const corsHeaders = {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      };
-  
-      // CORS preflight
-      if (request.method === "OPTIONS") {
-        return new Response(null, { headers: corsHeaders });
-      }
-  
-      const url = new URL(request.url);
-      const pathname = url.pathname;
-      const method = request.method.toUpperCase();
-  
-    // Helper for consistent JSON responses
+  async fetch(request, env) {
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    };
+
+    // CORS preflight
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
+    }
+
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+    const method = request.method.toUpperCase();
+
     const jsonResponse = (data, status = 200) =>
       new Response(JSON.stringify(data), {
         status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
-    // ---------- Shared helpers ----------
+    // ---------- Helper: Perplexity chat ----------
 
-    async function callGrokChat(body) {
-      const apiKey = env.GROK_API_KEY;
-      if (!apiKey) throw new Error("GROK_API_KEY not configured");
-
-      const res = await fetch("https://api.x.ai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Grok error ${res.status}: ${text.slice(0, 500)}`);
-      }
-
-      return res.json();
-    }
-
-    async function callPerplexityChat(body) {
+    async function callPerplexityChat(body, env) {
       const apiKey = env.PERPLEXITY_KEY;
       if (!apiKey) throw new Error("PERPLEXITY_KEY not configured");
 
@@ -57,18 +35,16 @@ export default {
         },
         body: JSON.stringify(body),
       });
-
       if (!res.ok) {
         const text = await res.text();
         throw new Error(
           `Perplexity error ${res.status}: ${text.slice(0, 500)}`
         );
       }
-
       return res.json();
     }
 
-    async function callOpenAIChat(body) {
+    async function callOpenAIChat(body, env) {
       const apiKey = env.OPENAI_API_KEY;
       if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
 
@@ -91,53 +67,58 @@ export default {
       return res.json();
     }
 
-    const enrichmentSystemPrompt = `
-You are the enrichment engine for a B2B sales desk that finds advertisers for a print media marketplace.
+    // ---------- Prompt & extractor ----------
 
-You receive partial prospect records (company, contact, website, city, notes, activity snapshot) and must:
+    const enrichmentSystemPrompt = `
+You are the prospect research assistant for a B2B sales desk that finds advertisers for a print media marketplace.
+
+You receive partial prospect records (company, contact, website, city, notes) and must produce a short, human-readable enrichment summary.
+
+Your job:
 
 1) Normalize and clean existing data (phone formats, URLs, capitalization).
+2) Use web search to collect only high-confidence, public company information:
+   - Canonical website URL
+   - General contact email and phone
+   - Public social links (LinkedIn, Facebook, Instagram, X/Twitter, YouTube, TikTok)
+   - 1–3 people who are good outreach contacts for advertising/marketing/partnerships
+3) Provide a very short business summary and whether they are a plausible print advertising prospect.
 
-2) Find missing public, company-level data by using search where appropriate:
-   - Official website URL (if missing or inconsistent).
-   - General contact email and phone.
-   - Public social links (LinkedIn, Facebook, Instagram, X/Twitter, YouTube, TikTok).
-   - Names and roles of people who are good advertising / marketing / partnership contacts.
+STRICT RULES:
+- Use only public, company-level data (from the website, official social pages, or widely corroborated sources).
+- Do NOT guess or fabricate emails, phone numbers, or names. If you are not confident, omit that item.
+- Do NOT output chain-of-thought, "<think>", step-by-step reasoning, or any explanation of your process.
+- Do NOT use code fences or JSON. Output only readable text.
+- Keep all text fields short and scannable.
 
-3) Provide a very concise business summary and whether they are a plausible print advertising prospect.
+Your output should be a compact text report with clearly labeled sections, for example:
 
-Strict rules:
-- Use only public, company-level data. Never invent private data.
-- Only include an email, phone, or person if you are confident it is correct and relevant to outreach.
-- If you are not reasonably confident, set that field to null.
-- Do NOT output any chain-of-thought, analysis sections, or "<think>" blocks.
-- Do NOT explain your steps. Only return final results via JSON.
-- Keep all free-text fields short and scannable:
-  - summary.overview: max ~35 words.
-  - summary.why_relevant_for_print: max ~25 words.
-  - inferred.reasoning: max ~35 words.
-  - next_action.script: max ~60 words if present.
-- Return strictly valid JSON only, with no markdown, no comments, and no extra keys beyond the given schema.
+Channels:
+- Website: ...
+- Email: ...
+- Phone: ...
+- LinkedIn: ...
+- ...
+
+Key People:
+- Name (Role) — email / phone
+- ...
+
+Summary:
+- One or two short sentences about what the business does and who they serve.
+
+Fit for Print:
+- Brief sentence about whether they are likely to benefit from print advertising and why.
 `.trim();
 
-    function buildEnrichmentUserPrompt(contact, mode) {
+    function buildPerplexityUserPrompt(contact, mode) {
       return `
-# Prospect
-
+Prospect JSON:
 ${JSON.stringify(contact, null, 2)}
-
-# Task
 
 Mode: ${mode}
 
-Allowed modes:
-- "quick-clean" – normalize existing fields only.
-- "research" – suggest missing business attributes and summary.
-- "next-step" – suggest one recommended next outreach action and reason.
-
-# Output format
-
-Return ONLY a JSON object with this shape:
+Return ONLY a JSON object with this exact shape:
 
 {
   "normalized": {
@@ -147,23 +128,6 @@ Return ONLY a JSON object with this shape:
     "phone": string | null,
     "website": string | null,
     "address": string | null
-  },
-  "inferred": {
-    "industry": string | null,
-    "company_size": "1-10" | "11-50" | "51-200" | "201-1000" | "1001+" | null,
-    "hq_city": string | null,
-    "hq_country": string | null,
-    "likely_print_advertiser": boolean | null,
-    "reasoning": string | null
-  },
-  "summary": {
-    "overview": string | null,
-    "why_relevant_for_print": string | null
-  },
-  "next_action": {
-    "label": string | null,
-    "channel": "call" | "email" | "sms" | "linkedin" | "other" | null,
-    "script": string | null
   },
   "channels": {
     "website": string | null,
@@ -183,179 +147,94 @@ Return ONLY a JSON object with this shape:
       "role": string | null,
       "email": string | null,
       "phone": string | null,
-      "is_advertising_contact": boolean | null,
       "notes": string | null,
+      "is_advertising_contact": boolean | null,
       "confidence": "high" | "medium" | "low" | null
     }
-  ]
-}
-`.trim();
-    }
-
-    const pipelineMergePrompt = `
-You are the final enrichment formatter for a B2B sales desk that finds advertisers for a print media marketplace.
-
-You receive:
-- The original prospect record.
-- A "facts" object from Perplexity (company details and context).
-- An "actions" object from Grok (reasoning and suggested next steps).
-
-Your job is to merge these into a single, concise JSON object with this schema:
-
-{
-  "normalized": {
-    "name": string | null,
-    "title": string | null,
-    "company": string | null,
-    "phone": string | null,
-    "website": string | null,
-    "address": string | null
-  },
-  "inferred": {
-    "industry": string | null,
-    "company_size": "1-10" | "11-50" | "51-200" | "201-1000" | "1001+" | null,
-    "hq_city": string | null,
-    "hq_country": string | null,
-    "likely_print_advertiser": boolean | null,
-    "reasoning": string | null
-  },
+  ],
   "summary": {
     "overview": string | null,
     "why_relevant_for_print": string | null
   },
-  "next_action": {
-    "label": string | null,
-    "channel": "call" | "email" | "sms" | "linkedin" | "other" | null,
-    "script": string | null
+  "fit": {
+    "likely_print_advertiser": boolean | null,
+    "reasoning": string | null
   }
 }
-
-Guidelines:
-- Prefer factual fields from the Perplexity "facts" layer when available.
-- Prefer reasoning and next-step suggestions from the Grok "actions" layer.
-- Keep everything concise and scannable.
-- summary.overview: 1–2 sentences, max ~35 words total.
-- summary.why_relevant_for_print: 1 sentence, max ~25 words.
-- inferred.reasoning: 1–2 sentences, max ~35 words.
-- next_action.script: 2–3 short sentences, max ~60 words.
-- Do not invent private emails or phone numbers; you may use public company websites only.
-- If something is unknown or uncertain, set that field to null.
-- Return strictly valid JSON only, with no markdown, no comments, no extra keys.
 `.trim();
-
-    // More robust JSON extractor (handles code fences, extra text, etc.)
-    function extractJsonContentFromLLM(rawJson, label) {
-      let content = rawJson?.choices?.[0]?.message?.content;
-      // Some APIs return content as array-of-parts
-      if (Array.isArray(content)) {
-        content = content
-          .map((part) =>
-            typeof part === "string"
-              ? part
-              : part?.text || JSON.stringify(part)
-          )
-          .join("");
-      }
-      if (typeof content !== "string") {
-        console.error(`Unexpected ${label} content:`, content);
-        return { error: `Unexpected ${label} response format` };
-      }
-      let text = content.trim();
-      // 1) Strip markdown code fences, e.g. ```json ... ```
-      if (text.startsWith("```")) {
-        text = text.replace(/^```[a-zA-Z0-9]*\s*/, "");
-        const lastFence = text.lastIndexOf("```");
-        if (lastFence !== -1) {
-          text = text.slice(0, lastFence);
-        }
-        text = text.trim();
-      }
-      // 2) First attempt: parse whole string
-      try {
-        return JSON.parse(text);
-      } catch (e) {
-        console.warn(
-          `${label} JSON parse failed on full text, trying substring…`
-        );
-      }
-      // 3) Second attempt: from first '{' to last '}'
-      const firstBrace = text.indexOf("{");
-      const lastBrace = text.lastIndexOf("}");
-      if (firstBrace !== -1 && lastBrace > firstBrace) {
-        const sub = text.slice(firstBrace, lastBrace + 1);
-        try {
-          return JSON.parse(sub);
-        } catch (e2) {
-          console.error(
-            `${label} JSON parse failed on substring:`,
-            sub.slice(0, 400)
-          );
-        }
-      }
-      console.error(`${label} final JSON parse failure:`, text.slice(0, 400));
-      // 👇 NEW BEHAVIOR HERE
-      if (label === "Perplexity") {
-        // Don't hard-fail Perplexity – just return raw text so the UI can show it.
-        return { raw: text.slice(0, 500) };
-      }
-      return {
-        error: `${label} did not return valid JSON`,
-        raw: text.slice(0, 500),
-      };
     }
-  
-      // ----------------------------------------------------
+
+    function extractPerplexityJson(rawJson) {
+      const content = rawJson?.choices?.[0]?.message?.content;
+      if (typeof content !== "string") {
+        return {};
+      }
+
+      try {
+        return JSON.parse(content);
+      } catch (err) {
+        console.error(
+          "extractPerplexityJson: failed to parse JSON",
+          err,
+          content.slice(0, 300)
+        );
+        return {};
+      }
+    }
+
+    // ----------------------------------------------------
     // Shared contacts API (KV: env.ADSELL_DATA)
-      // ----------------------------------------------------
-  
-      if (pathname === "/contacts" && method === "GET") {
-        try {
-          const raw = await env.ADSELL_DATA.get("shared_contacts");
-  
-          if (!raw) {
-            const empty = {
-              contacts: [],
-              activities: [],
-              scripts: [],
-              tags: [],
-              customFields: [],
-            };
+    // ----------------------------------------------------
+
+    if (pathname === "/contacts" && method === "GET") {
+      try {
+        const raw = await env.ADSELL_DATA.get("shared_contacts");
+
+        if (!raw) {
+          const empty = {
+            contacts: [],
+            activities: [],
+            scripts: [],
+            tags: [],
+            customFields: [],
+          };
           return jsonResponse(empty, 200);
-          }
-  
-          return new Response(raw, {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        } catch (err) {
-          console.error("GET /contacts error:", err);
+        }
+
+        return new Response(raw, {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (err) {
+        console.error("GET /contacts error:", err);
         return jsonResponse({ error: "Failed to load shared contacts" }, 500);
       }
     }
 
-      if (pathname === "/contacts/import" && method === "POST") {
+    if (pathname === "/contacts/import" && method === "POST") {
+      try {
+        const bodyText = await request.text();
+
+        let parsed;
         try {
-          const bodyText = await request.text();
-  
-          let parsed;
-          try {
-            parsed = JSON.parse(bodyText);
+          parsed = JSON.parse(bodyText);
         } catch {
           return jsonResponse({ error: "Invalid JSON body" }, 400);
         }
 
-          await env.ADSELL_DATA.put("shared_contacts", JSON.stringify(parsed));
+        await env.ADSELL_DATA.put("shared_contacts", JSON.stringify(parsed));
         return jsonResponse({ ok: true }, 200);
-        } catch (err) {
-          console.error("POST /contacts/import error:", err);
+      } catch (err) {
+        console.error("POST /contacts/import error:", err);
         return jsonResponse({ error: "Failed to save contacts" }, 500);
       }
     }
 
     // ----------------------------------------------------
-    // Grok enrichment endpoint: POST /grok/enrich
+    // Perplexity enrichment endpoint: POST /perplexity/enrich
     // ----------------------------------------------------
-    if (pathname === "/grok/enrich" && method === "POST") {
+
+    if (pathname === "/perplexity/enrich" && method === "POST") {
       try {
         let body;
         try {
@@ -373,66 +252,74 @@ Guidelines:
           );
         }
 
-        const userPrompt = buildEnrichmentUserPrompt(contact, mode);
+        // Build a user prompt that includes the prospect JSON and mode
+        const userPrompt = `
+Prospect JSON:
+${JSON.stringify(contact, null, 2)}
 
-        const grokRaw = await callGrokChat({
-          model: "grok-4",
-          messages: [
-            { role: "system", content: enrichmentSystemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          max_tokens: 800,
-          temperature: 0.2,
-        });
+Mode: ${mode}
 
-        const parsed = extractJsonContentFromLLM(grokRaw, "Grok");
-        if (parsed.error) return jsonResponse(parsed, 502);
-        return jsonResponse(parsed, 200);
-      } catch (err) {
-        console.error("POST /grok/enrich error:", err);
-        return jsonResponse(
-          { error: "Failed to call Grok enrichment" },
-          500
+Using the instructions from the system prompt, produce a concise enrichment report for this prospect as readable text (NO JSON, NO code fences, NO "<think>").
+`.trim();
+
+        // Call Perplexity (sonar) for enrichment
+        const pplxRaw = await callPerplexityChat(
+          {
+            model: "sonar",
+            messages: [
+              { role: "system", content: enrichmentSystemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            max_tokens: 800,
+            temperature: 0.2,
+          },
+          env
+        );
+
+        // Extract text content from Perplexity response
+        let content = pplxRaw?.choices?.[0]?.message?.content;
+
+        if (Array.isArray(content)) {
+          content = content
+            .map((part) =>
+              typeof part === "string"
+                ? part
+                : part?.text || JSON.stringify(part)
+            )
+            .join("");
+        }
+
+        if (typeof content !== "string") {
+          return new Response(
+            "No enrichment details available for this prospect.",
+            {
+              status: 200,
+              headers: { ...corsHeaders, "Content-Type": "text/plain" },
+            }
           );
         }
-      }
-  
-      // ----------------------------------------------------
-    // Perplexity enrichment endpoint: POST /perplexity/enrich
-      // ----------------------------------------------------
-    if (pathname === "/perplexity/enrich" && method === "POST") {
-        try {
-          let body;
-          try {
-          body = await request.json(); // { contact, mode }
-        } catch {
-          return jsonResponse({ error: "Invalid JSON body" }, 400);
+
+        let text = content.trim();
+
+        // Strip any <think>...</think> blocks if Perplexity includes them
+        const thinkStart = text.indexOf("<think>");
+        const thinkEnd = text.lastIndexOf("</think>");
+        if (thinkStart !== -1 && thinkEnd !== -1 && thinkEnd > thinkStart) {
+          const afterThink = text.slice(thinkEnd + "</think>".length).trim();
+          if (afterThink.length > 0) {
+            text = afterThink;
+          }
         }
 
-        const contact = body.contact || null;
-        const mode = body.mode || "research";
-        if (!contact) {
-          return jsonResponse(
-            { error: "Missing 'contact' in request body" },
-            400
-          );
+        if (!text) {
+          text = "No enrichment details available for this prospect.";
         }
 
-        const userPrompt = buildEnrichmentUserPrompt(contact, mode);
-
-        const pplxRaw = await callPerplexityChat({
-          model: "sonar-reasoning",
-          messages: [
-            { role: "system", content: enrichmentSystemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          max_tokens: 800,
-          temperature: 0.2,
+        // Return plain text so the frontend can display it directly
+        return new Response(text, {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "text/plain" },
         });
-
-        const parsed = extractJsonContentFromLLM(pplxRaw, "Perplexity");
-        // extractJsonContentFromLLM already falls back to { raw } for Perplexity on parse failure
-        return jsonResponse(parsed, 200);
       } catch (err) {
         console.error("POST /perplexity/enrich error:", err);
         return jsonResponse(
@@ -443,198 +330,51 @@ Guidelines:
     }
 
     // ----------------------------------------------------
-    // Unified 3-layer enrichment pipeline: POST /enrich/pipeline
-    // Perplexity -> Grok -> OpenAI
+    // Existing OpenAI Responses API proxy (leave for other features)
     // ----------------------------------------------------
-    if (pathname === "/enrich/pipeline" && method === "POST") {
-      try {
-        let body;
-        try {
-          body = await request.json(); // { contact, mode }
-        } catch {
-          return jsonResponse({ error: "Invalid JSON body" }, 400);
-        }
 
-        const contact = body.contact || null;
-        const mode = body.mode || "research";
-        if (!contact) {
-          return jsonResponse(
-            { error: "Missing 'contact' in request body" },
-            400
-          );
-        }
+    if (request.method !== "POST") {
+      return new Response("Use POST", {
+        status: 405,
+        headers: { ...corsHeaders, Allow: "POST" },
+      });
+    }
 
-        // ---------- Layer 1: Perplexity facts ----------
-        const factsPrompt = buildEnrichmentUserPrompt(contact, mode);
-
-        let pplxRaw;
-        try {
-          pplxRaw = await callPerplexityChat({
-            model: "sonar-reasoning",
-            messages: [
-              { role: "system", content: enrichmentSystemPrompt },
-              { role: "user", content: factsPrompt },
-            ],
-            max_tokens: 800,
-            temperature: 0.2,
-          });
-        } catch (e) {
-          console.error("Pipeline Perplexity error:", e);
-          // Continue with null facts so pipeline can still run
-          pplxRaw = null;
-        }
-
-        let facts = null;
-        if (pplxRaw) {
-          const parsedFacts = extractJsonContentFromLLM(pplxRaw, "Perplexity");
-          // If parsing fails, just keep raw text; no hard error
-          if (parsedFacts && !parsedFacts.error) {
-            facts = parsedFacts;
-          } else if (parsedFacts && parsedFacts.raw) {
-            facts = { raw: parsedFacts.raw };
-          }
-        }
-
-        // ---------- Layer 2: Grok actions ----------
-        const actionsPrompt = `
-Use the original prospect and optional facts data below to propose a concise next outreach step and any missing inferences.
-
-Prospect:
-${JSON.stringify(contact, null, 2)}
-
-Facts (may be null):
-${JSON.stringify(facts, null, 2)}
-
-Mode: ${mode}
-
-Return JSON in the same schema as before; if a field is unknown, set it to null. You may reuse fields from the facts layer but focus on reasoning and next_action.
-`.trim();
-
-        let grokRaw;
-        try {
-          grokRaw = await callGrokChat({
-            model: "grok-4",
-            messages: [
-              { role: "system", content: enrichmentSystemPrompt },
-              { role: "user", content: actionsPrompt },
-            ],
-            max_tokens: 800,
-            temperature: 0.2,
-          });
-        } catch (e) {
-          console.error("Pipeline Grok error:", e);
-          grokRaw = null;
-        }
-
-        let actions = null;
-        if (grokRaw) {
-          const parsedActions = extractJsonContentFromLLM(grokRaw, "Grok");
-          if (parsedActions && !parsedActions.error) {
-            actions = parsedActions;
-          } else if (parsedActions && parsedActions.raw) {
-            actions = { raw: parsedActions.raw };
-          }
-        }
-
-        // ---------- Layer 3: OpenAI merge/normalize ----------
-        const mergeUserPrompt = `
-You are given three JSON blobs:
-
-1) prospect: the raw prospect record.
-2) facts: factual enrichment from Perplexity (may be null).
-3) actions: reasoning + next steps from Grok (may be null).
-
-Your job is to merge them into a single JSON object using the schema described earlier.
-
-prospect JSON:
-${JSON.stringify(contact, null, 2)}
-
-facts JSON:
-${JSON.stringify(facts, null, 2)}
-
-actions JSON:
-${JSON.stringify(actions, null, 2)}
-
-Return ONLY the final JSON object, using all guidelines from the system prompt.
-`.trim();
-
-        let finalJson;
-        try {
-          const openaiRaw = await callOpenAIChat({
-            model: "gpt-4.1-mini",
-            messages: [
-              { role: "system", content: pipelineMergePrompt },
-              { role: "user", content: mergeUserPrompt },
-            ],
-            max_tokens: 800,
-            temperature: 0.2,
-          });
-
-          finalJson = extractJsonContentFromLLM(openaiRaw, "OpenAI");
-        } catch (e) {
-          console.error("Pipeline OpenAI merge error:", e);
-          // As a last resort, fall back to actions or facts
-          finalJson = actions || facts || { error: "Pipeline merge failed" };
-        }
-
-        return jsonResponse(finalJson, 200);
-        } catch (err) {
-        console.error("POST /enrich/pipeline error:", err);
-        return jsonResponse(
-          { error: "Failed to run enrichment pipeline" },
-          500
-          );
-        }
-      }
-  
-      // ----------------------------------------------------
-    // Existing OpenAI Responses API proxy (default POST)
-      // ----------------------------------------------------
-  
-      if (request.method !== "POST") {
-        return new Response("Use POST", {
-          status: 405,
-          headers: { ...corsHeaders, Allow: "POST" },
-        });
-      }
-  
-      let json;
-      try {
-        json = await request.json();
+    let json;
+    try {
+      json = await request.json();
     } catch {
       return jsonResponse({ error: "Invalid JSON body" }, 400);
     }
 
-    // For Responses API we allow input to be string OR array-of-input-items.
-    // We just pass it through as-is.
-      const input = json.input ?? "";
+    const input = json.input ?? "";
     const modeForTools = json.mode ?? "default";
-  
-      const tools =
+
+    const tools =
       modeForTools === "research" ? [{ type: "web_search_preview" }] : [];
-  
-      const openaiBody = JSON.stringify({
-        model: "gpt-4.1-mini",
-        input,
-        ...(tools.length > 0 ? { tools } : {}),
-      });
-  
-      const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-        },
-        body: openaiBody,
-      });
-  
-      const text = await openaiResponse.text();
-  
-      return new Response(text, {
-        status: openaiResponse.status,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    },
-  };
+
+    const openaiBody = JSON.stringify({
+      model: "gpt-4.1-mini",
+      input,
+      ...(tools.length > 0 ? { tools } : {}),
+    });
+
+    const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+      },
+      body: openaiBody,
+    });
+
+    const text = await openaiResponse.text();
+
+    return new Response(text, {
+      status: openaiResponse.status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  },
+};
 
 

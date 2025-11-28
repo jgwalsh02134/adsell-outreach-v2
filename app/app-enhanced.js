@@ -136,6 +136,25 @@ class OutreachTracker {
         document.getElementById("ai-clean-csv")?.addEventListener("click", () => this.aiCleanCSV());
         document.getElementById("rr-enrich-contact")?.addEventListener("click", () => this.enrichCurrentContactWithRocketReach());
         document.getElementById("rr-enrich-company")?.addEventListener("click", () => this.enrichCurrentCompanyWithRocketReach());
+        // Contact sheet advanced toggle
+        const advancedToggle = document.getElementById('contact-advanced-toggle');
+        const advancedSection = document.getElementById('contact-advanced-section');
+        if (advancedToggle && advancedSection) {
+            advancedToggle.addEventListener('click', () => {
+                const isCollapsed = advancedSection.classList.contains('collapsed');
+                if (isCollapsed) {
+                    advancedSection.classList.remove('collapsed');
+                    advancedSection.hidden = false;
+                    advancedToggle.textContent = 'Hide advanced fields';
+                    advancedToggle.setAttribute('aria-expanded', 'true');
+                } else {
+                    advancedSection.classList.add('collapsed');
+                    advancedSection.hidden = true;
+                    advancedToggle.textContent = 'Show advanced fields';
+                    advancedToggle.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
         const csvInput = document.getElementById("csv-file-input");
         if (csvInput) {
             csvInput.addEventListener("change", (e) => {
@@ -2585,12 +2604,93 @@ class OutreachTracker {
         this.showNotification('Selected contacts deleted');
     }
 
-    showAddContactModal() {
-        this.editingContactId = null;
-        document.getElementById('modal-title').textContent = 'Add Contact';
-        document.getElementById('contact-form').reset();
+    /**
+     * Open the shared contact sheet in add or edit mode.
+     * mode: "add" | "edit"
+     * contactIdOrData: optional contact id or contact object to edit
+     */
+    openContactSheet(mode = 'add', contactIdOrData = null) {
+        const form = document.getElementById('contact-form');
+        const modal = document.getElementById('contact-modal');
+        const titleEl = document.getElementById('modal-title');
+        if (!form || !modal || !titleEl) return;
+
+        let contact = null;
+        if (mode === 'edit') {
+            if (contactIdOrData && typeof contactIdOrData === 'object') {
+                contact = contactIdOrData;
+            } else if (contactIdOrData) {
+                contact = this.contacts.find(c => c.id === contactIdOrData) || null;
+            } else if (this.currentContact) {
+                contact = this.currentContact;
+            }
+        }
+
+        if (mode === 'add' || !contact) {
+            this.editingContactId = null;
+            titleEl.textContent = 'Add Contact';
+            form.reset();
+        } else {
+            this.editingContactId = contact.id;
+            titleEl.textContent = 'Edit Contact';
+
+            // Essentials
+            form.vendorName.value = contact.vendorName || '';
+            form.contactName.value = contact.contactName || '';
+            form.email.value = contact.email || '';
+            form.phone.value = contact.phone || '';
+            form.category.value = contact.category || '';
+            form.status.value = contact.status || 'Not Started';
+            form.project.value = contact.project || '';
+            form.segment.value = contact.segment || '';
+
+            // Advanced
+            if (form.companyName) form.companyName.value = contact.companyName || '';
+            if (form.website) form.website.value = contact.website || '';
+            if (form.leadSource) form.leadSource.value = contact.leadSource || '';
+            if (form.companySize) form.companySize.value = contact.companySize || '';
+            if (form.annualRevenue) form.annualRevenue.value = contact.annualRevenue || '';
+            if (form.referredBy) form.referredBy.value = contact.referredBy || '';
+            if (form.dealStage) form.dealStage.value = contact.dealStage || '';
+            if (form.dealValue) form.dealValue.value = contact.dealValue || '';
+            if (form.dealProbability) form.dealProbability.value = contact.dealProbability || '';
+            if (form.expectedCloseDate) form.expectedCloseDate.value = contact.expectedCloseDate || '';
+            if (form.decisionMaker) form.decisionMaker.value = contact.decisionMaker ? 'true' : 'false';
+            if (form.budget) form.budget.value = contact.budget || '';
+            if (form.authority) form.authority.value = contact.authority || '';
+            if (form.linkedin) form.linkedin.value = contact.linkedin || '';
+            if (form.twitter) form.twitter.value = contact.twitter || '';
+            if (form.facebook) form.facebook.value = contact.facebook || '';
+            if (form.instagram) form.instagram.value = contact.instagram || '';
+            if (form.address) form.address.value = contact.address || '';
+            if (form.city) form.city.value = contact.city || '';
+            if (form.state) form.state.value = contact.state || '';
+            if (form.zipCode) form.zipCode.value = contact.zipCode || '';
+            if (form.notes) form.notes.value = contact.notes || '';
+            if (form.internalNotes) form.internalNotes.value = contact.internalNotes || '';
+            if (form.nextSteps) form.nextSteps.value = contact.nextSteps || '';
+            if (form.followUpDate) form.followUpDate.value = contact.followUpDate || '';
+        }
+
+        // Render tag selector with current selections
         this.renderTagSelector();
-        document.getElementById('contact-modal').classList.add('active');
+
+        // Ensure advanced section is collapsed by default when opening
+        const advancedSection = document.getElementById('contact-advanced-section');
+        const advancedToggle = document.getElementById('contact-advanced-toggle');
+        if (advancedSection && advancedToggle) {
+            advancedSection.classList.add('collapsed');
+            advancedSection.hidden = true;
+            advancedToggle.textContent = 'Show advanced fields';
+            advancedToggle.setAttribute('aria-expanded', 'false');
+        }
+
+        modal.classList.add('active');
+    }
+
+    // Backwards-compatible wrappers
+    showAddContactModal() {
+        this.openContactSheet('add');
     }
 
     closeContactModal() {
@@ -2846,64 +2946,7 @@ class OutreachTracker {
 
     editContact() {
         if (!this.currentContact) return;
-        
-        this.editingContactId = this.currentContact.id;
-        document.getElementById('modal-title').textContent = 'Edit Contact Profile';
-        
-        const form = document.getElementById('contact-form');
-        
-        // Basic Info
-        form.vendorName.value = this.currentContact.vendorName || '';
-        form.companyName.value = this.currentContact.companyName || '';
-        form.contactName.value = this.currentContact.contactName || '';
-        form.title.value = this.currentContact.title || '';
-        form.email.value = this.currentContact.email || '';
-        form.phone.value = this.currentContact.phone || '';
-        form.website.value = this.currentContact.website || '';
-        
-        // Business Info
-        form.category.value = this.currentContact.category || '';
-        form.segment.value = this.currentContact.segment || '';
-        form.status.value = this.currentContact.status || 'Not Started';
-        form.companySize.value = this.currentContact.companySize || '';
-        form.annualRevenue.value = this.currentContact.annualRevenue || '';
-        
-        // Social
-        form.linkedin.value = this.currentContact.linkedin || '';
-        form.twitter.value = this.currentContact.twitter || '';
-        form.facebook.value = this.currentContact.facebook || '';
-        form.instagram.value = this.currentContact.instagram || '';
-        
-        // Address
-        form.address.value = this.currentContact.address || '';
-        form.city.value = this.currentContact.city || '';
-        form.state.value = this.currentContact.state || '';
-        form.zipCode.value = this.currentContact.zipCode || '';
-        
-        // Deal Info
-        form.dealStage.value = this.currentContact.dealStage || '';
-        form.dealValue.value = this.currentContact.dealValue || '';
-        form.dealProbability.value = this.currentContact.dealProbability || '';
-        form.expectedCloseDate.value = this.currentContact.expectedCloseDate || '';
-        
-        // Decision Making
-        form.decisionMaker.value = this.currentContact.decisionMaker ? 'true' : 'false';
-        form.budget.value = this.currentContact.budget || '';
-        form.authority.value = this.currentContact.authority || '';
-        
-        // Notes
-        form.notes.value = this.currentContact.notes || '';
-        form.internalNotes.value = this.currentContact.internalNotes || '';
-        form.followUpDate.value = this.currentContact.followUpDate || '';
-        form.nextSteps.value = this.currentContact.nextSteps || '';
-        form.leadSource.value = this.currentContact.leadSource || '';
-        form.project.value = this.currentContact.project || '';
-        form.referredBy.value = this.currentContact.referredBy || '';
-        
-        // Render tag selector with current selections
-        this.renderTagSelector();
-        
-        document.getElementById('contact-modal').classList.add('active');
+        this.openContactSheet('edit', this.currentContact.id);
     }
 
     async deleteContact() {
@@ -3422,7 +3465,15 @@ AdSell.ai`,
             ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`
             : '';
 
-        const websiteHref = contact.website || '';
+        const normalizeWebUrl = (raw) => {
+            if (!raw) return '';
+            const trimmed = String(raw).trim();
+            if (!trimmed) return '';
+            if (/^https?:\/\//i.test(trimmed)) return trimmed;
+            return `https://${trimmed}`;
+        };
+
+        const websiteHref = normalizeWebUrl(contact.website || '');
 
         const activities = this.getActivitiesForContact(contact.id);
         const tasks = this.getTasksForContact(contact.id);
@@ -3462,6 +3513,19 @@ AdSell.ai`,
             `;
         };
 
+        const linkedinHref = normalizeWebUrl(contact.linkedin || '');
+        const facebookHref = normalizeWebUrl(contact.facebook || '');
+
+        const twitterHref = (() => {
+            const raw = contact.twitter || '';
+            if (!raw) return '';
+            const trimmed = raw.trim();
+            if (!trimmed) return '';
+            if (/^https?:\/\//i.test(trimmed)) return trimmed;
+            const handle = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed;
+            return `https://x.com/${handle}`;
+        })();
+
         const channelsHtml = `
             <div class="prospect-channels">
                 ${primaryPhone ? `
@@ -3490,7 +3554,7 @@ AdSell.ai`,
                     </a>
                 ` : ''}
                 ${websiteHref ? `
-                    <a href="${websiteHref}" target="_blank" rel="noopener" class="prospect-channel-btn" aria-label="Open website">
+                    <a href="${websiteHref}" target="_blank" rel="noopener noreferrer" class="prospect-channel-btn" aria-label="Open website">
                         <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
                             <path d="M3.6 9h16.8M3.6 15h16.8M12 3a15.3 15.3 0 0 1 4.5 9A15.3 15.3 0 0 1 12 21a15.3 15.3 0 0 1-4.5-9A15.3 15.3 0 0 1 12 3Z" />
@@ -3499,7 +3563,7 @@ AdSell.ai`,
                     </a>
                 ` : ''}
                 ${mapsHref ? `
-                    <a href="${mapsHref}" target="_blank" rel="noopener" class="prospect-channel-btn" aria-label="Open maps">
+                    <a href="${mapsHref}" target="_blank" rel="noopener noreferrer" class="prospect-channel-btn" aria-label="Open maps">
                         <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 21.75s-6.75-4.5-6.75-10.125A6.75 6.75 0 0 1 12 4.125a6.75 6.75 0 0 1 6.75 7.5C18.75 17.25 12 21.75 12 21.75Z" />
                             <path d="M12 13.5a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z" />
@@ -3507,20 +3571,20 @@ AdSell.ai`,
                         <span class="prospect-channel-label">Map</span>
                     </a>
                 ` : ''}
-                ${contact.linkedin ? `
-                    <a href="${contact.linkedin}" target="_blank" rel="noopener" class="prospect-channel-btn" aria-label="Open LinkedIn">
+                ${linkedinHref ? `
+                    <a href="${linkedinHref}" target="_blank" rel="noopener noreferrer" class="prospect-channel-btn" aria-label="Open LinkedIn">
                         <img src="icons/linkedin-icon.svg" alt="" class="channel-icon" />
                         <span class="prospect-channel-label">LinkedIn</span>
                     </a>
                 ` : ''}
-                ${contact.facebook ? `
-                    <a href="${contact.facebook}" target="_blank" rel="noopener" class="prospect-channel-btn" aria-label="Open Facebook">
+                ${facebookHref ? `
+                    <a href="${facebookHref}" target="_blank" rel="noopener noreferrer" class="prospect-channel-btn" aria-label="Open Facebook">
                         <img src="icons/facebook-icon.svg" alt="" class="channel-icon" />
                         <span class="prospect-channel-label">Facebook</span>
                     </a>
                 ` : ''}
-                ${contact.twitter ? `
-                    <a href="${contact.twitter}" target="_blank" rel="noopener" class="prospect-channel-btn" aria-label="Open X (Twitter)">
+                ${twitterHref ? `
+                    <a href="${twitterHref}" target="_blank" rel="noopener noreferrer" class="prospect-channel-btn" aria-label="Open X (Twitter)">
                         <img src="icons/x-icon.svg" alt="" class="channel-icon" />
                         <span class="prospect-channel-label">X</span>
                     </a>
@@ -3574,59 +3638,91 @@ AdSell.ai`,
             : `<p class="empty-state"><span class="prospect-empty-title">No tasks yet.</span><br/><span class="prospect-empty-sub">Add a follow-up so you don’t lose this lead.</span></p>`;
 
         container.innerHTML = `
-            <div class="prospect-card prospect-workbench" style="margin-bottom: 16px;">
-                <div class="prospect-section-header">
-                    <button type="button" class="btn btn-secondary" onclick="app.exitProspectProfile()">← Back to Contacts</button>
-                    <div class="overline">Prospect</div>
+            <!-- Header card -->
+            <article class="card prospect-card prospect-profile-header-card">
+                <div class="prospect-header-top">
+                    <button
+                        type="button"
+                        class="prospect-back-link"
+                        data-role="back-to-contacts"
+                    >
+                        ← Contacts
+                    </button>
+                    <button
+                        type="button"
+                        class="icon-button"
+                        data-role="edit-prospect"
+                        aria-label="Edit prospect"
+                    >
+                        <svg
+                            class="icon-16"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path d="M16.862 3.487a2.25 2.25 0 0 1 3.182 3.182L8.999 17.714 5.25 18.75l1.036-3.75 10.576-11.513Z" />
+                            <path d="M19.5 10.5v9.75A1.75 1.75 0 0 1 17.75 22H4.75A1.75 1.75 0 0 1 3 20.25V7.25A1.75 1.75 0 0 1 4.75 5.5h9.75" />
+                        </svg>
+                    </button>
                 </div>
-                <div style="margin-top: 8px;">
-                    <div class="heading-h2">${primaryName}</div>
-                    ${secondaryLine ? `<div class="text-body" style="margin-top:4px;">${secondaryLine}</div>` : ''}
-                    ${metaLine ? `<div class="prospect-meta">${metaLine}</div>` : ''}
-                    <div class="prospect-header-quick">
-                        <div class="prospect-quick-pill">
-                            <span class="prospect-quick-label">Status</span>
-                            <select id="prospect-status-${contact.id}" class="prospect-quick-select">
-                                ${['Not Started','In Progress','Responded','Signed Up'].map(s => `
-                                    <option value="${s}" ${contact.status === s ? 'selected' : ''}>${s}</option>
-                                `).join('')}
-                            </select>
-                        </div>
-                        <div class="prospect-quick-pill">
-                            <span class="prospect-quick-label">Project</span>
-                            <select id="prospect-project-${contact.id}" class="prospect-quick-select">
-                                <option value="">No Project</option>
-                                ${(this.getProjectNames ? this.getProjectNames() : []).map(name => `
-                                    <option value="${name}" ${contact.project === name ? 'selected' : ''}>${name}</option>
-                                `).join('')}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="prospect-header-actions">
-                        <button type="button" class="btn btn-secondary" onclick="app.logActivity('${contact.id}')">Log Activity</button>
-                        <button type="button" class="btn btn-secondary" onclick="app.editContact()">Edit Profile</button>
-                        <button type="button" class="btn btn-secondary" onclick="app.openTaskForContact('${contact.id}')">Add Task</button>
-                        <button type="button" class="btn btn-secondary" onclick="app.aiCompanyResearch()">AI Summary</button>
-                    </div>
-                    ${channelsHtml}
+                <div class="overline-label">PROSPECT</div>
+                <h2 class="heading-h2 prospect-title">${primaryName}</h2>
+                ${secondaryLine ? `<p class="prospect-subtitle">${secondaryLine}</p>` : ''}
+                ${metaLine ? `<div class="prospect-meta">${metaLine}</div>` : ''}
+                <div class="prospect-chips">
+                    ${contact.status ? `<span class="chip chip-status">${contact.status}</span>` : ''}
+                    ${contact.category ? `<span class="chip chip-category">${contact.category}</span>` : ''}
                 </div>
-            </div>
+            </article>
 
-            <div class="prospect-card">
+            <!-- Channels card -->
+            <article class="card prospect-card">
+                <div class="overline-label">CHANNELS</div>
+                ${channelsHtml}
+            </article>
+
+            <!-- Details card -->
+            <article class="card prospect-card">
                 <div class="prospect-section-header">
-                    <div class="prospect-section-title">Contact Details</div>
-                    <button type="button" class="btn btn-secondary prospect-details-toggle" data-toggle="prospect-details">
+                    <div>
+                        <div class="overline-label">DETAILS</div>
+                    </div>
+                    <button
+                        type="button"
+                        class="btn btn-secondary prospect-details-toggle"
+                        data-toggle="prospect-details"
+                    >
                         ${this._prospectDetailsExpanded ? 'Hide details' : 'Show more'}
                     </button>
                 </div>
                 <div class="prospect-detail-grid">
                     <div>
-                        <div class="prospect-detail-item-label">Company / Organization</div>
+                        <div class="prospect-detail-item-label">Company</div>
                         <div class="prospect-detail-item-value">${displayCompany || '—'}</div>
                     </div>
                     <div>
                         <div class="prospect-detail-item-label">Contact</div>
                         <div class="prospect-detail-item-value">${displayContact || '—'}</div>
+                    </div>
+                    <div>
+                        <div class="prospect-detail-item-label">Title</div>
+                        <div class="prospect-detail-item-value">${displayTitle || '—'}</div>
+                    </div>
+                    <div>
+                        <div class="prospect-detail-item-label">Segment</div>
+                        <div class="prospect-detail-item-value">${contact.segment || '—'}</div>
+                    </div>
+                    <div>
+                        <div class="prospect-detail-item-label">Project</div>
+                        <div class="prospect-detail-item-value">${contact.project || '—'}</div>
+                    </div>
+                    <div>
+                        <div class="prospect-detail-item-label">Lead Source</div>
+                        <div class="prospect-detail-item-value">${contact.leadSource || '—'}</div>
                     </div>
                     <div>
                         <div class="prospect-detail-item-label">Email</div>
@@ -3643,32 +3739,12 @@ AdSell.ai`,
                     <div>
                         <div class="prospect-detail-item-label">Website</div>
                         <div class="prospect-detail-item-value">
-                            ${websiteHref ? `<a href="${websiteHref}" target="_blank" rel="noopener">${websiteHref}</a>` : '—'}
+                            ${websiteHref ? `<a href="${websiteHref}" target="_blank" rel="noopener noreferrer">${websiteHref}</a>` : '—'}
                         </div>
                     </div>
                 </div>
                 ${this._prospectDetailsExpanded ? `
-                <div class="prospect-detail-grid prospect-detail-grid-secondary">
-                    <div>
-                        <div class="prospect-detail-item-label">Title / Role</div>
-                        <div class="prospect-detail-item-value">${displayTitle || '—'}</div>
-                    </div>
-                    <div>
-                        <div class="prospect-detail-item-label">Category</div>
-                        <div class="prospect-detail-item-value">${contact.category || '—'}</div>
-                    </div>
-                    <div>
-                        <div class="prospect-detail-item-label">Segment</div>
-                        <div class="prospect-detail-item-value">${contact.segment || '—'}</div>
-                    </div>
-                    <div>
-                        <div class="prospect-detail-item-label">Project</div>
-                        <div class="prospect-detail-item-value">${contact.project || '—'}</div>
-                    </div>
-                    <div>
-                        <div class="prospect-detail-item-label">Lead Source</div>
-                        <div class="prospect-detail-item-value">${contact.leadSource || '—'}</div>
-                    </div>
+                <div class="prospect-detail-grid prospect-detail-grid-secondary" style="margin-top: 8px;">
                     <div>
                         <div class="prospect-detail-item-label">Address</div>
                         <div class="prospect-detail-item-value">
@@ -3677,90 +3753,90 @@ AdSell.ai`,
                     </div>
                 </div>
                 ` : ''}
-            </div>
+                <div style="margin-top: 12px;">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-role="edit-prospect"
+                    >
+                        Edit details
+                    </button>
+                </div>
+            </article>
 
-            <div class="prospect-card">
+            <!-- AI & Enrichment card -->
+            <article class="card prospect-card" id="prospect-enrichment-card">
                 <div class="prospect-section-header">
                     <div>
-                        <div class="overline">ENRICHMENT</div>
-                        <div class="prospect-section-title">AI Enrichment</div>
+                        <div class="overline-label">AI &amp; ENRICHMENT</div>
                     </div>
                 </div>
 
                 <div class="ai-provider-row">
-                    <span class="ai-provider-label">Provider</span>
-                    <div class="ai-provider-buttons" id="ai-provider-buttons">
-                        <button
-                            type="button"
-                            class="ai-provider-btn is-active"
-                            data-provider="openai"
-                            aria-label="Use ChatGPT / OpenAI"
-                        >
-                            <img
-                                src="icons/chatgpt-icon.svg"
-                                alt="ChatGPT"
-                                class="ai-provider-icon"
-                            />
-                        </button>
-                        <button
-                            type="button"
-                            class="ai-provider-btn"
-                            data-provider="grok"
-                            aria-label="Use Grok (xAI)"
-                        >
-                            <img
-                                src="icons/Xai-grok.svg"
-                                alt="Grok xAI"
-                                class="ai-provider-icon"
-                            />
-                        </button>
-                        <button
-                            type="button"
-                            class="ai-provider-btn"
-                            data-provider="perplexity"
-                            aria-label="Use Perplexity"
-                        >
-                            <img
-                                src="icons/perplexity-ai.svg"
-                                alt="Perplexity"
-                                class="ai-provider-icon"
-                            />
-                        </button>
-                    </div>
+                    <div class="ai-provider-label">AI Actions</div>
                 </div>
-
-                <div class="ai-actions">
-                    <button type="button" class="btn btn-primary" id="btn-enrich-full">
-                        Run Full Enrich
+                <div class="prospect-header-actions">
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        data-action="ai-outreach"
+                    >
+                        AI Outreach
                     </button>
-                    <button type="button" class="btn btn-ghost" id="btn-enrich-quick">
-                        Quick Clean
-                    </button>
-                    <button type="button" class="btn btn-ghost" id="btn-enrich-next">
-                        Suggested Next Step
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-action="ai-company-research"
+                    >
+                        AI Company Research
                     </button>
                 </div>
 
+                <div class="ai-enrich-header" style="margin-top: 12px;">
+                    <button type="button" class="btn btn-secondary" id="btn-enrich-enhance">
+                        Enhance Profile (Perplexity)
+                    </button>
+                </div>
                 <div id="ai-enrich-result" class="ai-enrich-result">
-                    <p class="muted">Run an enrichment to see AI suggestions here.</p>
+                    <p class="muted">
+                        Enhance this profile to discover missing contact info, social links, and key people for outreach.
+                    </p>
                 </div>
-            </div>
+            </article>
 
-            <div class="prospect-card">
+            <!-- Activity card -->
+            <article class="card prospect-card">
                 <div class="prospect-section-header">
-                    <div class="prospect-section-title">Activity</div>
-                    <button type="button" class="btn btn-secondary" onclick="app.logActivity('${contact.id}')">+ Log Activity</button>
+                    <div>
+                        <div class="overline-label">ACTIVITY</div>
+                    </div>
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-role="log-activity"
+                    >
+                        + Log Activity
+                    </button>
                 </div>
                 ${activitiesHtml}
-            </div>
+            </article>
 
-            <div class="prospect-card">
+            <!-- Tasks card -->
+            <article class="card prospect-card">
                 <div class="prospect-section-header">
-                    <div class="prospect-section-title">Tasks</div>
-                    <button type="button" class="btn btn-secondary" onclick="app.openTaskForContact('${contact.id}')">+ Add Task</button>
+                    <div>
+                        <div class="overline-label">TASKS</div>
+                    </div>
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-role="add-task"
+                    >
+                        + Add Task
+                    </button>
                 </div>
                 ${tasksHtml}
-            </div>
+            </article>
         `;
 
         // Scroll to top on mobile so header and channels are visible
@@ -3771,23 +3847,20 @@ AdSell.ai`,
             });
         }
 
-        // Wire quick status and project controls
-        const statusSelectEl = document.getElementById(`prospect-status-${contact.id}`);
-        if (statusSelectEl) {
-            statusSelectEl.addEventListener('change', () => {
-                const newStatus = statusSelectEl.value || 'Not Started';
-                this.updateContactStatusInline(contact.id, newStatus);
-            });
+        // Back navigation
+        const backBtn = container.querySelector('[data-role="back-to-contacts"]');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => this.exitProspectProfile());
         }
 
-        const projectSelectEl = document.getElementById(`prospect-project-${contact.id}`);
-        if (projectSelectEl) {
-            projectSelectEl.addEventListener('change', () => {
-                const newProject = projectSelectEl.value || '';
-                this.updateContactProjectInline(contact.id, newProject);
+        // Edit profile (header pencil + Edit details)
+        container.querySelectorAll('[data-role="edit-prospect"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.openContactSheet('edit', contact.id);
             });
-        }
+        });
 
+        // Details expand/collapse
         const detailsToggle = container.querySelector('.prospect-details-toggle');
         if (detailsToggle) {
             detailsToggle.addEventListener('click', () => {
@@ -3796,47 +3869,39 @@ AdSell.ai`,
             });
         }
 
+        // Activity / tasks actions
+        const logActivityBtn = container.querySelector('[data-role="log-activity"]');
+        if (logActivityBtn) {
+            logActivityBtn.addEventListener('click', () => this.logActivity(contact.id));
+        }
+        const addTaskBtn = container.querySelector('[data-role="add-task"]');
+        if (addTaskBtn) {
+            addTaskBtn.addEventListener('click', () => this.openTaskForContact(contact.id));
+        }
+
+        // AI & enrichment actions
+        container.querySelectorAll('[data-action]').forEach(btn => {
+            const action = btn.getAttribute('data-action');
+            if (!action) return;
+            if (action === 'ai-outreach') {
+                btn.addEventListener('click', () => this.aiOutreach());
+            } else if (action === 'ai-company-research') {
+                btn.addEventListener('click', () => this.aiCompanyResearch());
+            }
+        });
+
         // Wire AI enrichment card within the prospect profile
         this.setupAIEnrichment();
     }
 
     /**
-     * Set up AI enrichment provider selection and actions for the current prospect.
-     * Note: This assumes the current prospect profile is rendered and uses getActiveContact().
+     * Set up AI enrichment actions for the current prospect (Perplexity-only).
      */
     setupAIEnrichment() {
-        const container = document.getElementById('prospect-profile-view');
-        if (!container) return;
+        const resultEl = document.getElementById('ai-enrich-result');
+        const enhanceBtn = document.getElementById('btn-enrich-enhance');
+        if (!resultEl || !enhanceBtn) return;
 
-        const providerButtons = container.querySelectorAll('#ai-provider-buttons .ai-provider-btn');
-        const resultEl = container.querySelector('#ai-enrich-result');
-        const btnFull = container.querySelector('#btn-enrich-full');
-        const btnQuick = container.querySelector('#btn-enrich-quick');
-        const btnNext = container.querySelector('#btn-enrich-next');
-
-        if (!providerButtons.length || !resultEl || !btnFull || !btnQuick || !btnNext) return;
-
-        // Track current provider on the instance so it can persist across re-renders if desired
-        this._aiEnrichProvider = this._aiEnrichProvider || 'openai';
-        let currentProvider = this._aiEnrichProvider;
-
-        // Reflect initial provider selection in the UI
-        providerButtons.forEach((btn) => {
-            const isActive = (btn.dataset.provider || 'openai') === currentProvider;
-            btn.classList.toggle('is-active', isActive);
-        });
-
-        // Provider selection UI
-        providerButtons.forEach((btn) => {
-            btn.addEventListener('click', () => {
-                providerButtons.forEach((b) => b.classList.remove('is-active'));
-                btn.classList.add('is-active');
-                currentProvider = btn.dataset.provider || 'openai';
-                this._aiEnrichProvider = currentProvider;
-            });
-        });
-
-        // TODO: wire this to real app state
         function getCurrentProspect() {
             if (window.appState && window.appState.selectedContact) {
                 return window.appState.selectedContact;
@@ -3844,111 +3909,226 @@ AdSell.ai`,
             return null;
         }
 
+        const makeCopyButton = (value) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'ai-copy-btn';
+            btn.textContent = 'Copy';
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                if (!value) return;
+                try {
+                    await navigator.clipboard.writeText(value);
+                } catch (err) {
+                    console.error('Clipboard copy failed', err);
+                }
+            });
+            return btn;
+        };
+
         const setResult = (content, isError = false) => {
             resultEl.innerHTML = '';
 
-            // Normalize basic types first
             const isObject = content && typeof content === 'object';
 
-            // Handle plain string or null/undefined
+            // Plain string / null / undefined
             if (!isObject) {
                 const p = document.createElement('p');
                 p.textContent = content == null ? '' : String(content);
-                if (isError) {
-                    p.style.color = '#dc2626';
-                }
+                if (isError) p.style.color = '#dc2626';
                 resultEl.appendChild(p);
                 return;
             }
 
-            // Perplexity / relaxed fallback: { raw: "..." }
-            if ('raw' in content && !content.normalized && !content.inferred && !content.summary && !content.next_action) {
-                const pre = document.createElement('pre');
-                pre.textContent = typeof content.raw === 'string'
-                    ? content.raw
-                    : JSON.stringify(content.raw, null, 2);
-                resultEl.appendChild(pre);
+            // If Perplexity did not return structured JSON, or worker fell back to {},
+            // do NOT show any raw chain-of-thought. Just show a friendly message.
+            const keys = Object.keys(content);
+            if (keys.length === 0 || (keys.length === 1 && keys[0] === 'raw')) {
+                const p = document.createElement('p');
+                p.textContent = 'No structured enrichment is available for this prospect yet.';
+                p.className = 'ai-muted';
+                resultEl.appendChild(p);
                 return;
             }
 
             const wrapper = document.createElement('div');
 
-            const hasErrorField = Boolean(content.error);
-            const effectiveIsError = isError || hasErrorField;
+            const { normalized = {}, channels = {}, people = [], summary = {}, fit = {} } = content;
 
-            // If there is an explicit error message, show it prominently
-            if (hasErrorField) {
-                const errP = document.createElement('p');
-                errP.textContent = String(content.error);
-                errP.style.color = '#dc2626';
-                errP.style.fontWeight = '600';
-                wrapper.appendChild(errP);
-            }
-
-            const addSectionTitle = (text) => {
-                const titleEl = document.createElement('div');
-                titleEl.textContent = text;
-                titleEl.style.fontWeight = '600';
-                titleEl.style.marginTop = '4px';
-                wrapper.appendChild(titleEl);
+            const addSection = (title) => {
+                const section = document.createElement('div');
+                section.className = 'ai-section';
+                const heading = document.createElement('div');
+                heading.className = 'ai-section-title';
+                heading.textContent = title;
+                section.appendChild(heading);
+                wrapper.appendChild(section);
+                return section;
             };
 
-            const addLine = (label, value, options = {}) => {
-                if (value === null || value === undefined || value === '') return;
-                const line = document.createElement('p');
-                line.style.margin = '2px 0';
-                if (options.mono) {
-                    line.style.whiteSpace = 'pre-wrap';
-                    line.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, "SF Mono", monospace';
+            const addChannelRow = (section, label, value, type) => {
+                if (!value) return;
+                const row = document.createElement('div');
+                row.style.display = 'flex';
+                row.style.alignItems = 'center';
+                row.style.gap = '6px';
+                row.style.margin = '2px 0';
+
+                const labelEl = document.createElement('span');
+                labelEl.className = 'ai-label';
+                labelEl.textContent = `${label}:`;
+                row.appendChild(labelEl);
+
+                let valueEl;
+                const hrefValue = String(value);
+                if (type === 'url') {
+                    valueEl = document.createElement('a');
+                    valueEl.href = hrefValue;
+                    valueEl.target = '_blank';
+                    valueEl.rel = 'noopener';
+                    valueEl.textContent = hrefValue;
+                } else if (type === 'email') {
+                    valueEl = document.createElement('a');
+                    valueEl.href = `mailto:${hrefValue}`;
+                    valueEl.textContent = hrefValue;
+                } else if (type === 'phone') {
+                    valueEl = document.createElement('a');
+                    valueEl.href = `tel:${hrefValue}`;
+                    valueEl.textContent = hrefValue;
+                } else {
+                    valueEl = document.createElement('span');
+                    valueEl.textContent = hrefValue;
                 }
-                line.textContent = `${label}: ${String(value)}`;
-                wrapper.appendChild(line);
+                valueEl.className = 'ai-value';
+                row.appendChild(valueEl);
+
+                row.appendChild(makeCopyButton(hrefValue));
+                section.appendChild(row);
             };
 
-            const { normalized = {}, inferred = {}, summary = {}, next_action: nextAction = {} } = content;
-
-            // Normalized fields
-            if (normalized && Object.keys(normalized).length) {
-                addSectionTitle('Cleaned fields');
-                addLine('Name', normalized.name);
-                addLine('Title', normalized.title);
-                addLine('Company', normalized.company);
-                addLine('Phone', normalized.phone);
-                addLine('Website', normalized.website);
-                addLine('Address', normalized.address);
+            // Channels section
+            const hasChannels = channels && Object.values(channels).some(v => v);
+            if (hasChannels) {
+                const section = addSection('Channels');
+                addChannelRow(section, 'Website', channels.website || channels.website, 'url');
+                addChannelRow(section, 'General email', channels.email_general, 'email');
+                addChannelRow(section, 'General phone', channels.phone_general, 'phone');
+                addChannelRow(section, 'LinkedIn', channels.linkedin, 'url');
+                addChannelRow(section, 'Facebook', channels.facebook, 'url');
+                addChannelRow(section, 'Instagram', channels.instagram, 'url');
+                addChannelRow(section, 'X / Twitter', channels.x, 'url');
+                addChannelRow(section, 'YouTube', channels.youtube, 'url');
+                addChannelRow(section, 'TikTok', channels.tiktok, 'url');
+                addChannelRow(section, 'Other', channels.other, 'url');
             }
 
-            // Inferred business attributes
-            if (inferred && Object.keys(inferred).length) {
-                addSectionTitle('Inferred business attributes');
-                addLine('Industry', inferred.industry);
-                addLine('Company size', inferred.company_size);
-                addLine('HQ city', inferred.hq_city);
-                addLine('HQ country', inferred.hq_country);
+            // People section
+            if (Array.isArray(people) && people.length) {
+                const section = addSection('Key people');
+                people.forEach(person => {
+                    const item = document.createElement('div');
+                    item.className = 'ai-person';
 
-                if (typeof inferred.likely_print_advertiser === 'boolean') {
-                    addLine(
-                        'Likely print advertiser',
-                        inferred.likely_print_advertiser ? 'Yes' : 'No'
-                    );
-                }
+                    const header = document.createElement('div');
+                    header.className = 'ai-person-header';
 
-                addLine('Reasoning', inferred.reasoning);
+                    const nameEl = document.createElement('span');
+                    nameEl.className = 'ai-person-name';
+                    nameEl.textContent = person.name || '(Name unknown)';
+                    header.appendChild(nameEl);
+
+                    if (person.role) {
+                        const roleEl = document.createElement('span');
+                        roleEl.className = 'ai-person-role';
+                        roleEl.textContent = person.role;
+                        header.appendChild(roleEl);
+                    }
+
+                    if (typeof person.is_advertising_contact === 'boolean') {
+                        const badge = document.createElement('span');
+                        badge.className = 'ai-badge';
+                        badge.textContent = person.is_advertising_contact ? 'Ad contact' : 'Other';
+                        header.appendChild(badge);
+                    }
+
+                    if (person.confidence) {
+                        const conf = document.createElement('span');
+                        conf.className = 'ai-badge';
+                        conf.textContent = `Confidence: ${person.confidence}`;
+                        header.appendChild(conf);
+                    }
+
+                    item.appendChild(header);
+
+                    const contactRow = document.createElement('div');
+                    contactRow.className = 'ai-person-contact';
+
+                    if (person.email) {
+                        const emailRow = document.createElement('div');
+                        const emailLink = document.createElement('a');
+                        emailLink.href = `mailto:${person.email}`;
+                        emailLink.textContent = person.email;
+                        emailRow.appendChild(emailLink);
+                        emailRow.appendChild(makeCopyButton(person.email));
+                        contactRow.appendChild(emailRow);
+                    }
+
+                    if (person.phone) {
+                        const phoneRow = document.createElement('div');
+                        const phoneLink = document.createElement('a');
+                        phoneLink.href = `tel:${person.phone}`;
+                        phoneLink.textContent = person.phone;
+                        phoneRow.appendChild(phoneLink);
+                        phoneRow.appendChild(makeCopyButton(person.phone));
+                        contactRow.appendChild(phoneRow);
+                    }
+
+                    if (contactRow.childNodes.length) {
+                        item.appendChild(contactRow);
+                    }
+
+                    if (person.notes) {
+                        const notesEl = document.createElement('p');
+                        notesEl.className = 'ai-notes';
+                        notesEl.textContent = person.notes;
+                        item.appendChild(notesEl);
+                    }
+
+                    section.appendChild(item);
+                });
             }
 
-            // Summary
+            // Summary section
             if (summary && (summary.overview || summary.why_relevant_for_print)) {
-                addSectionTitle('Summary');
-                addLine('Overview', summary.overview);
-                addLine('Why relevant for print', summary.why_relevant_for_print);
+                const section = addSection('Summary');
+                if (summary.overview) {
+                    const p = document.createElement('p');
+                    p.textContent = summary.overview;
+                    section.appendChild(p);
+                }
+                if (summary.why_relevant_for_print) {
+                    const p = document.createElement('p');
+                    p.className = 'ai-muted';
+                    p.textContent = summary.why_relevant_for_print;
+                    section.appendChild(p);
+                }
             }
 
-            // Next action
-            if (nextAction && (nextAction.label || nextAction.channel || nextAction.script)) {
-                addSectionTitle('Suggested next step');
-                addLine('Label', nextAction.label);
-                addLine('Channel', nextAction.channel);
-                addLine('Script', nextAction.script, { mono: true });
+            // Fit for print section
+            if (fit && (typeof fit.likely_print_advertiser === 'boolean' || fit.reasoning)) {
+                const section = addSection('Fit for print');
+                const line = document.createElement('p');
+                let text = 'Likely print advertiser: ';
+                if (typeof fit.likely_print_advertiser === 'boolean') {
+                    text += fit.likely_print_advertiser ? 'Yes' : 'No';
+                } else {
+                    text += 'Unknown';
+                }
+                if (fit.reasoning) {
+                    text += ` — ${fit.reasoning}`;
+                }
+                line.textContent = text;
+                section.appendChild(line);
             }
 
             if (!wrapper.hasChildNodes()) {
@@ -3957,37 +4137,30 @@ AdSell.ai`,
                 wrapper.appendChild(empty);
             }
 
-            if (effectiveIsError) {
+            if (isError) {
                 wrapper.style.color = '#dc2626';
             }
 
             resultEl.appendChild(wrapper);
         };
 
-        async function runEnrich(mode) {
+        const runEnhance = async () => {
             const contact = getCurrentProspect();
             if (!contact) {
                 setResult('No prospect selected.', true);
                 return;
             }
-            let url;
-            if (currentProvider === 'grok') {
-                url = 'https://adsell-openai-proxy.jgregorywalsh.workers.dev/grok/enrich';
-            } else if (currentProvider === 'perplexity') {
-                url = 'https://adsell-openai-proxy.jgregorywalsh.workers.dev/perplexity/enrich';
-            } else {
-                // OpenAI provider uses the unified enrichment pipeline
-                url = 'https://adsell-openai-proxy.jgregorywalsh.workers.dev/enrich/pipeline';
-            }
-            setResult('Running enrichment...');
+
+            setResult('Enhancing profile...');
+
             try {
-                // For all providers now, the Worker expects { contact, mode }
-                const body = { contact, mode };
-                const res = await fetch(url, {
+                const body = { contact, mode: 'research' };
+                const res = await fetch('https://adsell-openai-proxy.jgregorywalsh.workers.dev/perplexity/enrich', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
+
                 const text = await res.text();
                 let data;
                 try {
@@ -3995,20 +4168,20 @@ AdSell.ai`,
                 } catch {
                     data = text;
                 }
+
                 if (!res.ok) {
                     setResult((data && data.error) || text || 'Enrichment failed.', true);
                     return;
                 }
+
                 setResult(data);
             } catch (err) {
                 console.error('Enrichment error:', err);
                 setResult('Unexpected error during enrichment.', true);
             }
-        }
+        };
 
-        btnFull.addEventListener('click', () => runEnrich('research'));
-        btnQuick.addEventListener('click', () => runEnrich('quick-clean'));
-        btnNext.addEventListener('click', () => runEnrich('next-step'));
+        enhanceBtn.addEventListener('click', runEnhance);
     }
 
     async updateContactStatusInline(contactId, newStatus) {
