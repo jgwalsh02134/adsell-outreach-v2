@@ -2500,6 +2500,10 @@ form {
   margin-bottom: 24px;
 }
 
+.prospect-workbench {
+  padding: 20px;
+}
+
 .prospect-header-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2683,6 +2687,16 @@ form {
   padding: 8px 0;
 }
 
+.prospect-empty-title {
+  font-weight: 600;
+}
+
+.prospect-empty-sub {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-muted);
+}
+
 .prospect-phone-list {
   display: flex;
   flex-direction: column;
@@ -2725,6 +2739,10 @@ form {
   color: var(--color-text-muted);
 }
 
+.prospect-workbench {
+  padding: 20px;
+}
+
 @media (min-width: 768px) {
   #prospect-profile-view {
     padding: 24px;
@@ -2746,6 +2764,10 @@ form {
   /* On wider screens, show channel labels next to icons */
   .prospect-channel-label {
     display: inline;
+  }
+
+  .prospect-workbench {
+    padding: 24px;
   }
 }
 

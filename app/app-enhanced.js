@@ -94,6 +94,7 @@ class OutreachTracker {
         this.projects = [];
         this.currentContact = null;
         this.activeContactId = null;
+        this._prospectDetailsExpanded = false;
         this.contactsSearchTerm = '';
         this.editingContactId = null;
         this.editingScriptId = null;
@@ -3558,7 +3559,7 @@ AdSell.ai`,
                     }).join('')}
                 </div>
             `
-            : `<p class="empty-state">No activity logged yet</p>`;
+            : `<p class="empty-state"><span class="prospect-empty-title">No activity yet.</span><br/><span class="prospect-empty-sub">Log a call, email, or note when you touch this prospect.</span></p>`;
 
         const tasksHtml = (overdueTasks.length || todayTasks.length || upcomingTasks.length)
             ? `
@@ -3566,10 +3567,10 @@ AdSell.ai`,
                 ${renderTaskGroup('Today', todayTasks)}
                 ${renderTaskGroup('Upcoming', upcomingTasks)}
             `
-            : `<p class="empty-state">No tasks for this contact.</p>`;
+            : `<p class="empty-state"><span class="prospect-empty-title">No tasks yet.</span><br/><span class="prospect-empty-sub">Add a follow-up so you don’t lose this lead.</span></p>`;
 
         container.innerHTML = `
-            <div class="prospect-card" style="margin-bottom: 16px;">
+            <div class="prospect-card prospect-workbench" style="margin-bottom: 16px;">
                 <div class="prospect-section-header">
                     <button type="button" class="btn btn-secondary" onclick="app.exitProspectProfile()">← Back to Contacts</button>
                     <div class="overline">Prospect</div>
@@ -3607,74 +3608,71 @@ AdSell.ai`,
                 </div>
             </div>
 
-            <div class="prospect-two-column">
-                <div class="prospect-card">
-                    <div class="prospect-section-header">
-                        <div class="prospect-section-title">Contact Details</div>
+            <div class="prospect-card">
+                <div class="prospect-section-header">
+                    <div class="prospect-section-title">Contact Details</div>
+                    <button type="button" class="btn btn-secondary prospect-details-toggle" data-toggle="prospect-details">
+                        ${this._prospectDetailsExpanded ? 'Hide details' : 'Show more'}
+                    </button>
+                </div>
+                <div class="prospect-detail-grid">
+                    <div>
+                        <div class="prospect-detail-item-label">Company / Organization</div>
+                        <div class="prospect-detail-item-value">${displayCompany || '—'}</div>
                     </div>
-                    <div class="prospect-detail-grid">
-                        <div>
-                            <div class="prospect-detail-item-label">Company / Organization</div>
-                            <div class="prospect-detail-item-value">${displayCompany || '—'}</div>
+                    <div>
+                        <div class="prospect-detail-item-label">Contact</div>
+                        <div class="prospect-detail-item-value">${displayContact || '—'}</div>
+                    </div>
+                    <div>
+                        <div class="prospect-detail-item-label">Email</div>
+                        <div class="prospect-detail-item-value">
+                            ${primaryEmail ? `<a href="mailto:${primaryEmail}">${primaryEmail}</a>` : '—'}
                         </div>
-                        <div>
-                            <div class="prospect-detail-item-label">Contact</div>
-                            <div class="prospect-detail-item-value">${displayContact || '—'}</div>
+                    </div>
+                    <div>
+                        <div class="prospect-detail-item-label">Phone</div>
+                        <div class="prospect-detail-item-value">
+                            ${this.renderPhoneNumbers(contact.phone)}
                         </div>
-                        <div>
-                            <div class="prospect-detail-item-label">Title / Role</div>
-                            <div class="prospect-detail-item-value">${displayTitle || '—'}</div>
-                        </div>
-                        <div>
-                            <div class="prospect-detail-item-label">Email</div>
-                            <div class="prospect-detail-item-value">
-                                ${primaryEmail ? `<a href="mailto:${primaryEmail}">${primaryEmail}</a>` : '—'}
-                            </div>
-                        </div>
-                        <div>
-                            <div class="prospect-detail-item-label">Phone</div>
-                            <div class="prospect-detail-item-value">
-                                ${this.renderPhoneNumbers(contact.phone)}
-                            </div>
-                        </div>
-                        <div>
-                            <div class="prospect-detail-item-label">Website</div>
-                            <div class="prospect-detail-item-value">
-                                ${websiteHref ? `<a href="${websiteHref}" target="_blank" rel="noopener">${websiteHref}</a>` : '—'}
-                            </div>
-                        </div>
-                        <div>
-                            <div class="prospect-detail-item-label">Category</div>
-                            <div class="prospect-detail-item-value">${contact.category || '—'}</div>
-                        </div>
-                        <div>
-                            <div class="prospect-detail-item-label">Segment</div>
-                            <div class="prospect-detail-item-value">${contact.segment || '—'}</div>
-                        </div>
-                        <div>
-                            <div class="prospect-detail-item-label">Project</div>
-                            <div class="prospect-detail-item-value">${contact.project || '—'}</div>
-                        </div>
-                        <div>
-                            <div class="prospect-detail-item-label">Lead Source</div>
-                            <div class="prospect-detail-item-value">${contact.leadSource || '—'}</div>
-                        </div>
-                        <div>
-                            <div class="prospect-detail-item-label">Address</div>
-                            <div class="prospect-detail-item-value">
-                                ${fullAddress || '—'}
-                            </div>
+                    </div>
+                    <div>
+                        <div class="prospect-detail-item-label">Website</div>
+                        <div class="prospect-detail-item-value">
+                            ${websiteHref ? `<a href="${websiteHref}" target="_blank" rel="noopener">${websiteHref}</a>` : '—'}
                         </div>
                     </div>
                 </div>
-
-                <div class="prospect-card">
-                    <div class="prospect-section-header">
-                        <div class="prospect-section-title">Activity</div>
-                        <button type="button" class="btn btn-secondary" onclick="app.logActivity('${contact.id}')">+ Log Activity</button>
+                ${this._prospectDetailsExpanded ? `
+                <div class="prospect-detail-grid prospect-detail-grid-secondary">
+                    <div>
+                        <div class="prospect-detail-item-label">Title / Role</div>
+                        <div class="prospect-detail-item-value">${displayTitle || '—'}</div>
                     </div>
-                    ${activitiesHtml}
+                    <div>
+                        <div class="prospect-detail-item-label">Category</div>
+                        <div class="prospect-detail-item-value">${contact.category || '—'}</div>
+                    </div>
+                    <div>
+                        <div class="prospect-detail-item-label">Segment</div>
+                        <div class="prospect-detail-item-value">${contact.segment || '—'}</div>
+                    </div>
+                    <div>
+                        <div class="prospect-detail-item-label">Project</div>
+                        <div class="prospect-detail-item-value">${contact.project || '—'}</div>
+                    </div>
+                    <div>
+                        <div class="prospect-detail-item-label">Lead Source</div>
+                        <div class="prospect-detail-item-value">${contact.leadSource || '—'}</div>
+                    </div>
+                    <div>
+                        <div class="prospect-detail-item-label">Address</div>
+                        <div class="prospect-detail-item-value">
+                            ${fullAddress || '—'}
+                        </div>
+                    </div>
                 </div>
+                ` : ''}
             </div>
 
             <div class="prospect-card">
@@ -3689,11 +3687,22 @@ AdSell.ai`,
                         </svg>
                     </div>
                 </div>
+                <div class="prospect-meta" style="margin-bottom:8px;">
+                    Use AI to summarize this account, enrich missing details, and draft outreach.
+                </div>
                 <div class="prospect-header-actions">
                     <button type="button" class="btn btn-secondary" onclick="app.aiOutreach()">AI Outreach</button>
                     <button type="button" class="btn btn-secondary" onclick="app.aiCompanyResearch()">AI Summary</button>
                     <button type="button" class="btn btn-secondary" onclick="app.aiEnrichContactPlaceholder()">AI Enrich Contact</button>
                 </div>
+            </div>
+
+            <div class="prospect-card">
+                <div class="prospect-section-header">
+                    <div class="prospect-section-title">Activity</div>
+                    <button type="button" class="btn btn-secondary" onclick="app.logActivity('${contact.id}')">+ Log Activity</button>
+                </div>
+                ${activitiesHtml}
             </div>
 
             <div class="prospect-card">
@@ -3727,6 +3736,14 @@ AdSell.ai`,
             projectSelectEl.addEventListener('change', () => {
                 const newProject = projectSelectEl.value || '';
                 this.updateContactProjectInline(contact.id, newProject);
+            });
+        }
+
+        const detailsToggle = container.querySelector('.prospect-details-toggle');
+        if (detailsToggle) {
+            detailsToggle.addEventListener('click', () => {
+                this._prospectDetailsExpanded = !this._prospectDetailsExpanded;
+                this.renderProspectProfileView();
             });
         }
     }
