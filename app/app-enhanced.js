@@ -3721,7 +3721,7 @@ AdSell.ai`,
                             aria-label="Use Perplexity"
                         >
                             <img
-                                src="icons/perplexity-ai-icon.svg"
+                                src="icons/perplexity-ai.svg"
                                 alt="Perplexity"
                                 class="ai-provider-icon"
                             />
@@ -3845,16 +3845,123 @@ AdSell.ai`,
         }
 
         const setResult = (content, isError = false) => {
-            if (typeof content === 'object') {
-                content = JSON.stringify(content, null, 2);
-            }
             resultEl.innerHTML = '';
-            const pre = document.createElement('pre');
-            pre.textContent = content;
-            if (isError) {
-                pre.style.color = '#dc2626';
+
+            // Normalize basic types first
+            const isObject = content && typeof content === 'object';
+
+            // Handle plain string or null/undefined
+            if (!isObject) {
+                const p = document.createElement('p');
+                p.textContent = content == null ? '' : String(content);
+                if (isError) {
+                    p.style.color = '#dc2626';
+                }
+                resultEl.appendChild(p);
+                return;
             }
-            resultEl.appendChild(pre);
+
+            // Perplexity / relaxed fallback: { raw: "..." }
+            if ('raw' in content && !content.normalized && !content.inferred && !content.summary && !content.next_action) {
+                const pre = document.createElement('pre');
+                pre.textContent = typeof content.raw === 'string'
+                    ? content.raw
+                    : JSON.stringify(content.raw, null, 2);
+                resultEl.appendChild(pre);
+                return;
+            }
+
+            const wrapper = document.createElement('div');
+
+            const hasErrorField = Boolean(content.error);
+            const effectiveIsError = isError || hasErrorField;
+
+            // If there is an explicit error message, show it prominently
+            if (hasErrorField) {
+                const errP = document.createElement('p');
+                errP.textContent = String(content.error);
+                errP.style.color = '#dc2626';
+                errP.style.fontWeight = '600';
+                wrapper.appendChild(errP);
+            }
+
+            const addSectionTitle = (text) => {
+                const titleEl = document.createElement('div');
+                titleEl.textContent = text;
+                titleEl.style.fontWeight = '600';
+                titleEl.style.marginTop = '4px';
+                wrapper.appendChild(titleEl);
+            };
+
+            const addLine = (label, value, options = {}) => {
+                if (value === null || value === undefined || value === '') return;
+                const line = document.createElement('p');
+                line.style.margin = '2px 0';
+                if (options.mono) {
+                    line.style.whiteSpace = 'pre-wrap';
+                    line.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, "SF Mono", monospace';
+                }
+                line.textContent = `${label}: ${String(value)}`;
+                wrapper.appendChild(line);
+            };
+
+            const { normalized = {}, inferred = {}, summary = {}, next_action: nextAction = {} } = content;
+
+            // Normalized fields
+            if (normalized && Object.keys(normalized).length) {
+                addSectionTitle('Cleaned fields');
+                addLine('Name', normalized.name);
+                addLine('Title', normalized.title);
+                addLine('Company', normalized.company);
+                addLine('Phone', normalized.phone);
+                addLine('Website', normalized.website);
+                addLine('Address', normalized.address);
+            }
+
+            // Inferred business attributes
+            if (inferred && Object.keys(inferred).length) {
+                addSectionTitle('Inferred business attributes');
+                addLine('Industry', inferred.industry);
+                addLine('Company size', inferred.company_size);
+                addLine('HQ city', inferred.hq_city);
+                addLine('HQ country', inferred.hq_country);
+
+                if (typeof inferred.likely_print_advertiser === 'boolean') {
+                    addLine(
+                        'Likely print advertiser',
+                        inferred.likely_print_advertiser ? 'Yes' : 'No'
+                    );
+                }
+
+                addLine('Reasoning', inferred.reasoning);
+            }
+
+            // Summary
+            if (summary && (summary.overview || summary.why_relevant_for_print)) {
+                addSectionTitle('Summary');
+                addLine('Overview', summary.overview);
+                addLine('Why relevant for print', summary.why_relevant_for_print);
+            }
+
+            // Next action
+            if (nextAction && (nextAction.label || nextAction.channel || nextAction.script)) {
+                addSectionTitle('Suggested next step');
+                addLine('Label', nextAction.label);
+                addLine('Channel', nextAction.channel);
+                addLine('Script', nextAction.script, { mono: true });
+            }
+
+            if (!wrapper.hasChildNodes()) {
+                const empty = document.createElement('p');
+                empty.textContent = 'No enrichment details returned.';
+                wrapper.appendChild(empty);
+            }
+
+            if (effectiveIsError) {
+                wrapper.style.color = '#dc2626';
+            }
+
+            resultEl.appendChild(wrapper);
         };
 
         async function runEnrich(mode) {
@@ -3869,66 +3976,13 @@ AdSell.ai`,
             } else if (currentProvider === 'perplexity') {
                 url = 'https://adsell-openai-proxy.jgregorywalsh.workers.dev/perplexity/enrich';
             } else {
-                // OpenAI fallback using existing responses proxy
-                url = 'https://adsell-openai-proxy.jgregorywalsh.workers.dev';
+                // OpenAI provider uses the unified enrichment pipeline
+                url = 'https://adsell-openai-proxy.jgregorywalsh.workers.dev/enrich/pipeline';
             }
             setResult('Running enrichment...');
             try {
-                let body;
-                if (currentProvider === 'openai') {
-                    // Build a prompt string for the Responses API
-                    const userPrompt = `
-You are the enrichment engine for a B2B sales desk that finds advertisers for a print media marketplace.
-You receive partial prospect records (company, contact, website, city, notes, activity snapshot) and must:
-1. Normalize and clean existing data (phone formats, URLs, capitalization).
-2. Infer missing business attributes using general knowledge and web context, but NEVER hallucinate specifics.
-3. Provide a short, neutral business summary and suggested next outreach step.
-Mode: ${mode}
-Prospect JSON:
-${JSON.stringify(contact, null, 2)}
-Return ONLY a JSON object with this shape (no prose, no markdown, no code fences):
-{
-  "normalized": {
-    "name": string | null,
-    "title": string | null,
-    "company": string | null,
-    "phone": string | null,
-    "website": string | null,
-    "address": string | null
-  },
-  "inferred": {
-    "industry": string | null,
-    "company_size": "1-10" | "11-50" | "51-200" | "201-1000" | "1001+" | null,
-    "hq_city": string | null,
-    "hq_country": string | null,
-    "likely_print_advertiser": boolean | null,
-    "reasoning": string | null
-  },
-  "summary": {
-    "overview": string | null,
-    "why_relevant_for_print": string | null
-  },
-  "next_action": {
-    "label": string | null,
-    "channel": "call" | "email" | "sms" | "linkedin" | "other" | null,
-    "script": string | null
-  }
-}
-`.trim();
-                    // Responses API expects a string or array-of-input-items; we use array form
-                    body = {
-                        input: [
-                            {
-                                role: 'user',
-                                content: userPrompt
-                            }
-                        ],
-                        mode: mode === 'research' ? 'research' : 'default'
-                    };
-                } else {
-                    // Grok / Perplexity both expect { contact, mode }
-                    body = { contact, mode };
-                }
+                // For all providers now, the Worker expects { contact, mode }
+                const body = { contact, mode };
                 const res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

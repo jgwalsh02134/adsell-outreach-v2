@@ -1,19 +1,19 @@
 export default {
-  async fetch(request, env) {
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    };
-
-    // CORS preflight
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
-
-    const url = new URL(request.url);
-    const pathname = url.pathname;
-    const method = request.method.toUpperCase();
+    async fetch(request, env) {
+      const corsHeaders = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      };
+  
+      // CORS preflight
+      if (request.method === "OPTIONS") {
+        return new Response(null, { headers: corsHeaders });
+      }
+  
+      const url = new URL(request.url);
+      const pathname = url.pathname;
+      const method = request.method.toUpperCase();
 
     // Helper for consistent JSON responses
     const jsonResponse = (data, status = 200) =>
@@ -62,6 +62,29 @@ export default {
         const text = await res.text();
         throw new Error(
           `Perplexity error ${res.status}: ${text.slice(0, 500)}`
+        );
+      }
+
+      return res.json();
+    }
+
+    async function callOpenAIChat(body) {
+      const apiKey = env.OPENAI_API_KEY;
+      if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
+
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(
+          `OpenAI chat error ${res.status}: ${text.slice(0, 500)}`
         );
       }
 
@@ -132,6 +155,57 @@ Return ONLY a JSON object with this shape:
 `.trim();
     }
 
+    const pipelineMergePrompt = `
+You are the final enrichment formatter for a B2B sales desk that finds advertisers for a print media marketplace.
+
+You receive:
+- The original prospect record.
+- A "facts" object from Perplexity (company details and context).
+- An "actions" object from Grok (reasoning and suggested next steps).
+
+Your job is to merge these into a single, concise JSON object with this schema:
+
+{
+  "normalized": {
+    "name": string | null,
+    "title": string | null,
+    "company": string | null,
+    "phone": string | null,
+    "website": string | null,
+    "address": string | null
+  },
+  "inferred": {
+    "industry": string | null,
+    "company_size": "1-10" | "11-50" | "51-200" | "201-1000" | "1001+" | null,
+    "hq_city": string | null,
+    "hq_country": string | null,
+    "likely_print_advertiser": boolean | null,
+    "reasoning": string | null
+  },
+  "summary": {
+    "overview": string | null,
+    "why_relevant_for_print": string | null
+  },
+  "next_action": {
+    "label": string | null,
+    "channel": "call" | "email" | "sms" | "linkedin" | "other" | null,
+    "script": string | null
+  }
+}
+
+Guidelines:
+- Prefer factual fields from the Perplexity "facts" layer when available.
+- Prefer reasoning and next-step suggestions from the Grok "actions" layer.
+- Keep everything concise and scannable.
+- summary.overview: 1–2 sentences, max ~35 words total.
+- summary.why_relevant_for_print: 1 sentence, max ~25 words.
+- inferred.reasoning: 1–2 sentences, max ~35 words.
+- next_action.script: 2–3 short sentences, max ~60 words.
+- Do not invent private emails or phone numbers; you may use public company websites only.
+- If something is unknown or uncertain, set that field to null.
+- Return strictly valid JSON only, with no markdown, no comments, no extra keys.
+`.trim();
+
     // More robust JSON extractor (handles code fences, extra text, etc.)
     function extractJsonContentFromLLM(rawJson, label) {
       let content = rawJson?.choices?.[0]?.message?.content;
@@ -192,51 +266,51 @@ Return ONLY a JSON object with this shape:
         raw: text.slice(0, 500),
       };
     }
-
-    // ----------------------------------------------------
+  
+      // ----------------------------------------------------
     // Shared contacts API (KV: env.ADSELL_DATA)
-    // ----------------------------------------------------
-
-    if (pathname === "/contacts" && method === "GET") {
-      try {
-        const raw = await env.ADSELL_DATA.get("shared_contacts");
-
-        if (!raw) {
-          const empty = {
-            contacts: [],
-            activities: [],
-            scripts: [],
-            tags: [],
-            customFields: [],
-          };
+      // ----------------------------------------------------
+  
+      if (pathname === "/contacts" && method === "GET") {
+        try {
+          const raw = await env.ADSELL_DATA.get("shared_contacts");
+  
+          if (!raw) {
+            const empty = {
+              contacts: [],
+              activities: [],
+              scripts: [],
+              tags: [],
+              customFields: [],
+            };
           return jsonResponse(empty, 200);
-        }
-
-        return new Response(raw, {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      } catch (err) {
-        console.error("GET /contacts error:", err);
+          }
+  
+          return new Response(raw, {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        } catch (err) {
+          console.error("GET /contacts error:", err);
         return jsonResponse({ error: "Failed to load shared contacts" }, 500);
       }
     }
 
-    if (pathname === "/contacts/import" && method === "POST") {
-      try {
-        const bodyText = await request.text();
-
-        let parsed;
+      if (pathname === "/contacts/import" && method === "POST") {
         try {
-          parsed = JSON.parse(bodyText);
+          const bodyText = await request.text();
+  
+          let parsed;
+          try {
+            parsed = JSON.parse(bodyText);
         } catch {
           return jsonResponse({ error: "Invalid JSON body" }, 400);
         }
 
-        await env.ADSELL_DATA.put("shared_contacts", JSON.stringify(parsed));
+          await env.ADSELL_DATA.put("shared_contacts", JSON.stringify(parsed));
         return jsonResponse({ ok: true }, 200);
-      } catch (err) {
-        console.error("POST /contacts/import error:", err);
+        } catch (err) {
+          console.error("POST /contacts/import error:", err);
         return jsonResponse({ error: "Failed to save contacts" }, 500);
       }
     }
@@ -282,17 +356,17 @@ Return ONLY a JSON object with this shape:
         return jsonResponse(
           { error: "Failed to call Grok enrichment" },
           500
-        );
+          );
+        }
       }
-    }
-
-    // ----------------------------------------------------
+  
+      // ----------------------------------------------------
     // Perplexity enrichment endpoint: POST /perplexity/enrich
-    // ----------------------------------------------------
+      // ----------------------------------------------------
     if (pathname === "/perplexity/enrich" && method === "POST") {
-      try {
-        let body;
         try {
+          let body;
+          try {
           body = await request.json(); // { contact, mode }
         } catch {
           return jsonResponse({ error: "Invalid JSON body" }, 400);
@@ -362,53 +436,198 @@ Return ONLY a JSON object with this shape:
     }
 
     // ----------------------------------------------------
-    // Existing OpenAI Responses API proxy (default POST)
+    // Unified 3-layer enrichment pipeline: POST /enrich/pipeline
+    // Perplexity -> Grok -> OpenAI
     // ----------------------------------------------------
+    if (pathname === "/enrich/pipeline" && method === "POST") {
+      try {
+        let body;
+        try {
+          body = await request.json(); // { contact, mode }
+        } catch {
+          return jsonResponse({ error: "Invalid JSON body" }, 400);
+        }
 
-    if (request.method !== "POST") {
-      return new Response("Use POST", {
-        status: 405,
-        headers: { ...corsHeaders, Allow: "POST" },
-      });
-    }
+        const contact = body.contact || null;
+        const mode = body.mode || "research";
+        if (!contact) {
+          return jsonResponse(
+            { error: "Missing 'contact' in request body" },
+            400
+          );
+        }
 
-    let json;
-    try {
-      json = await request.json();
+        // ---------- Layer 1: Perplexity facts ----------
+        const factsPrompt = buildEnrichmentUserPrompt(contact, mode);
+
+        let pplxRaw;
+        try {
+          pplxRaw = await callPerplexityChat({
+            model: "sonar-reasoning",
+            messages: [
+              { role: "system", content: enrichmentSystemPrompt },
+              { role: "user", content: factsPrompt },
+            ],
+            max_tokens: 800,
+            temperature: 0.2,
+          });
+        } catch (e) {
+          console.error("Pipeline Perplexity error:", e);
+          // Continue with null facts so pipeline can still run
+          pplxRaw = null;
+        }
+
+        let facts = null;
+        if (pplxRaw) {
+          const parsedFacts = extractJsonContentFromLLM(pplxRaw, "Perplexity");
+          // If parsing fails, just keep raw text; no hard error
+          if (parsedFacts && !parsedFacts.error) {
+            facts = parsedFacts;
+          } else if (parsedFacts && parsedFacts.raw) {
+            facts = { raw: parsedFacts.raw };
+          }
+        }
+
+        // ---------- Layer 2: Grok actions ----------
+        const actionsPrompt = `
+Use the original prospect and optional facts data below to propose a concise next outreach step and any missing inferences.
+
+Prospect:
+${JSON.stringify(contact, null, 2)}
+
+Facts (may be null):
+${JSON.stringify(facts, null, 2)}
+
+Mode: ${mode}
+
+Return JSON in the same schema as before; if a field is unknown, set it to null. You may reuse fields from the facts layer but focus on reasoning and next_action.
+`.trim();
+
+        let grokRaw;
+        try {
+          grokRaw = await callGrokChat({
+            model: "grok-4",
+            messages: [
+              { role: "system", content: enrichmentSystemPrompt },
+              { role: "user", content: actionsPrompt },
+            ],
+            max_tokens: 800,
+            temperature: 0.2,
+          });
+        } catch (e) {
+          console.error("Pipeline Grok error:", e);
+          grokRaw = null;
+        }
+
+        let actions = null;
+        if (grokRaw) {
+          const parsedActions = extractJsonContentFromLLM(grokRaw, "Grok");
+          if (parsedActions && !parsedActions.error) {
+            actions = parsedActions;
+          } else if (parsedActions && parsedActions.raw) {
+            actions = { raw: parsedActions.raw };
+          }
+        }
+
+        // ---------- Layer 3: OpenAI merge/normalize ----------
+        const mergeUserPrompt = `
+You are given three JSON blobs:
+
+1) prospect: the raw prospect record.
+2) facts: factual enrichment from Perplexity (may be null).
+3) actions: reasoning + next steps from Grok (may be null).
+
+Your job is to merge them into a single JSON object using the schema described earlier.
+
+prospect JSON:
+${JSON.stringify(contact, null, 2)}
+
+facts JSON:
+${JSON.stringify(facts, null, 2)}
+
+actions JSON:
+${JSON.stringify(actions, null, 2)}
+
+Return ONLY the final JSON object, using all guidelines from the system prompt.
+`.trim();
+
+        let finalJson;
+        try {
+          const openaiRaw = await callOpenAIChat({
+            model: "gpt-4.1-mini",
+            messages: [
+              { role: "system", content: pipelineMergePrompt },
+              { role: "user", content: mergeUserPrompt },
+            ],
+            max_tokens: 800,
+            temperature: 0.2,
+          });
+
+          finalJson = extractJsonContentFromLLM(openaiRaw, "OpenAI");
+        } catch (e) {
+          console.error("Pipeline OpenAI merge error:", e);
+          // As a last resort, fall back to actions or facts
+          finalJson = actions || facts || { error: "Pipeline merge failed" };
+        }
+
+        return jsonResponse(finalJson, 200);
+        } catch (err) {
+        console.error("POST /enrich/pipeline error:", err);
+        return jsonResponse(
+          { error: "Failed to run enrichment pipeline" },
+          500
+          );
+        }
+      }
+  
+      // ----------------------------------------------------
+    // Existing OpenAI Responses API proxy (default POST)
+      // ----------------------------------------------------
+  
+      if (request.method !== "POST") {
+        return new Response("Use POST", {
+          status: 405,
+          headers: { ...corsHeaders, Allow: "POST" },
+        });
+      }
+  
+      let json;
+      try {
+        json = await request.json();
     } catch {
       return jsonResponse({ error: "Invalid JSON body" }, 400);
     }
 
     // For Responses API we allow input to be string OR array-of-input-items.
     // We just pass it through as-is.
-    const input = json.input ?? "";
+      const input = json.input ?? "";
     const modeForTools = json.mode ?? "default";
-
-    const tools =
+  
+      const tools =
       modeForTools === "research" ? [{ type: "web_search_preview" }] : [];
-
-    const openaiBody = JSON.stringify({
-      model: "gpt-4.1-mini",
-      input,
-      ...(tools.length > 0 ? { tools } : {}),
-    });
-
-    const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-      },
-      body: openaiBody,
-    });
-
-    const text = await openaiResponse.text();
-
-    return new Response(text, {
-      status: openaiResponse.status,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  },
-};
+  
+      const openaiBody = JSON.stringify({
+        model: "gpt-4.1-mini",
+        input,
+        ...(tools.length > 0 ? { tools } : {}),
+      });
+  
+      const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+        },
+        body: openaiBody,
+      });
+  
+      const text = await openaiResponse.text();
+  
+      return new Response(text, {
+        status: openaiResponse.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    },
+  };
 
 
