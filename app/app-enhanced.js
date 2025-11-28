@@ -3376,6 +3376,10 @@ AdSell.ai`,
             return;
         }
 
+        // Expose the active prospect globally so enrichment can use it
+        window.appState = window.appState || {};
+        window.appState.selectedContact = contact;
+
         container.classList.remove('hidden');
 
         const displayCompany = (contact.vendorName || contact.companyName || '').trim();
@@ -3678,22 +3682,67 @@ AdSell.ai`,
             <div class="prospect-card">
                 <div class="prospect-section-header">
                     <div>
-                        <div class="overline">AI &amp; Enrichment</div>
-                        <div class="prospect-meta">AI helpers for this contact</div>
-                    </div>
-                    <div class="prospect-activity-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9.813 15.904 9 21l3.75-2.25L16.5 21l-.809-5.104M6.75 9 3 6.75 6.75 4.5 9 0l2.25 4.5 3.75 2.25L11.25 9 9 13.5 6.75 9Z" />
-                        </svg>
+                        <div class="overline">ENRICHMENT</div>
+                        <div class="prospect-section-title">AI Enrichment</div>
                     </div>
                 </div>
-                <div class="prospect-meta" style="margin-bottom:8px;">
-                    Use AI to summarize this account, enrich missing details, and draft outreach.
+
+                <div class="ai-provider-row">
+                    <span class="ai-provider-label">Provider</span>
+                    <div class="ai-provider-buttons" id="ai-provider-buttons">
+                        <button
+                            type="button"
+                            class="ai-provider-btn is-active"
+                            data-provider="openai"
+                            aria-label="Use ChatGPT / OpenAI"
+                        >
+                            <img
+                                src="icons/chatgpt-icon.svg"
+                                alt="ChatGPT"
+                                class="ai-provider-icon"
+                            />
+                        </button>
+                        <button
+                            type="button"
+                            class="ai-provider-btn"
+                            data-provider="grok"
+                            aria-label="Use Grok (xAI)"
+                        >
+                            <img
+                                src="icons/Xai-grok.svg"
+                                alt="Grok xAI"
+                                class="ai-provider-icon"
+                            />
+                        </button>
+                        <button
+                            type="button"
+                            class="ai-provider-btn"
+                            data-provider="perplexity"
+                            aria-label="Use Perplexity"
+                        >
+                            <img
+                                src="icons/perplexity-ai-icon.svg"
+                                alt="Perplexity"
+                                class="ai-provider-icon"
+                            />
+                        </button>
+                    </div>
                 </div>
-                <div class="prospect-header-actions">
-                    <button type="button" class="btn btn-secondary" onclick="app.aiOutreach()">AI Outreach</button>
-                    <button type="button" class="btn btn-secondary" onclick="app.aiCompanyResearch()">AI Summary</button>
-                    <button type="button" class="btn btn-secondary" onclick="app.aiEnrichContactPlaceholder()">AI Enrich Contact</button>
+
+                <div class="ai-actions">
+                    <button type="button" class="btn btn-primary" id="btn-enrich-full">
+                        Run Full Enrich
+                    </button>
+                    <button type="button" class="btn btn-ghost" id="btn-enrich-quick">
+                        Quick Clean
+                    </button>
+                    <button type="button" class="btn btn-ghost" id="btn-enrich-next">
+                        Suggested Next Step
+                    </button>
+                </div>
+
+                <div id="ai-enrich-result" class="ai-enrich-result">
+                    <p class="muted">Run an enrichment to see AI suggestions here.</p>
                 </div>
             </div>
 
@@ -3746,6 +3795,166 @@ AdSell.ai`,
                 this.renderProspectProfileView();
             });
         }
+
+        // Wire AI enrichment card within the prospect profile
+        this.setupAIEnrichment();
+    }
+
+    /**
+     * Set up AI enrichment provider selection and actions for the current prospect.
+     * Note: This assumes the current prospect profile is rendered and uses getActiveContact().
+     */
+    setupAIEnrichment() {
+        const container = document.getElementById('prospect-profile-view');
+        if (!container) return;
+
+        const providerButtons = container.querySelectorAll('#ai-provider-buttons .ai-provider-btn');
+        const resultEl = container.querySelector('#ai-enrich-result');
+        const btnFull = container.querySelector('#btn-enrich-full');
+        const btnQuick = container.querySelector('#btn-enrich-quick');
+        const btnNext = container.querySelector('#btn-enrich-next');
+
+        if (!providerButtons.length || !resultEl || !btnFull || !btnQuick || !btnNext) return;
+
+        // Track current provider on the instance so it can persist across re-renders if desired
+        this._aiEnrichProvider = this._aiEnrichProvider || 'openai';
+        let currentProvider = this._aiEnrichProvider;
+
+        // Reflect initial provider selection in the UI
+        providerButtons.forEach((btn) => {
+            const isActive = (btn.dataset.provider || 'openai') === currentProvider;
+            btn.classList.toggle('is-active', isActive);
+        });
+
+        // Provider selection UI
+        providerButtons.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                providerButtons.forEach((b) => b.classList.remove('is-active'));
+                btn.classList.add('is-active');
+                currentProvider = btn.dataset.provider || 'openai';
+                this._aiEnrichProvider = currentProvider;
+            });
+        });
+
+        // TODO: wire this to real app state
+        function getCurrentProspect() {
+            if (window.appState && window.appState.selectedContact) {
+                return window.appState.selectedContact;
+            }
+            return null;
+        }
+
+        const setResult = (content, isError = false) => {
+            if (typeof content === 'object') {
+                content = JSON.stringify(content, null, 2);
+            }
+            resultEl.innerHTML = '';
+            const pre = document.createElement('pre');
+            pre.textContent = content;
+            if (isError) {
+                pre.style.color = '#dc2626';
+            }
+            resultEl.appendChild(pre);
+        };
+
+        async function runEnrich(mode) {
+            const contact = getCurrentProspect();
+            if (!contact) {
+                setResult('No prospect selected.', true);
+                return;
+            }
+            let url;
+            if (currentProvider === 'grok') {
+                url = 'https://adsell-openai-proxy.jgregorywalsh.workers.dev/grok/enrich';
+            } else if (currentProvider === 'perplexity') {
+                url = 'https://adsell-openai-proxy.jgregorywalsh.workers.dev/perplexity/enrich';
+            } else {
+                // OpenAI fallback using existing responses proxy
+                url = 'https://adsell-openai-proxy.jgregorywalsh.workers.dev';
+            }
+            setResult('Running enrichment...');
+            try {
+                let body;
+                if (currentProvider === 'openai') {
+                    // Build a prompt string for the Responses API
+                    const userPrompt = `
+You are the enrichment engine for a B2B sales desk that finds advertisers for a print media marketplace.
+You receive partial prospect records (company, contact, website, city, notes, activity snapshot) and must:
+1. Normalize and clean existing data (phone formats, URLs, capitalization).
+2. Infer missing business attributes using general knowledge and web context, but NEVER hallucinate specifics.
+3. Provide a short, neutral business summary and suggested next outreach step.
+Mode: ${mode}
+Prospect JSON:
+${JSON.stringify(contact, null, 2)}
+Return ONLY a JSON object with this shape (no prose, no markdown, no code fences):
+{
+  "normalized": {
+    "name": string | null,
+    "title": string | null,
+    "company": string | null,
+    "phone": string | null,
+    "website": string | null,
+    "address": string | null
+  },
+  "inferred": {
+    "industry": string | null,
+    "company_size": "1-10" | "11-50" | "51-200" | "201-1000" | "1001+" | null,
+    "hq_city": string | null,
+    "hq_country": string | null,
+    "likely_print_advertiser": boolean | null,
+    "reasoning": string | null
+  },
+  "summary": {
+    "overview": string | null,
+    "why_relevant_for_print": string | null
+  },
+  "next_action": {
+    "label": string | null,
+    "channel": "call" | "email" | "sms" | "linkedin" | "other" | null,
+    "script": string | null
+  }
+}
+`.trim();
+                    // Responses API expects a string or array-of-input-items; we use array form
+                    body = {
+                        input: [
+                            {
+                                role: 'user',
+                                content: userPrompt
+                            }
+                        ],
+                        mode: mode === 'research' ? 'research' : 'default'
+                    };
+                } else {
+                    // Grok / Perplexity both expect { contact, mode }
+                    body = { contact, mode };
+                }
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch {
+                    data = text;
+                }
+                if (!res.ok) {
+                    setResult((data && data.error) || text || 'Enrichment failed.', true);
+                    return;
+                }
+                setResult(data);
+            } catch (err) {
+                console.error('Enrichment error:', err);
+                setResult('Unexpected error during enrichment.', true);
+            }
+        }
+
+        btnFull.addEventListener('click', () => runEnrich('research'));
+        btnQuick.addEventListener('click', () => runEnrich('quick-clean'));
+        btnNext.addEventListener('click', () => runEnrich('next-step'));
     }
 
     async updateContactStatusInline(contactId, newStatus) {

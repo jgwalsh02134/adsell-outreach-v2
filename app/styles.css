@@ -2697,6 +2697,87 @@ form {
   color: var(--color-text-muted);
 }
 
+/* AI enrichment card */
+.ai-provider-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
+.ai-provider-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.ai-provider-buttons {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.ai-provider-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-surface);
+  padding: 4px;
+  cursor: pointer;
+  transition:
+    background 120ms ease-out,
+    border-color 120ms ease-out,
+    box-shadow 120ms ease-out,
+    transform 80ms ease-out;
+}
+
+.ai-provider-btn:hover {
+  background: var(--color-bg-subtle);
+}
+
+.ai-provider-btn.is-active {
+  border-color: var(--color-brand);
+  background: var(--color-brand-soft);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand) 25%, transparent);
+}
+
+.ai-provider-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ai-enrich-result {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--color-bg-subtle);
+  font-size: 12px;
+  line-height: 1.5;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.ai-enrich-result pre {
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .prospect-phone-list {
   display: flex;
   flex-direction: column;
