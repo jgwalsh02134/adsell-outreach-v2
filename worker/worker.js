@@ -135,7 +135,6 @@ Return ONLY a JSON object with this shape:
     // More robust JSON extractor (handles code fences, extra text, etc.)
     function extractJsonContentFromLLM(rawJson, label) {
       let content = rawJson?.choices?.[0]?.message?.content;
-
       // Some APIs return content as array-of-parts
       if (Array.isArray(content)) {
         content = content
@@ -146,17 +145,13 @@ Return ONLY a JSON object with this shape:
           )
           .join("");
       }
-
       if (typeof content !== "string") {
         console.error(`Unexpected ${label} content:`, content);
         return { error: `Unexpected ${label} response format` };
       }
-
       let text = content.trim();
-
       // 1) Strip markdown code fences, e.g. ```json ... ```
       if (text.startsWith("```")) {
-        // remove first fence line (``` or ```json)
         text = text.replace(/^```[a-zA-Z0-9]*\s*/, "");
         const lastFence = text.lastIndexOf("```");
         if (lastFence !== -1) {
@@ -164,7 +159,6 @@ Return ONLY a JSON object with this shape:
         }
         text = text.trim();
       }
-
       // 2) First attempt: parse whole string
       try {
         return JSON.parse(text);
@@ -173,7 +167,6 @@ Return ONLY a JSON object with this shape:
           `${label} JSON parse failed on full text, trying substring…`
         );
       }
-
       // 3) Second attempt: from first '{' to last '}'
       const firstBrace = text.indexOf("{");
       const lastBrace = text.lastIndexOf("}");
@@ -188,8 +181,12 @@ Return ONLY a JSON object with this shape:
           );
         }
       }
-
       console.error(`${label} final JSON parse failure:`, text.slice(0, 400));
+      // 👇 NEW BEHAVIOR HERE
+      if (label === "Perplexity") {
+        // Don't hard-fail Perplexity – just return raw text so the UI can show it.
+        return { raw: text.slice(0, 500) };
+      }
       return {
         error: `${label} did not return valid JSON`,
         raw: text.slice(0, 500),
