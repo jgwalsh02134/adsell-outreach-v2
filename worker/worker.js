@@ -14,7 +14,7 @@ export default {
       const url = new URL(request.url);
       const pathname = url.pathname;
       const method = request.method.toUpperCase();
-
+  
     // Helper for consistent JSON responses
     const jsonResponse = (data, status = 200) =>
       new Response(JSON.stringify(data), {
@@ -95,15 +95,29 @@ export default {
 You are the enrichment engine for a B2B sales desk that finds advertisers for a print media marketplace.
 
 You receive partial prospect records (company, contact, website, city, notes, activity snapshot) and must:
-1. Normalize and clean existing data (phone formats, URLs, capitalization).
-2. Infer missing business attributes using general knowledge and web context, but NEVER hallucinate specifics.
-3. Provide a short, neutral business summary and suggested next outreach step.
 
-Rules:
-- Only infer attributes that are highly plausible for this specific prospect.
-- If you are not reasonably confident, return null for that field.
-- Do not invent private emails, phone numbers, or personal data. You may suggest public company-level info only.
-- Keep your output strictly as compact JSON, no explanations or comments.
+1) Normalize and clean existing data (phone formats, URLs, capitalization).
+
+2) Find missing public, company-level data by using search where appropriate:
+   - Official website URL (if missing or inconsistent).
+   - General contact email and phone.
+   - Public social links (LinkedIn, Facebook, Instagram, X/Twitter, YouTube, TikTok).
+   - Names and roles of people who are good advertising / marketing / partnership contacts.
+
+3) Provide a very concise business summary and whether they are a plausible print advertising prospect.
+
+Strict rules:
+- Use only public, company-level data. Never invent private data.
+- Only include an email, phone, or person if you are confident it is correct and relevant to outreach.
+- If you are not reasonably confident, set that field to null.
+- Do NOT output any chain-of-thought, analysis sections, or "<think>" blocks.
+- Do NOT explain your steps. Only return final results via JSON.
+- Keep all free-text fields short and scannable:
+  - summary.overview: max ~35 words.
+  - summary.why_relevant_for_print: max ~25 words.
+  - inferred.reasoning: max ~35 words.
+  - next_action.script: max ~60 words if present.
+- Return strictly valid JSON only, with no markdown, no comments, and no extra keys beyond the given schema.
 `.trim();
 
     function buildEnrichmentUserPrompt(contact, mode) {
@@ -150,7 +164,30 @@ Return ONLY a JSON object with this shape:
     "label": string | null,
     "channel": "call" | "email" | "sms" | "linkedin" | "other" | null,
     "script": string | null
-  }
+  },
+  "channels": {
+    "website": string | null,
+    "email_general": string | null,
+    "phone_general": string | null,
+    "facebook": string | null,
+    "instagram": string | null,
+    "linkedin": string | null,
+    "x": string | null,
+    "youtube": string | null,
+    "tiktok": string | null,
+    "other": string | null
+  },
+  "people": [
+    {
+      "name": string | null,
+      "role": string | null,
+      "email": string | null,
+      "phone": string | null,
+      "is_advertising_contact": boolean | null,
+      "notes": string | null,
+      "confidence": "high" | "medium" | "low" | null
+    }
+  ]
 }
 `.trim();
     }
@@ -393,38 +430,8 @@ Guidelines:
           temperature: 0.2,
         });
 
-        // Try to parse JSON, but fall back to raw text instead of throwing an error
-        let content = pplxRaw?.choices?.[0]?.message?.content;
-        if (Array.isArray(content)) {
-          content = content
-            .map((part) =>
-              typeof part === "string" ? part : part?.text || JSON.stringify(part)
-            )
-            .join("");
-        }
-        let text = (content || "").trim();
-
-        // First try: JSON as-is
-        let parsed;
-        try {
-          parsed = JSON.parse(text);
-        } catch {
-          // Second try: from first { to last }
-          const firstBrace = text.indexOf("{");
-          const lastBrace = text.lastIndexOf("}");
-          if (firstBrace !== -1 && lastBrace > firstBrace) {
-            const sub = text.slice(firstBrace, lastBrace + 1);
-            try {
-              parsed = JSON.parse(sub);
-            } catch {
-              // Still no luck: just return raw
-              parsed = { raw: text };
-            }
-          } else {
-            parsed = { raw: text };
-          }
-        }
-
+        const parsed = extractJsonContentFromLLM(pplxRaw, "Perplexity");
+        // extractJsonContentFromLLM already falls back to { raw } for Perplexity on parse failure
         return jsonResponse(parsed, 200);
       } catch (err) {
         console.error("POST /perplexity/enrich error:", err);
