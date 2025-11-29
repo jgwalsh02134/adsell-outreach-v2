@@ -2025,38 +2025,43 @@ class OutreachTracker {
                 // Organization / company name for primary heading
                 const orgName = contact.vendorName || contact.companyName || '';
 
-                // Contact label/person (e.g., "President", "Info", or a person's name)
-                const emailLocal =
-                    primaryEmail && primaryEmail.includes('@')
-                        ? primaryEmail.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, ch => ch.toUpperCase())
-                        : '';
-                const label = contact.contactName || contact.title || emailLocal;
-
-                // Segment / role / project (e.g., "Ski Expo")
-                const segmentOrProject = contact.segment || contact.project || '';
-
-                let secondaryLine = '';
-                if (label && segmentOrProject) {
-                    secondaryLine = `${label} · ${segmentOrProject}`;
+                // Contact person name
+                const contactPerson = contact.contactName || '';
+                // Title/role
+                const contactTitle = contact.title || '';
+                // Build meta-primary: "Person Name · Title" or just one
+                let metaPrimary = '';
+                if (contactPerson && contactTitle) {
+                    metaPrimary = `${contactPerson} · ${contactTitle}`;
                 } else {
-                    secondaryLine = label || segmentOrProject;
+                    metaPrimary = contactPerson || contactTitle || '';
                 }
 
+                // Project / segment for meta-secondary
+                const projectName = contact.project || '';
+                const segmentName = contact.segment || '';
+
                 return `
-                    <article class="contact-card" data-id="${contact.id}">
-                        <div class="contact-card-main">
-                            <div class="contact-card-header">
-                                <div class="contact-card-name">${orgName || '(No organization)'}</div>
-                                ${statusText ? `<span class="status-badge status-${statusSlug}">${statusText}</span>` : ''}
-                            </div>
-                            ${secondaryLine ? `<div class="contact-card-company">${secondaryLine}</div>` : ''}
-                            ${tags ? `<div class="contact-card-tags tags-inline">${tags}</div>` : ''}
+                    <article class="contact-card-list" data-id="${contact.id}">
+                        <div class="contact-card-header">
+                            <div class="contact-card-title">${orgName || '(No organization)'}</div>
+                            <div class="contact-card-status contact-status-${statusSlug}">${statusText}</div>
                         </div>
+                        ${metaPrimary || projectName || segmentName ? `
+                        <div class="contact-card-meta">
+                            ${metaPrimary ? `<div class="contact-card-meta-primary">${metaPrimary}</div>` : ''}
+                            ${projectName ? `<div class="contact-card-meta-secondary">${projectName}</div>` : (segmentName ? `<div class="contact-card-meta-secondary">${segmentName}</div>` : '')}
+                        </div>
+                        ` : ''}
                         <div class="contact-card-footer">
-                            <div class="contact-card-quick-actions">
-                                ${primaryPhone ? `<a href="tel:${telHref}" class="chip chip-primary">Call</a>` : ''}
-                                ${primaryEmail ? `<a href="mailto:${primaryEmail}" class="chip chip-channel">Email</a>` : ''}
-                                <button type="button" class="chip chip-channel" onclick="app.showProspectProfile('${contact.id}')">Profile</button>
+                            <div class="contact-card-tags">
+                                ${projectName ? `<span class="contact-chip">${projectName}</span>` : ''}
+                                ${tags}
+                            </div>
+                            <div class="contact-card-actions">
+                                ${primaryPhone ? `<a href="tel:${telHref}" class="action-chip">Call</a>` : ''}
+                                ${primaryEmail ? `<a href="mailto:${primaryEmail}" class="action-chip">Email</a>` : ''}
+                                <button type="button" class="action-chip action-chip-primary" onclick="event.stopPropagation(); app.viewContact('${contact.id}')">Profile</button>
                             </div>
                         </div>
                     </article>
@@ -2065,12 +2070,12 @@ class OutreachTracker {
 
             rolodex.innerHTML = rolodexHtml;
 
-            // Card tap → open prospect profile (but let quick action links work)
-            rolodex.querySelectorAll('.contact-card').forEach(card => {
+            // Card tap → open prospect profile (but let quick action links/buttons work)
+            rolodex.querySelectorAll('.contact-card-list').forEach(card => {
                 card.addEventListener('click', (e) => {
                     const target = e.target;
-                    if (target.closest('a')) {
-                        // Allow tel: / mailto: to work without opening profile
+                    if (target.closest('a') || target.closest('button')) {
+                        // Allow tel: / mailto: / buttons to work without opening profile
                         return;
                     }
                     const id = card.getAttribute('data-id');
