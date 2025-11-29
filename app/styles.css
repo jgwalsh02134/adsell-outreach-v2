@@ -2678,11 +2678,12 @@ form {
   color: var(--color-brand-strong);
 }
 
+/* AI Actions buttons in Prospect Profile */
 .prospect-header-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 4px;
 }
 
 .prospect-channels {
@@ -2952,12 +2953,45 @@ form {
   word-break: break-word;
 }
 
+/* Shared layout for AI action buttons */
+.ai-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-inline: 14px;
+  padding-block: 8px;
+}
+
+/* SVG / icon inside AI buttons */
+.ai-action-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+@media (max-width: 767px) {
+  .prospect-header-actions {
+    gap: 6px;
+  }
+
+  .ai-action-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .ai-enrich-header {
+    justify-content: flex-start;
+  }
+}
+
 .ai-enrich-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 4px;
 }
 
 .ai-provider-indicator {

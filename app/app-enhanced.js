@@ -2627,7 +2627,7 @@ class OutreachTracker {
         }
 
         if (mode === 'add' || !contact) {
-            this.editingContactId = null;
+        this.editingContactId = null;
             titleEl.textContent = 'Add Contact';
             form.reset();
         } else {
@@ -3778,23 +3778,45 @@ AdSell.ai`,
                 <div class="prospect-header-actions">
                     <button
                         type="button"
-                        class="btn btn-primary"
+                        class="btn btn-primary ai-action-btn"
                         data-action="ai-outreach"
                     >
-                        AI Outreach
+                        <img
+                            src="icons/white-chatgpt-icon.svg"
+                            alt=""
+                            class="ai-action-icon"
+                            aria-hidden="true"
+                        />
+                        <span>Outreach</span>
                     </button>
                     <button
                         type="button"
-                        class="btn btn-secondary"
+                        class="btn btn-secondary ai-action-btn"
                         data-action="ai-company-research"
                     >
-                        AI Company Research
+                        <img
+                            src="icons/chatgpt-icon.svg"
+                            alt=""
+                            class="ai-action-icon"
+                            aria-hidden="true"
+                        />
+                        <span>Company Research</span>
                     </button>
                 </div>
 
                 <div class="ai-enrich-header" style="margin-top: 12px;">
-                    <button type="button" class="btn btn-secondary" id="btn-enrich-enhance">
-                        Enhance Profile (Perplexity)
+                    <button
+                        type="button"
+                        class="btn btn-secondary ai-action-btn"
+                        id="btn-enrich-enhance"
+                    >
+                        <img
+                            src="icons/perplexity-ai.svg"
+                            alt=""
+                            class="ai-action-icon"
+                            aria-hidden="true"
+                        />
+                        <span>Enhance Profile</span>
                     </button>
                 </div>
                 <div id="ai-enrich-result" class="ai-enrich-result">
@@ -3945,7 +3967,7 @@ AdSell.ai`,
             const keys = Object.keys(content);
             if (keys.length === 0 || (keys.length === 1 && keys[0] === 'raw')) {
                 const p = document.createElement('p');
-                p.textContent = 'No structured enrichment is available for this prospect yet.';
+                p.textContent = 'No enrichment has been generated for this profile yet.';
                 p.className = 'ai-muted';
                 resultEl.appendChild(p);
                 return;
@@ -4155,26 +4177,25 @@ AdSell.ai`,
 
             try {
                 const body = { contact, mode: 'research' };
-                const res = await fetch('https://adsell-openai-proxy.jgregorywalsh.workers.dev/perplexity/enrich', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
+                const res = await fetch(
+                    'https://adsell-openai-proxy.jgregorywalsh.workers.dev/perplexity/enrich',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    }
+                );
 
                 const text = await res.text();
-                let data;
-                try {
-                    data = JSON.parse(text);
-                } catch {
-                    data = text;
-                }
 
                 if (!res.ok) {
-                    setResult((data && data.error) || text || 'Enrichment failed.', true);
+                    // Show the error text if available, otherwise a generic message
+                    setResult(text || 'Enrichment failed.', true);
                     return;
                 }
 
-                setResult(data);
+                // Always treat the result as plain text
+                setResult(text);
             } catch (err) {
                 console.error('Enrichment error:', err);
                 setResult('Unexpected error during enrichment.', true);

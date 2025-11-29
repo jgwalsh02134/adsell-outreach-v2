@@ -44,30 +44,7 @@ export default {
       return res.json();
     }
 
-    async function callOpenAIChat(body, env) {
-      const apiKey = env.OPENAI_API_KEY;
-      if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
-
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(
-          `OpenAI chat error ${res.status}: ${text.slice(0, 500)}`
-        );
-      }
-
-      return res.json();
-    }
-
-    // ---------- Prompt & extractor ----------
+    // ---------- Prompt ----------
 
     const enrichmentSystemPrompt = `
 You are the prospect research assistant for a B2B sales desk that finds advertisers for a print media marketplace.
@@ -89,9 +66,9 @@ STRICT RULES:
 - Do NOT guess or fabricate emails, phone numbers, or names. If you are not confident, omit that item.
 - Do NOT output chain-of-thought, "<think>", step-by-step reasoning, or any explanation of your process.
 - Do NOT use code fences or JSON. Output only readable text.
-- Keep all text fields short and scannable.
+- Keep all text short and scannable.
 
-Your output should be a compact text report with clearly labeled sections, for example:
+Format your output as a compact report with clearly labeled sections, for example:
 
 Channels:
 - Website: ...
@@ -110,77 +87,6 @@ Summary:
 Fit for Print:
 - Brief sentence about whether they are likely to benefit from print advertising and why.
 `.trim();
-
-    function buildPerplexityUserPrompt(contact, mode) {
-      return `
-Prospect JSON:
-${JSON.stringify(contact, null, 2)}
-
-Mode: ${mode}
-
-Return ONLY a JSON object with this exact shape:
-
-{
-  "normalized": {
-    "name": string | null,
-    "title": string | null,
-    "company": string | null,
-    "phone": string | null,
-    "website": string | null,
-    "address": string | null
-  },
-  "channels": {
-    "website": string | null,
-    "email_general": string | null,
-    "phone_general": string | null,
-    "facebook": string | null,
-    "instagram": string | null,
-    "linkedin": string | null,
-    "x": string | null,
-    "youtube": string | null,
-    "tiktok": string | null,
-    "other": string | null
-  },
-  "people": [
-    {
-      "name": string | null,
-      "role": string | null,
-      "email": string | null,
-      "phone": string | null,
-      "notes": string | null,
-      "is_advertising_contact": boolean | null,
-      "confidence": "high" | "medium" | "low" | null
-    }
-  ],
-  "summary": {
-    "overview": string | null,
-    "why_relevant_for_print": string | null
-  },
-  "fit": {
-    "likely_print_advertiser": boolean | null,
-    "reasoning": string | null
-  }
-}
-`.trim();
-    }
-
-    function extractPerplexityJson(rawJson) {
-      const content = rawJson?.choices?.[0]?.message?.content;
-      if (typeof content !== "string") {
-        return {};
-      }
-
-      try {
-        return JSON.parse(content);
-      } catch (err) {
-        console.error(
-          "extractPerplexityJson: failed to parse JSON",
-          err,
-          content.slice(0, 300)
-        );
-        return {};
-      }
-    }
 
     // ----------------------------------------------------
     // Shared contacts API (KV: env.ADSELL_DATA)
@@ -259,7 +165,7 @@ ${JSON.stringify(contact, null, 2)}
 
 Mode: ${mode}
 
-Using the instructions from the system prompt, produce a concise enrichment report for this prospect as readable text (NO JSON, NO code fences, NO "<think>").
+Using the instructions from the system prompt, produce a concise enrichment report for this prospect as readable text only (NO JSON, NO code fences, NO "<think>"). Use headings like "Channels:", "Key People:", "Summary:", and "Fit for Print:".
 `.trim();
 
         // Call Perplexity (sonar) for enrichment
@@ -291,7 +197,7 @@ Using the instructions from the system prompt, produce a concise enrichment repo
 
         if (typeof content !== "string") {
           return new Response(
-            "No enrichment details available for this prospect.",
+            "No enrichment details are available for this prospect.",
             {
               status: 200,
               headers: { ...corsHeaders, "Content-Type": "text/plain" },
@@ -312,7 +218,7 @@ Using the instructions from the system prompt, produce a concise enrichment repo
         }
 
         if (!text) {
-          text = "No enrichment details available for this prospect.";
+          text = "No enrichment details are available for this prospect.";
         }
 
         // Return plain text so the frontend can display it directly
