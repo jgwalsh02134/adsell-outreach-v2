@@ -441,6 +441,13 @@ body {
     display: none;
 }
 
+/* On mobile, add extra bottom padding for the fixed bottom nav */
+@media (max-width: 1023px) {
+    .page {
+        padding-bottom: 92px; /* nav height (72px) + breathing room + safe area */
+    }
+}
+
 .page.active {
     display: block;
     animation: fadeIn 0.3s;
@@ -580,61 +587,104 @@ body {
     color: var(--text-primary);
 }
 
-/* Bottom tab bar: iOS-style navigation (mobile primary nav) */
+/* ============================================
+   Bottom Tab Bar: iOS-style navigation
+   ============================================ */
+
 .mobile-nav.bottom-nav {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
-    height: 56px;
+    height: 72px;
     padding-bottom: env(safe-area-inset-bottom);
-    background: var(--color-bg-surface);
-    border-top: 1px solid var(--color-border-subtle);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.06);
+    display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: space-around;
     z-index: 100;
 }
 
-/* Each tab: icon-only button */
+/* Each tab item - icon + label stack */
 .mobile-nav.bottom-nav .bottom-nav-item {
     flex: 1;
+    height: 100%;
+    border: none;
+    background: transparent;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border: none;
-    background: transparent;
-    text-align: center;
-    padding: 6px 0;
+    gap: 4px;
     cursor: pointer;
+    padding: 8px 4px;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.15s ease;
 }
 
-/* SVG icon */
+.mobile-nav.bottom-nav .bottom-nav-item:active {
+    opacity: 0.7;
+}
+
+/* Tab icon - SF-style icons, larger for easier tapping */
 .mobile-nav.bottom-nav .tab-icon {
-    width: 22px;
-    height: 22px;
-    margin-bottom: 2px;
+    width: 28px;
+    height: 28px;
+    display: block;
+    transition: transform 0.25s cubic-bezier(0.33, 1.55, 0.69, 1), filter 0.2s ease;
 }
 
-/* Active state (JS toggles .is-active on current tab) */
-.mobile-nav.bottom-nav .bottom-nav-item {
-    color: var(--color-text-muted);
+/* Tab label - slightly larger for readability */
+.mobile-nav.bottom-nav .tab-label {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.1;
+    color: var(--color-text-muted, #6b7280);
+    transition: color 0.15s ease, font-weight 0.15s ease;
 }
 
+/* Inactive state - muted/grayscale appearance */
+.mobile-nav.bottom-nav .bottom-nav-item:not(.is-active) .tab-icon {
+    filter: grayscale(100%) opacity(0.5);
+}
+
+.mobile-nav.bottom-nav .bottom-nav-item:not(.is-active) .tab-label {
+    color: #9ca3af;
+}
+
+/* Active state - SF blue highlight */
 .mobile-nav.bottom-nav .bottom-nav-item.is-active {
-    color: var(--color-brand);
     position: relative;
 }
 
+/* Active icon: full color + slight scale pop */
+.mobile-nav.bottom-nav .bottom-nav-item.is-active .tab-icon {
+    filter: none;
+    transform: scale(1.12);
+}
+
+/* Active label: SF blue */
+.mobile-nav.bottom-nav .bottom-nav-item.is-active .tab-label {
+    color: #007aff;
+    font-weight: 600;
+}
+
+/* Subtle pill indicator under active tab */
 .mobile-nav.bottom-nav .bottom-nav-item.is-active::before {
     content: "";
     position: absolute;
-    top: 0;
-    left: 25%;
-    right: 25%;
-    height: 2px;
-    background: var(--color-brand);
-    border-radius: 999px;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 42px;
+    height: 20px;
+    border-radius: 9999px;
+    background: rgba(0, 122, 255, 0.12);
+    z-index: -1;
 }
 
 /* Contacts mobile toggles (hidden by default, shown in mobile media query) */
@@ -2729,6 +2779,52 @@ form {
   width: 20px;
   height: 20px;
   display: block;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Messaging Channel Button Variants (Message, WhatsApp, Messenger)
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Unified Message button (iMessage on Apple, SMS elsewhere) - Blue tint on hover */
+.prospect-channel-message:hover {
+  color: #007aff;
+  border-color: rgba(0, 122, 255, 0.3);
+  background: rgba(0, 122, 255, 0.08);
+}
+
+.prospect-channel-message .prospect-channel-icon {
+  stroke: currentColor;
+}
+
+/* WhatsApp - Green tint on hover */
+.prospect-channel-whatsapp:hover {
+  color: #25d366;
+  border-color: rgba(37, 211, 102, 0.3);
+  background: rgba(37, 211, 102, 0.08);
+}
+
+.prospect-channel-whatsapp .prospect-channel-icon {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* Facebook Messenger - Blue/purple tint on hover */
+.prospect-channel-messenger:hover {
+  color: #0084ff;
+  border-color: rgba(0, 132, 255, 0.3);
+  background: rgba(0, 132, 255, 0.08);
+}
+
+.prospect-channel-messenger .prospect-channel-icon {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* Ensure filled icons have consistent sizing */
+.prospect-channel-whatsapp .prospect-channel-icon,
+.prospect-channel-messenger .prospect-channel-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .prospect-two-column {

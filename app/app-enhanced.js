@@ -240,12 +240,22 @@ class OutreachTracker {
 
                 this.showPage(page);
 
+                // Update active state for bottom nav immediately
+                tabLinks.forEach(t => t.classList.remove('is-active'));
+                btn.classList.add('is-active');
+
                 // Also close the hamburger menu if it's open
                 if (navContainer && navContainer.classList.contains('nav-open')) {
                     navContainer.classList.remove('nav-open');
                 }
             });
         });
+
+        // Set initial active state for bottom nav based on default page
+        const defaultTab = document.querySelector('.mobile-nav.bottom-nav .bottom-nav-item[data-page="dashboard"]');
+        if (defaultTab) {
+            defaultTab.classList.add('is-active');
+        }
 
         // Dashboard stat cards → shortcuts
         const dashboardLinks = document.querySelectorAll('.stat-card.dashboard-link');
@@ -578,13 +588,13 @@ class OutreachTracker {
             quickAddForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const formData = new FormData(quickAddForm);
-                const vendorName = (formData.get('vendorName') || '').trim();
-                if (!vendorName) {
-                    alert('Please enter a company / organization name.');
+                const businessName = (formData.get('vendorName') || '').trim();
+                if (!businessName) {
+                    alert('Please enter a business / organization name.');
                     return;
                 }
                 const contactData = {
-                    vendorName,
+                    vendorName: businessName,
                     contactName: (formData.get('contactName') || '').trim(),
                     email: (formData.get('email') || '').trim(),
                     phone: (formData.get('phone') || '').trim(),
@@ -1815,7 +1825,7 @@ class OutreachTracker {
                     return `
                         <div class="calendar-followup-row" data-id="${c.id}">
                             <div class="calendar-followup-main">
-                                <div class="calendar-followup-name">${c.vendorName || '(No vendor name)'}</div>
+                                <div class="calendar-followup-name">${c.vendorName || '(No business name)'}</div>
                                 <div class="calendar-followup-meta">${meta || 'Follow-up scheduled'}</div>
                             </div>
                             <div class="calendar-followup-date">${this.formatDate(entry.date.toISOString())}</div>
@@ -1845,7 +1855,7 @@ class OutreachTracker {
 
         container.innerHTML = recentActivities.map(activity => {
             const contact = this.contacts.find(c => c.id === activity.contactId);
-            const vendorName = contact ? contact.vendorName : 'Unknown';
+            const businessName = contact ? contact.vendorName : 'Unknown';
             
             return `
                 <div class="activity-item">
@@ -1853,7 +1863,7 @@ class OutreachTracker {
                         <span class="activity-type">${activity.type}</span>
                         <span class="activity-date">${this.formatDate(activity.date)}</span>
                     </div>
-                    <div class="activity-vendor">${vendorName}</div>
+                    <div class="activity-vendor">${businessName}</div>
                     <p class="activity-notes">${this.truncateText(activity.notes, 100)}</p>
                 </div>
             `;
@@ -1916,7 +1926,7 @@ class OutreachTracker {
 
             return `
             <tr class="contact-row" data-id="${contact.id}">
-                <td data-col="vendor" data-label="Vendor">
+                <td data-col="vendor" data-label="Business">
                     <label class="row-select-wrap">
                         <input type="checkbox" class="row-select" data-id="${contact.id}" ${this.selectedContactIds.has(contact.id) ? 'checked' : ''}>
                         <div>
@@ -1980,7 +1990,7 @@ class OutreachTracker {
             });
         });
 
-        // Explicitly make vendor name clickable without triggering checkbox
+        // Explicitly make business name clickable without triggering checkbox
         tbody.querySelectorAll('.contact-name-link').forEach(el => {
             el.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -2225,7 +2235,7 @@ class OutreachTracker {
     }
 
     applyColumnVisibility() {
-        // Vendor column always visible
+        // Business/Organization column always visible
         const table = document.querySelector('.contacts-table');
         if (!table) return;
 
@@ -3191,10 +3201,10 @@ class OutreachTracker {
                 id: this.generateId(),
                 title: 'Initial Outreach - Print Advertising Platform',
                 type: 'Email',
-                subject: 'Reach more customers for {Vendor Name} with print advertising',
+                subject: 'Reach more customers for {Business Name} with print advertising',
                 content: `Hi {Contact Name},
 
-My name is {Your Name} from AdSell.ai. I saw {Vendor Name} at the Albany Ski Expo and wanted to reach out about an opportunity that could help you reach more customers this ski season.
+My name is {Your Name} from AdSell.ai. I saw {Business Name} at the Albany Ski Expo and wanted to reach out about an opportunity that could help you reach more customers this ski season.
 
 AdSell.ai is an AI-powered platform that makes print advertising incredibly easy and affordable. Instead of going through expensive agencies, you can place ads directly in top newspapers and magazines with just a few clicks.
 
@@ -3210,7 +3220,7 @@ Perfect for {Category} like yours looking to reach local ski enthusiasts and fam
 
 **Special offer for ski industry businesses:** Use code 2104 to get started with preferred pricing.
 
-Would you be open to a quick 10-minute call this week? I can show you exactly how {Vendor Name} could use print advertising to fill more lift lines/increase foot traffic/boost bookings this season.
+Would you be open to a quick 10-minute call this week? I can show you exactly how {Business Name} could use print advertising to fill more lift lines/increase foot traffic/boost bookings this season.
 
 Visit www.adsell.ai or reply to schedule a demo.
 
@@ -3284,12 +3294,12 @@ IMPORTANT:
                 id: this.generateId(),
                 title: 'Follow-up Email - No Response',
                 type: 'Email',
-                subject: 'Still interested in reaching more customers? {Vendor Name}',
+                subject: 'Still interested in reaching more customers? {Business Name}',
                 content: `Hi {Contact Name},
 
 Following up on my email about AdSell.ai - wanted to make sure this didn't get buried in your inbox.
 
-Quick refresher: We help ski businesses like {Vendor Name} place print ads in newspapers and magazines without the hassle (or cost!) of traditional agencies.
+Quick refresher: We help ski businesses like {Business Name} place print ads in newspapers and magazines without the hassle (or cost!) of traditional agencies.
 
 Why this matters for ski season:
 • Families plan ski trips by reading local weekend guides and outdoor magazines
@@ -3303,7 +3313,7 @@ Takes literally 5 minutes to create and submit your first ad.
 
 Quick question: Are you actively advertising right now, or still figuring out your marketing strategy for the season?
 
-Would love to show you how {Vendor Name} could use this. 10-minute call or I can send you a quick demo video - your choice.
+Would love to show you how {Business Name} could use this. 10-minute call or I can send you a quick demo video - your choice.
 
 Reply with "Demo" for a video walkthrough or "Call" to schedule 10 minutes.
 
@@ -3319,7 +3329,7 @@ AdSell.ai`,
                 subject: 'Print advertising without the headache',
                 content: `{Contact Name},
 
-Quick question: Does {Vendor Name} do any print advertising?
+Quick question: Does {Business Name} do any print advertising?
 
 Most ski businesses tell us they wish they could, but it's too expensive/complicated/time-consuming through traditional agencies.
 
@@ -3333,7 +3343,7 @@ That's exactly what we built AdSell.ai to solve:
 
 Perfect for reaching families planning ski trips who aren't on Instagram all day.
 
-Worth a 10-minute conversation? I can show you exactly how it works and what it would cost for {Vendor Name}.
+Worth a 10-minute conversation? I can show you exactly how it works and what it would cost for {Business Name}.
 
 Reply "yes" or visit www.adsell.ai (code 2104 for ski industry access).
 
@@ -3348,7 +3358,7 @@ AdSell.ai`,
                 subject: 'Following up from Albany Ski Expo',
                 content: `Hi {Contact Name},
 
-We connected at the Albany Ski Expo (or saw {Vendor Name} was an exhibitor) and wanted to follow up about something that could help you get more value from events like this.
+We connected at the Albany Ski Expo (or saw {Business Name} was an exhibitor) and wanted to follow up about something that could help you get more value from events like this.
 
 The challenge with expos: you meet hundreds of potential customers, but then what? How do you stay top-of-mind when they're actually ready to book/buy?
 
@@ -3362,7 +3372,7 @@ Here's how ski businesses are using it:
 
 **Example:** A ski shop runs an ad in regional outdoor magazines post-expo offering 15% off gear. Cost: $300. Result: 47 customers, $8,200 in sales. That's 27x ROI.
 
-Want to see how this could work for {Vendor Name}? I can show you exactly which publications your expo attendees read.
+Want to see how this could work for {Business Name}? I can show you exactly which publications your expo attendees read.
 
 10-minute call or demo video - your choice. Reply or visit www.adsell.ai (code 2104).
 
@@ -3680,6 +3690,11 @@ AdSell.ai`,
             return `https://x.com/${handle}`;
         })();
 
+        // Generate messaging channel links
+        const messageUrl = this.getMessageLink(contact);  // Unified Message (iMessage on Apple, SMS elsewhere)
+        const whatsAppUrl = this.getWhatsAppLink(contact); // Only shows if contact.hasWhatsApp === true
+        const fbMessageUrl = this.getFacebookMessageLink(contact);
+
         const channelsHtml = `
             <div class="prospect-channels">
                 ${primaryPhone ? `
@@ -3690,12 +3705,20 @@ AdSell.ai`,
                         <span class="prospect-channel-label">Call</span>
                     </a>
                 ` : ''}
-                ${telHref ? `
-                    <a href="sms:${telHref}" class="prospect-channel-btn" aria-label="SMS ${displayContact || primaryName}">
+                ${messageUrl ? `
+                    <a href="${messageUrl}" class="prospect-channel-btn prospect-channel-message" aria-label="Message ${displayContact || primaryName}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 8.25A2.25 2.25 0 0 1 5.25 6h13.5A2.25 2.25 0 0 1 21 8.25v7.5A2.25 2.25 0 0 1 18.75 18H8.664a2.25 2.25 0 0 0-1.59.66L4.5 21v-3.75A2.25 2.25 0 0 1 3 15.75v-7.5Z" />
+                            <path d="M12 21c5.523 0 10-4.03 10-9s-4.477-9-10-9S2 7.03 2 12c0 2.14.832 4.1 2.217 5.6L3 21l4.163-1.325A10.68 10.68 0 0 0 12 21Z" />
                         </svg>
-                        <span class="prospect-channel-label">SMS</span>
+                        <span class="prospect-channel-label">Message</span>
+                    </a>
+                ` : ''}
+                ${whatsAppUrl ? `
+                    <a href="${whatsAppUrl}" target="_blank" rel="noopener noreferrer" class="prospect-channel-btn prospect-channel-whatsapp" aria-label="WhatsApp ${displayContact || primaryName}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+                        </svg>
+                        <span class="prospect-channel-label">WhatsApp</span>
                     </a>
                 ` : ''}
                 ${primaryEmail ? `
@@ -3705,6 +3728,14 @@ AdSell.ai`,
                             <path d="M5.25 6.75 12 12l6.75-5.25" />
                         </svg>
                         <span class="prospect-channel-label">Email</span>
+                    </a>
+                ` : ''}
+                ${fbMessageUrl ? `
+                    <a href="${fbMessageUrl}" target="_blank" rel="noopener noreferrer" class="prospect-channel-btn prospect-channel-messenger" aria-label="Facebook Message ${displayContact || primaryName}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.906 1.437 5.502 3.686 7.202V22l3.397-1.866c.905.251 1.867.387 2.917.387 5.523 0 10-4.145 10-9.243S17.523 2 12 2Zm.995 12.442-2.548-2.72-4.973 2.72 5.47-5.806 2.611 2.72 4.909-2.72-5.469 5.806Z"/>
+                        </svg>
+                        <span class="prospect-channel-label">Messenger</span>
                     </a>
                 ` : ''}
                 ${websiteHref ? `
@@ -4471,14 +4502,14 @@ AdSell.ai`,
             const contacts = [];
 
             // Build a set of keys for existing contacts to detect duplicates.
-            // Key format: vendorName|email, both lowercased and trimmed.
+            // Key format: businessName|email, both lowercased and trimmed.
             const existingKeys = new Set(
                 (this.contacts || [])
                     .filter(c => c.vendorName && c.email)
                     .map(c => {
-                        const vendor = c.vendorName.toLowerCase().trim();
+                        const business = c.vendorName.toLowerCase().trim();
                         const email = c.email.toLowerCase().trim();
-                        return `${vendor}|${email}`;
+                        return `${business}|${email}`;
                     })
             );
 
@@ -4526,7 +4557,7 @@ AdSell.ai`,
 
                     const h = headerMap[index];
 
-                    // Vendor / Company / Organization name
+                    // Business / Company / Organization name
                     if (hasAny(h, ["vendor", "business", "organization", "organisation", "org", "company", "account", "brand"])) {
                         if (!contact.vendorName) contact.vendorName = value;
                         if (!contact.companyName) contact.companyName = value;
@@ -4586,7 +4617,7 @@ AdSell.ai`,
                     }
                 });
 
-                // Fallbacks for vendor/company names
+                // Fallbacks for business/company names
                 if (!contact.vendorName) {
                     contact.vendorName =
                         contact.companyName ||
@@ -4618,7 +4649,7 @@ AdSell.ai`,
                     continue;
                 }
 
-                // Build dedupe key if we have both vendorName and email
+                // Build dedupe key if we have both business name and email
                 let dedupeKey = null;
                 if (contact.vendorName && contact.email) {
                     const vendor = contact.vendorName.toLowerCase().trim();
@@ -4837,6 +4868,88 @@ AdSell.ai`,
     truncateText(text, length) {
         if (!text || text.length <= length) return text;
         return text.substring(0, length) + '...';
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Channel Link Helpers (iMessage, SMS, WhatsApp, Facebook Message)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Normalize a phone number to E.164-ish format for URL schemes.
+     * Returns null if no valid phone can be extracted.
+     */
+    normalizePhone(rawPhone) {
+        if (!rawPhone) return null;
+        const digits = String(rawPhone).replace(/[^\d+]/g, "");
+        // Basic heuristic: if it doesn't start with + and looks like US number, prepend +1
+        if (!digits.startsWith("+") && digits.length === 10) {
+            return "+1" + digits;
+        }
+        return digits || null;
+    }
+
+    /**
+     * Check if the current device is likely an Apple device (for iMessage).
+     */
+    isAppleDevice() {
+        const ua = navigator.userAgent || "";
+        return /iPhone|iPad|iPod|Mac/i.test(ua);
+    }
+
+    /**
+     * Get unified Message link.
+     * On Apple devices → iMessage scheme.
+     * On other devices → SMS scheme.
+     */
+    getMessageLink(contact) {
+        const phone = this.normalizePhone(contact?.phone);
+        if (!phone) return null;
+
+        if (this.isAppleDevice()) {
+            // Use iMessage scheme on Apple platforms
+            return `imessage:${phone}`;
+        } else {
+            // Use SMS scheme elsewhere
+            return `sms:${phone}`;
+        }
+    }
+
+    /**
+     * Get WhatsApp link (wa.me format, digits only without +).
+     * Only returns a link if the contact is explicitly marked as WhatsApp-enabled.
+     */
+    getWhatsAppLink(contact) {
+        // Only show WhatsApp if explicitly flagged
+        if (!contact || !contact.hasWhatsApp) return null;
+        const phone = this.normalizePhone(contact?.phone);
+        if (!phone) return null;
+        const digitsOnly = phone.replace(/[^\d]/g, "");
+        if (!digitsOnly) return null;
+        return `https://wa.me/${digitsOnly}`;
+    }
+
+    /**
+     * Get Facebook Messenger link from contact.facebook URL.
+     * Attempts to extract the page/profile handle and build an m.me link.
+     */
+    getFacebookMessageLink(contact) {
+        const url = contact?.facebook || contact?.facebookPage || "";
+        if (!url) return null;
+
+        try {
+            const u = new URL(url);
+            // Expect path like /PageName or /groups/Something
+            const parts = u.pathname.split("/").filter(Boolean);
+            if (parts.length >= 1) {
+                // Use the last non-empty segment as the handle
+                const handle = parts[parts.length - 1];
+                return `https://m.me/${handle}`;
+            }
+            // Fallback: just open the original URL
+            return url;
+        } catch {
+            return null;
+        }
     }
 
     // Download helpers

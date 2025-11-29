@@ -604,7 +604,7 @@
                     <p class="upload-help">Upload a CSV file with contact information</p>
                     <div class="csv-format-help">
                         <h4>Expected CSV Format:</h4>
-                        <p>Vendor Name, Contact Name, Email, Phone, Website, Category, Segment, Status, Notes</p>
+                        <p>Business Name, Contact Name, Email, Phone, Website, Category, Segment, Status, Notes</p>
                     </div>
                 </div>
 
@@ -674,18 +674,46 @@
     </main>
 
     <nav class="mobile-nav bottom-nav">
-        <a href="#" class="bottom-nav-item" data-page="dashboard" data-view="dashboard" aria-label="Dashboard">
-            <img src="icons/dashboard.svg" alt="" class="tab-icon" />
-        </a>
-        <a href="#" class="bottom-nav-item" data-page="contacts" data-view="contacts" aria-label="Contacts">
-            <img src="icons/contacts.svg" alt="" class="tab-icon" />
-        </a>
-        <a href="#" class="bottom-nav-item" data-page="projects" data-view="projects" aria-label="Projects">
-            <img src="icons/projects.svg" alt="" class="tab-icon" />
-        </a>
-        <a href="#" class="bottom-nav-item" data-page="tasks" data-view="tasks" aria-label="Tasks">
-            <img src="icons/tasks.svg" alt="" class="tab-icon" />
-        </a>
+        <button
+            type="button"
+            class="bottom-nav-item"
+            data-page="dashboard"
+            data-view="dashboard"
+            aria-label="Home"
+        >
+            <img src="icons/sf-home-icon.svg" alt="" class="tab-icon" />
+            <span class="tab-label">Home</span>
+        </button>
+        <button
+            type="button"
+            class="bottom-nav-item"
+            data-page="contacts"
+            data-view="contacts"
+            aria-label="Contacts"
+        >
+            <img src="icons/sf-contacts-icon.svg" alt="" class="tab-icon" />
+            <span class="tab-label">Contacts</span>
+        </button>
+        <button
+            type="button"
+            class="bottom-nav-item"
+            data-page="projects"
+            data-view="projects"
+            aria-label="Projects"
+        >
+            <img src="icons/sf-projects-icon.svg" alt="" class="tab-icon" />
+            <span class="tab-label">Projects</span>
+        </button>
+        <button
+            type="button"
+            class="bottom-nav-item"
+            data-page="tasks"
+            data-view="tasks"
+            aria-label="Tasks"
+        >
+            <img src="icons/sf-tasks-icon.svg" alt="" class="tab-icon" />
+            <span class="tab-label">Tasks</span>
+        </button>
     </nav>
 
     <!-- Contact Sheet Modal (Add/Edit Contact) -->
@@ -702,7 +730,7 @@
                     <div class="overline-label">Essentials</div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Business/Vendor Name *</label>
+                            <label>Business / Organization Name *</label>
                             <input type="text" name="vendorName" required>
                         </div>
                     </div>
