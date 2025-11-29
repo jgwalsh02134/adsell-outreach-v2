@@ -528,6 +528,11 @@ body {
     display: inline-block;
 }
 
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 12px;
+}
+
 .btn-primary {
     background-color: var(--color-brand);
     border-color: var(--color-brand);
@@ -2818,6 +2823,202 @@ form {
 
 .prospect-detail-item-value a:hover {
   text-decoration: underline;
+}
+
+/* ============================================
+   Details Card - Grouped Layout
+   ============================================ */
+
+.details-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.details-card-header .overline-label {
+  margin: 0;
+}
+
+.details-group {
+  margin-bottom: 16px;
+}
+
+.details-group:last-child {
+  margin-bottom: 0;
+}
+
+.details-group-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted, #6b7280);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--color-border-subtle, #e5e7eb);
+}
+
+.details-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+}
+
+.details-row:last-child {
+  margin-bottom: 0;
+}
+
+.details-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-muted, #6b7280);
+  margin-bottom: 2px;
+}
+
+.details-value {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--color-text-primary, #111827);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.details-value a {
+  color: var(--color-brand-strong, #1d4ed8);
+  text-decoration: none;
+}
+
+.details-value a:hover {
+  text-decoration: underline;
+}
+
+.details-value-muted {
+  font-size: 14px;
+  color: var(--color-text-muted, #9ca3af);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.details-hidden {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .details-row {
+    margin-bottom: 6px;
+  }
+  
+  .details-group {
+    margin-bottom: 12px;
+  }
+  
+  .details-value {
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 768px) {
+  .details-rows-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 24px;
+  }
+}
+
+/* ============================================
+   Contact Modal - Mobile Bottom Sheet
+   ============================================ */
+
+#contact-modal .modal-content {
+  transition: transform 0.25s ease-out;
+}
+
+@media (max-width: 767px) {
+  #contact-modal.active {
+    align-items: flex-end;
+  }
+  
+  #contact-modal .modal-content {
+    width: 100%;
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 16px 16px 0 0;
+    margin: 0;
+    animation: slideUpSheet 0.25s ease-out;
+  }
+  
+  @keyframes slideUpSheet {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Contact form grid layout */
+.contact-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 767px) {
+  .contact-form-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* Advanced fields container */
+.contact-advanced-section.collapsed {
+  display: none;
+}
+
+/* Save/Cancel button row */
+.contact-modal-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-subtle, #e5e7eb);
+}
+
+.contact-modal-error {
+  margin-top: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #b91c1c;
+  background: #fef2f2;
+  border-radius: 6px;
+  border: 1px solid #fecaca;
+}
+
+/* Save button loading state */
+.btn-saving {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.btn-saving::after {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: 6px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.6s linear infinite;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .prospect-activity-list,

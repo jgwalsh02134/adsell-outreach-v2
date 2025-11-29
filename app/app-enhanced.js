@@ -2715,10 +2715,31 @@ class OutreachTracker {
 
     async saveContact(form) {
         const formData = new FormData(form);
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const errorEl = form.querySelector('.contact-modal-error');
         
+        // Show loading state
+        const originalBtnText = submitBtn?.textContent || 'Save';
+        if (submitBtn) {
+            submitBtn.textContent = 'Saving…';
+            submitBtn.classList.add('btn-saving');
+            submitBtn.disabled = true;
+        }
+        
+        // Clear previous errors
+        if (errorEl) {
+            errorEl.remove();
+        }
+        
+        try {
         // Get selected tags
         const selectedTags = Array.from(document.querySelectorAll('#tag-selector input[type="checkbox"]:checked'))
             .map(cb => cb.value);
+
+            // Get existing contact data to preserve metadata
+            const existingContact = this.editingContactId 
+                ? this.contacts.find(c => c.id === this.editingContactId) 
+                : null;
 
         const contact = {
             id: this.editingContactId || this.generateId(),
@@ -2773,18 +2794,14 @@ class OutreachTracker {
             leadSource: formData.get('leadSource') || 'Albany Ski Expo',
             referredBy: formData.get('referredBy'),
             
-            // Metadata
-            createdAt: this.editingContactId ? 
-                this.contacts.find(c => c.id === this.editingContactId).createdAt : 
-                new Date().toISOString(),
-            lastContact: this.editingContactId ? 
-                this.contacts.find(c => c.id === this.editingContactId).lastContact : 
-                null,
+                // Metadata - preserve from existing or create new
+                createdAt: existingContact?.createdAt || new Date().toISOString(),
+                lastContact: existingContact?.lastContact || null,
             followUpDate: formData.get('followUpDate') || null,
             nextSteps: formData.get('nextSteps'),
             
             // Custom fields
-            customFields: {}
+                customFields: existingContact?.customFields || {}
         };
 
         if (contact.project) {
@@ -2793,7 +2810,9 @@ class OutreachTracker {
 
         if (this.editingContactId) {
             const index = this.contacts.findIndex(c => c.id === this.editingContactId);
+                if (index !== -1) {
             this.contacts[index] = contact;
+                }
         } else {
             this.contacts.push(contact);
         }
@@ -2805,9 +2824,32 @@ class OutreachTracker {
         
         this.showNotification('Contact saved successfully!');
 
-        // If we are currently viewing this contact in the prospect profile, refresh it
-        if (this.activeContactId === contact.id) {
-            this.renderProspectProfileView();
+            // If we are currently viewing this contact in the prospect profile, refresh it
+            if (this.activeContactId === contact.id) {
+                this.currentContact = contact;
+                this.renderProspectProfileView();
+            }
+        } catch (err) {
+            console.error('Failed to save contact:', err);
+            
+            // Show error message in modal
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'contact-modal-error';
+            errorDiv.textContent = 'Failed to save contact. Please try again.';
+            
+            const actionsRow = form.querySelector('.contact-modal-actions') || form.querySelector('.form-actions');
+            if (actionsRow) {
+                actionsRow.parentNode.insertBefore(errorDiv, actionsRow);
+            } else {
+                form.appendChild(errorDiv);
+            }
+        } finally {
+            // Reset button state
+            if (submitBtn) {
+                submitBtn.textContent = originalBtnText;
+                submitBtn.classList.remove('btn-saving');
+                submitBtn.disabled = false;
+            }
         }
     }
 
@@ -3379,6 +3421,118 @@ AdSell.ai`,
         }
     }
 
+    /**
+     * Render the Details card with grouped layout (Organization, People & Contact, Web & Location)
+     */
+    renderDetailsGroups(contact, helpers) {
+        const { displayCompany, displayContact, displayTitle, primaryEmail, websiteHref, fullAddress } = helpers;
+
+        // Helper to render a single detail row
+        const renderRow = (label, value, options = {}) => {
+            const { isLink = false, href = '', isCore = false } = options;
+            const hasValue = value && value.trim() && value.trim() !== '—';
+            
+            // Hide non-core empty fields
+            if (!hasValue && !isCore) return '';
+            
+            let valueHtml;
+            if (hasValue) {
+                if (isLink && href) {
+                    valueHtml = `<a href="${href}" ${options.external ? 'target="_blank" rel="noopener noreferrer"' : ''}>${value}</a>`;
+                } else {
+                    valueHtml = value;
+                }
+                valueHtml = `<div class="details-value">${valueHtml}</div>`;
+            } else {
+                valueHtml = `<div class="details-value-muted">Not set</div>`;
+            }
+
+            return `
+                <div class="details-row">
+                    <div class="details-label">${label}</div>
+                    ${valueHtml}
+                </div>
+            `;
+        };
+
+        // Organization group
+        const orgRows = [
+            renderRow('Company', displayCompany || '', { isCore: true }),
+            renderRow('Segment', contact.segment || ''),
+            renderRow('Project', contact.project || '', { isCore: true }),
+            renderRow('Lead Source', contact.leadSource || '')
+        ].filter(Boolean).join('');
+
+        // People & Contact group
+        const phoneHtml = this.renderPhoneNumbers(contact.phone);
+        const hasPhone = phoneHtml && phoneHtml !== '—';
+        
+        const peopleRows = [
+            renderRow('Contact', displayContact || ''),
+            renderRow('Title', displayTitle || ''),
+            primaryEmail 
+                ? `<div class="details-row">
+                    <div class="details-label">Email</div>
+                    <div class="details-value"><a href="mailto:${primaryEmail}">${primaryEmail}</a></div>
+                   </div>`
+                : '',
+            hasPhone 
+                ? `<div class="details-row">
+                    <div class="details-label">Phone</div>
+                    <div class="details-value">${phoneHtml}</div>
+                   </div>`
+                : ''
+        ].filter(Boolean).join('');
+
+        // Web & Location group
+        const webRows = [
+            websiteHref 
+                ? `<div class="details-row">
+                    <div class="details-label">Website</div>
+                    <div class="details-value"><a href="${websiteHref}" target="_blank" rel="noopener noreferrer">${websiteHref}</a></div>
+                   </div>`
+                : '',
+            fullAddress 
+                ? `<div class="details-row">
+                    <div class="details-label">Address</div>
+                    <div class="details-value">${fullAddress}</div>
+                   </div>`
+                : ''
+        ].filter(Boolean).join('');
+
+        // Build groups HTML, hiding empty groups
+        let groupsHtml = '';
+
+        if (orgRows) {
+            groupsHtml += `
+                <div class="details-group">
+                    <div class="details-group-title">Organization</div>
+                    <div class="details-rows-grid">${orgRows}</div>
+                </div>
+            `;
+        }
+
+        if (peopleRows) {
+            groupsHtml += `
+                <div class="details-group">
+                    <div class="details-group-title">People & Contact</div>
+                    <div class="details-rows-grid">${peopleRows}</div>
+                </div>
+            `;
+        }
+
+        if (webRows) {
+            groupsHtml += `
+                <div class="details-group">
+                    <div class="details-group-title">Web & Location</div>
+                    <div class="details-rows-grid">${webRows}</div>
+                </div>
+            `;
+        }
+
+        return groupsHtml || '<p class="details-value-muted">No details available.</p>';
+    }
+
     showProspectProfile(contactId) {
         if (!contactId) return;
         this.activeContactId = contactId;
@@ -3687,81 +3841,25 @@ AdSell.ai`,
 
             <!-- Details card -->
             <article class="card prospect-card">
-                <div class="prospect-section-header">
-                    <div>
-                        <div class="overline-label">DETAILS</div>
-                    </div>
+                <div class="details-card-header">
+                    <div class="overline-label">DETAILS</div>
                     <button
                         type="button"
-                        class="btn btn-secondary prospect-details-toggle"
-                        data-toggle="prospect-details"
-                    >
-                        ${this._prospectDetailsExpanded ? 'Hide details' : 'Show more'}
-                    </button>
-                </div>
-                <div class="prospect-detail-grid">
-                    <div>
-                        <div class="prospect-detail-item-label">Company</div>
-                        <div class="prospect-detail-item-value">${displayCompany || '—'}</div>
-                    </div>
-                    <div>
-                        <div class="prospect-detail-item-label">Contact</div>
-                        <div class="prospect-detail-item-value">${displayContact || '—'}</div>
-                    </div>
-                    <div>
-                        <div class="prospect-detail-item-label">Title</div>
-                        <div class="prospect-detail-item-value">${displayTitle || '—'}</div>
-                    </div>
-                    <div>
-                        <div class="prospect-detail-item-label">Segment</div>
-                        <div class="prospect-detail-item-value">${contact.segment || '—'}</div>
-                    </div>
-                    <div>
-                        <div class="prospect-detail-item-label">Project</div>
-                        <div class="prospect-detail-item-value">${contact.project || '—'}</div>
-                    </div>
-                    <div>
-                        <div class="prospect-detail-item-label">Lead Source</div>
-                        <div class="prospect-detail-item-value">${contact.leadSource || '—'}</div>
-                    </div>
-                    <div>
-                        <div class="prospect-detail-item-label">Email</div>
-                        <div class="prospect-detail-item-value">
-                            ${primaryEmail ? `<a href="mailto:${primaryEmail}">${primaryEmail}</a>` : '—'}
-                        </div>
-                    </div>
-                    <div>
-                        <div class="prospect-detail-item-label">Phone</div>
-                        <div class="prospect-detail-item-value">
-                            ${this.renderPhoneNumbers(contact.phone)}
-                        </div>
-                    </div>
-                    <div>
-                        <div class="prospect-detail-item-label">Website</div>
-                        <div class="prospect-detail-item-value">
-                            ${websiteHref ? `<a href="${websiteHref}" target="_blank" rel="noopener noreferrer">${websiteHref}</a>` : '—'}
-                        </div>
-                    </div>
-                </div>
-                ${this._prospectDetailsExpanded ? `
-                <div class="prospect-detail-grid prospect-detail-grid-secondary" style="margin-top: 8px;">
-                    <div>
-                        <div class="prospect-detail-item-label">Address</div>
-                        <div class="prospect-detail-item-value">
-                            ${fullAddress || '—'}
-                        </div>
-                    </div>
-                </div>
-                ` : ''}
-                <div style="margin-top: 12px;">
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
+                        class="btn btn-primary btn-sm"
                         data-role="edit-prospect"
                     >
-                        Edit details
+                        Edit
                     </button>
                 </div>
+                
+                ${this.renderDetailsGroups(contact, {
+                    displayCompany,
+                    displayContact,
+                    displayTitle,
+                    primaryEmail,
+                    websiteHref,
+                    fullAddress
+                })}
             </article>
 
             <!-- AI & Enrichment card -->
