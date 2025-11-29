@@ -3772,46 +3772,48 @@ AdSell.ai`,
                     </div>
                 </div>
 
-                <!-- AI Actions Group -->
-                <div class="ai-actions-group">
-                    <div class="ai-group-label">AI Actions</div>
-                    <div class="ai-actions-row">
-                        <button
-                            type="button"
-                            class="btn btn-primary ai-action-btn"
-                            data-action="ai-outreach"
-                        >
-                            <img
-                                src="icons/white-chatgpt-icon.svg"
-                                alt=""
-                                class="ai-action-icon"
-                                aria-hidden="true"
-                            />
-                            <span>Outreach</span>
-                        </button>
-                        <button
-                            type="button"
-                            class="btn btn-secondary ai-action-btn"
-                            data-action="ai-company-research"
-                        >
-                            <img
-                                src="icons/chatgpt-icon.svg"
-                                alt=""
-                                class="ai-action-icon"
-                                aria-hidden="true"
-                            />
-                            <span>Company Research</span>
-                        </button>
-                    </div>
+                <!-- AI Actions row -->
+                <div class="ai-provider-row">
+                    <div class="ai-provider-label">AI Actions</div>
+                </div>
+                <div class="prospect-header-actions">
+                    <button
+                        type="button"
+                        class="btn btn-primary ai-action-btn"
+                        data-action="ai-outreach"
+                    >
+                        <img
+                            src="icons/white-chatgpt-icon.svg"
+                            alt=""
+                            class="ai-action-icon"
+                            aria-hidden="true"
+                        />
+                        <span>Outreach</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-secondary ai-action-btn"
+                        data-action="ai-company-research"
+                    >
+                        <img
+                            src="icons/chatgpt-icon.svg"
+                            alt=""
+                            class="ai-action-icon"
+                            aria-hidden="true"
+                        />
+                        <span>Company Research</span>
+                    </button>
                 </div>
 
-                <!-- Perplexity Enrichment Group -->
-                <div class="ai-enrich-group">
-                    <div class="ai-group-label">Perplexity Enrichment</div>
+                <!-- Enrichment row -->
+                <div class="ai-provider-row" style="margin-top: 12px;">
+                    <div class="ai-provider-label">Enrichment</div>
+                </div>
+                <div class="prospect-header-actions">
                     <button
                         type="button"
                         class="btn btn-perplexity ai-action-btn"
-                        id="btn-enrich-enhance"
+                        id="btn-enrich-perplexity"
                     >
                         <img
                             src="icons/white-perplexity-icon.svg"
@@ -3819,13 +3821,28 @@ AdSell.ai`,
                             class="ai-action-icon"
                             aria-hidden="true"
                         />
-                        <span>Enhance Profile</span>
+                        <span>Research (Perplexity)</span>
                     </button>
-                    <div id="ai-enrich-result" class="ai-enrich-result">
-                        <p class="muted">
-                            Enhance this profile to discover missing contact info, social links, and key people for outreach.
-                        </p>
-                    </div>
+                    <button
+                        type="button"
+                        class="btn btn-secondary ai-action-btn"
+                        id="btn-enrich-grok"
+                    >
+                        <img
+                            src="icons/Grok-icon.svg"
+                            alt=""
+                            class="ai-action-icon"
+                            aria-hidden="true"
+                        />
+                        <span>Research (Grok)</span>
+                    </button>
+                </div>
+
+                <!-- Result panel -->
+                <div id="ai-enrich-result" class="ai-enrich-result">
+                    <p class="muted">
+                        Use Perplexity or Grok to fill missing details and understand this account&apos;s marketing behavior.
+                    </p>
                 </div>
             </article>
 
@@ -3920,12 +3937,18 @@ AdSell.ai`,
     }
 
     /**
-     * Set up AI enrichment actions for the current prospect (Perplexity-only).
+     * Set up AI enrichment actions for the current prospect (Perplexity + Grok).
+     * Now uses text-based responses with rich formatting.
      */
     setupAIEnrichment() {
         const resultEl = document.getElementById('ai-enrich-result');
-        const enhanceBtn = document.getElementById('btn-enrich-enhance');
-        if (!resultEl || !enhanceBtn) return;
+        const btnPerplexity = document.getElementById('btn-enrich-perplexity');
+        const btnGrok = document.getElementById('btn-enrich-grok');
+        if (!resultEl || !btnPerplexity || !btnGrok) return;
+
+        let activeEngine = null;
+        let perplexityResult = null;
+        let grokResult = null;
 
         function getCurrentProspect() {
             if (window.appState && window.appState.selectedContact) {
@@ -3934,278 +3957,260 @@ AdSell.ai`,
             return null;
         }
 
-        const makeCopyButton = (value) => {
+        // Helper to detect and make URLs clickable
+        function linkifyText(text) {
+            // URL pattern
+            const urlPattern = /(https?:\/\/[^\s<>\[\]()]+)/gi;
+            // Email pattern
+            const emailPattern = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi;
+            // Phone pattern (basic)
+            const phonePattern = /(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})/g;
+
+            let result = text;
+            
+            // Replace URLs with links
+            result = result.replace(urlPattern, '<a href="$1" target="_blank" rel="noopener noreferrer" class="ai-link">$1</a>');
+            
+            // Replace emails with mailto links (but not if already in an href)
+            result = result.replace(/(?<!href=")([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi, 
+                '<a href="mailto:$1" class="ai-link ai-email">$1</a>');
+
+            return result;
+        }
+
+        // Helper to create copy button for a value
+        function createCopyButton(value, label = 'Copy') {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'ai-copy-btn';
-            btn.textContent = 'Copy';
-            btn.addEventListener('click', async (e) => {
+            btn.className = 'ai-copy-chip';
+            btn.textContent = label;
+            btn.title = `Copy: ${value}`;
+            btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                if (!value) return;
-                try {
-                    await navigator.clipboard.writeText(value);
-                } catch (err) {
-                    console.error('Clipboard copy failed', err);
-                }
+                e.stopPropagation();
+                navigator.clipboard?.writeText(value).then(() => {
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => { btn.textContent = label; }, 1500);
+                });
             });
             return btn;
-        };
+        }
 
-        const setResult = (content, isError = false) => {
+        // Extract copyable items from text
+        function extractCopyableItems(text) {
+            const items = [];
+            
+            // Extract URLs
+            const urlMatches = text.match(/(https?:\/\/[^\s<>\[\]()]+)/gi) || [];
+            urlMatches.forEach(url => {
+                if (!items.some(i => i.value === url)) {
+                    items.push({ type: 'url', value: url, label: 'Website' });
+                }
+            });
+
+            // Extract emails
+            const emailMatches = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi) || [];
+            emailMatches.forEach(email => {
+                if (!items.some(i => i.value === email)) {
+                    items.push({ type: 'email', value: email, label: 'Email' });
+                }
+            });
+
+            // Extract phone numbers
+            const phoneMatches = text.match(/(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})/g) || [];
+            phoneMatches.forEach(phone => {
+                const cleaned = phone.replace(/[^\d+]/g, '');
+                if (cleaned.length >= 10 && !items.some(i => i.value === phone)) {
+                    items.push({ type: 'phone', value: phone, label: 'Phone' });
+                }
+            });
+
+            return items;
+        }
+
+        // Render text-based research results
+        function renderResearchText(text, engine) {
             resultEl.innerHTML = '';
 
-            const isObject = content && typeof content === 'object';
-
-            // Plain string / null / undefined
-            if (!isObject) {
+            if (!text || text.trim() === '') {
                 const p = document.createElement('p');
-                p.textContent = content == null ? '' : String(content);
-                if (isError) p.style.color = '#dc2626';
-                resultEl.appendChild(p);
-                return;
-            }
-
-            // If Perplexity did not return structured JSON, or worker fell back to {},
-            // do NOT show any raw chain-of-thought. Just show a friendly message.
-            const keys = Object.keys(content);
-            if (keys.length === 0 || (keys.length === 1 && keys[0] === 'raw')) {
-                const p = document.createElement('p');
-                p.textContent = 'No enrichment has been generated for this profile yet.';
                 p.className = 'ai-muted';
+                p.textContent = 'No research results available.';
                 resultEl.appendChild(p);
                 return;
             }
 
-            const wrapper = document.createElement('div');
+            // Create container
+            const container = document.createElement('div');
+            container.className = 'ai-research-container';
 
-            const { normalized = {}, channels = {}, people = [], summary = {}, fit = {} } = content;
+            // Engine label
+            const engineLabel = document.createElement('div');
+            engineLabel.className = 'ai-engine-badge';
+            engineLabel.innerHTML = `<span class="ai-engine-icon">${engine === 'perplexity' ? '🔍' : '⚡'}</span> ${engine === 'perplexity' ? 'Perplexity' : 'Grok'} Research`;
+            container.appendChild(engineLabel);
 
-            const addSection = (title) => {
-                const section = document.createElement('div');
-                section.className = 'ai-section';
-                const heading = document.createElement('div');
-                heading.className = 'ai-section-title';
-                heading.textContent = title;
-                section.appendChild(heading);
-                wrapper.appendChild(section);
-                return section;
-            };
+            // Extract copyable items and create quick-copy bar
+            const copyableItems = extractCopyableItems(text);
+            if (copyableItems.length > 0) {
+                const copyBar = document.createElement('div');
+                copyBar.className = 'ai-copy-bar';
+                
+                const copyLabel = document.createElement('span');
+                copyLabel.className = 'ai-copy-bar-label';
+                copyLabel.textContent = 'Quick Copy:';
+                copyBar.appendChild(copyLabel);
 
-            const addChannelRow = (section, label, value, type) => {
-                if (!value) return;
-                const row = document.createElement('div');
-                row.style.display = 'flex';
-                row.style.alignItems = 'center';
-                row.style.gap = '6px';
-                row.style.margin = '2px 0';
-
-                const labelEl = document.createElement('span');
-                labelEl.className = 'ai-label';
-                labelEl.textContent = `${label}:`;
-                row.appendChild(labelEl);
-
-                let valueEl;
-                const hrefValue = String(value);
-                if (type === 'url') {
-                    valueEl = document.createElement('a');
-                    valueEl.href = hrefValue;
-                    valueEl.target = '_blank';
-                    valueEl.rel = 'noopener';
-                    valueEl.textContent = hrefValue;
-                } else if (type === 'email') {
-                    valueEl = document.createElement('a');
-                    valueEl.href = `mailto:${hrefValue}`;
-                    valueEl.textContent = hrefValue;
-                } else if (type === 'phone') {
-                    valueEl = document.createElement('a');
-                    valueEl.href = `tel:${hrefValue}`;
-                    valueEl.textContent = hrefValue;
-                } else {
-                    valueEl = document.createElement('span');
-                    valueEl.textContent = hrefValue;
-                }
-                valueEl.className = 'ai-value';
-                row.appendChild(valueEl);
-
-                row.appendChild(makeCopyButton(hrefValue));
-                section.appendChild(row);
-            };
-
-            // Channels section
-            const hasChannels = channels && Object.values(channels).some(v => v);
-            if (hasChannels) {
-                const section = addSection('Channels');
-                addChannelRow(section, 'Website', channels.website || channels.website, 'url');
-                addChannelRow(section, 'General email', channels.email_general, 'email');
-                addChannelRow(section, 'General phone', channels.phone_general, 'phone');
-                addChannelRow(section, 'LinkedIn', channels.linkedin, 'url');
-                addChannelRow(section, 'Facebook', channels.facebook, 'url');
-                addChannelRow(section, 'Instagram', channels.instagram, 'url');
-                addChannelRow(section, 'X / Twitter', channels.x, 'url');
-                addChannelRow(section, 'YouTube', channels.youtube, 'url');
-                addChannelRow(section, 'TikTok', channels.tiktok, 'url');
-                addChannelRow(section, 'Other', channels.other, 'url');
-            }
-
-            // People section
-            if (Array.isArray(people) && people.length) {
-                const section = addSection('Key people');
-                people.forEach(person => {
-                    const item = document.createElement('div');
-                    item.className = 'ai-person';
-
-                    const header = document.createElement('div');
-                    header.className = 'ai-person-header';
-
-                    const nameEl = document.createElement('span');
-                    nameEl.className = 'ai-person-name';
-                    nameEl.textContent = person.name || '(Name unknown)';
-                    header.appendChild(nameEl);
-
-                    if (person.role) {
-                        const roleEl = document.createElement('span');
-                        roleEl.className = 'ai-person-role';
-                        roleEl.textContent = person.role;
-                        header.appendChild(roleEl);
-                    }
-
-                    if (typeof person.is_advertising_contact === 'boolean') {
-                        const badge = document.createElement('span');
-                        badge.className = 'ai-badge';
-                        badge.textContent = person.is_advertising_contact ? 'Ad contact' : 'Other';
-                        header.appendChild(badge);
-                    }
-
-                    if (person.confidence) {
-                        const conf = document.createElement('span');
-                        conf.className = 'ai-badge';
-                        conf.textContent = `Confidence: ${person.confidence}`;
-                        header.appendChild(conf);
-                    }
-
-                    item.appendChild(header);
-
-                    const contactRow = document.createElement('div');
-                    contactRow.className = 'ai-person-contact';
-
-                    if (person.email) {
-                        const emailRow = document.createElement('div');
-                        const emailLink = document.createElement('a');
-                        emailLink.href = `mailto:${person.email}`;
-                        emailLink.textContent = person.email;
-                        emailRow.appendChild(emailLink);
-                        emailRow.appendChild(makeCopyButton(person.email));
-                        contactRow.appendChild(emailRow);
-                    }
-
-                    if (person.phone) {
-                        const phoneRow = document.createElement('div');
-                        const phoneLink = document.createElement('a');
-                        phoneLink.href = `tel:${person.phone}`;
-                        phoneLink.textContent = person.phone;
-                        phoneRow.appendChild(phoneLink);
-                        phoneRow.appendChild(makeCopyButton(person.phone));
-                        contactRow.appendChild(phoneRow);
-                    }
-
-                    if (contactRow.childNodes.length) {
-                        item.appendChild(contactRow);
-                    }
-
-                    if (person.notes) {
-                        const notesEl = document.createElement('p');
-                        notesEl.className = 'ai-notes';
-                        notesEl.textContent = person.notes;
-                        item.appendChild(notesEl);
-                    }
-
-                    section.appendChild(item);
+                // Limit to first 6 items
+                copyableItems.slice(0, 6).forEach(item => {
+                    const chip = createCopyButton(item.value, item.type === 'email' ? '📧' : item.type === 'phone' ? '📞' : '🔗');
+                    copyBar.appendChild(chip);
                 });
+
+                container.appendChild(copyBar);
             }
 
-            // Summary section
-            if (summary && (summary.overview || summary.why_relevant_for_print)) {
-                const section = addSection('Summary');
-                if (summary.overview) {
-                    const p = document.createElement('p');
-                    p.textContent = summary.overview;
-                    section.appendChild(p);
-                }
-                if (summary.why_relevant_for_print) {
-                    const p = document.createElement('p');
-                    p.className = 'ai-muted';
-                    p.textContent = summary.why_relevant_for_print;
-                    section.appendChild(p);
-                }
-            }
+            // Create scrollable text area with formatted content
+            const textContainer = document.createElement('div');
+            textContainer.className = 'ai-research-text';
 
-            // Fit for print section
-            if (fit && (typeof fit.likely_print_advertiser === 'boolean' || fit.reasoning)) {
-                const section = addSection('Fit for print');
-                const line = document.createElement('p');
-                let text = 'Likely print advertiser: ';
-                if (typeof fit.likely_print_advertiser === 'boolean') {
-                    text += fit.likely_print_advertiser ? 'Yes' : 'No';
-                } else {
-                    text += 'Unknown';
-                }
-                if (fit.reasoning) {
-                    text += ` — ${fit.reasoning}`;
-                }
-                line.textContent = text;
-                section.appendChild(line);
-            }
+            // Process text: convert markdown-style headers and linkify
+            let processedText = text
+                // Convert ## headers to styled headers
+                .replace(/^## (.+)$/gm, '<h3 class="ai-research-heading">$1</h3>')
+                // Convert ### headers
+                .replace(/^### (.+)$/gm, '<h4 class="ai-research-subheading">$1</h4>')
+                // Convert bullet points
+                .replace(/^- (.+)$/gm, '<div class="ai-research-bullet">• $1</div>')
+                // Convert bold
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                // Preserve line breaks
+                .replace(/\n\n/g, '</p><p class="ai-research-para">')
+                .replace(/\n/g, '<br>');
 
-            if (!wrapper.hasChildNodes()) {
-                const empty = document.createElement('p');
-                empty.textContent = 'No enrichment details returned.';
-                wrapper.appendChild(empty);
-            }
+            // Linkify URLs and emails
+            processedText = linkifyText(processedText);
 
-            if (isError) {
-                wrapper.style.color = '#dc2626';
-            }
+            // Wrap in paragraph
+            textContainer.innerHTML = `<p class="ai-research-para">${processedText}</p>`;
 
-            resultEl.appendChild(wrapper);
-        };
+            container.appendChild(textContainer);
 
-        const runEnhance = async () => {
+            // Copy all button
+            const copyAllBtn = document.createElement('button');
+            copyAllBtn.type = 'button';
+            copyAllBtn.className = 'btn btn-ghost ai-copy-all-btn';
+            copyAllBtn.textContent = '📋 Copy Full Report';
+            copyAllBtn.addEventListener('click', () => {
+                navigator.clipboard?.writeText(text).then(() => {
+                    copyAllBtn.textContent = '✓ Copied!';
+                    setTimeout(() => { copyAllBtn.textContent = '📋 Copy Full Report'; }, 2000);
+                });
+            });
+            container.appendChild(copyAllBtn);
+
+            resultEl.appendChild(container);
+        }
+
+        // Show loading state
+        function showLoading(engine) {
+            resultEl.innerHTML = '';
+            const loader = document.createElement('div');
+            loader.className = 'ai-research-loading';
+            loader.innerHTML = `
+                <div class="ai-loading-spinner"></div>
+                <p>Running ${engine === 'perplexity' ? 'Perplexity' : 'Grok'} deep research...</p>
+                <p class="ai-muted">This may take 15-30 seconds for thorough results.</p>
+            `;
+            resultEl.appendChild(loader);
+        }
+
+        // Show error state
+        function showError(message) {
+            resultEl.innerHTML = '';
+            const errorEl = document.createElement('div');
+            errorEl.className = 'ai-research-error';
+            errorEl.innerHTML = `
+                <p class="ai-error-icon">⚠️</p>
+                <p>${message}</p>
+            `;
+            resultEl.appendChild(errorEl);
+        }
+
+        // Update button states
+        function updateButtonStates(activeBtn) {
+            btnPerplexity.classList.toggle('is-active', activeBtn === 'perplexity');
+            btnGrok.classList.toggle('is-active', activeBtn === 'grok');
+        }
+
+        const runPerplexity = async () => {
             const contact = getCurrentProspect();
             if (!contact) {
-                setResult('No prospect selected.', true);
+                showError('No prospect selected. Please select a contact first.');
                 return;
             }
 
-            setResult('Enhancing profile...');
+            activeEngine = 'perplexity';
+            updateButtonStates('perplexity');
+            showLoading('perplexity');
 
             try {
-                const body = { contact, mode: 'research' };
-                const res = await fetch(
-                    'https://adsell-openai-proxy.jgregorywalsh.workers.dev/perplexity/enrich',
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body)
-                    }
-                );
+                const res = await fetch('https://adsell-openai-proxy.jgregorywalsh.workers.dev/perplexity/enrich', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contact })
+                });
 
                 const text = await res.text();
-
+                
                 if (!res.ok) {
-                    // Show the error text if available, otherwise a generic message
-                    setResult(text || 'Enrichment failed.', true);
+                    showError(`Perplexity research failed: ${text}`);
                     return;
                 }
 
-                // Always treat the result as plain text
-                setResult(text);
+                perplexityResult = text;
+                renderResearchText(text, 'perplexity');
             } catch (err) {
-                console.error('Enrichment error:', err);
-                setResult('Unexpected error during enrichment.', true);
+                console.error('Perplexity research error:', err);
+                showError(`Failed to complete research: ${err.message}`);
             }
         };
 
-        enhanceBtn.addEventListener('click', runEnhance);
+        const runGrok = async () => {
+            const contact = getCurrentProspect();
+            if (!contact) {
+                showError('No prospect selected. Please select a contact first.');
+                return;
+            }
+
+            activeEngine = 'grok';
+            updateButtonStates('grok');
+            showLoading('grok');
+
+            try {
+                const res = await fetch('https://adsell-openai-proxy.jgregorywalsh.workers.dev/grok/enrich', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contact })
+                });
+
+                const text = await res.text();
+                
+                if (!res.ok) {
+                    showError(`Grok research failed: ${text}`);
+                    return;
+                }
+
+                grokResult = text;
+                renderResearchText(text, 'grok');
+            } catch (err) {
+                console.error('Grok research error:', err);
+                showError(`Failed to complete research: ${err.message}`);
+            }
+        };
+
+        btnPerplexity.addEventListener('click', runPerplexity);
+        btnGrok.addEventListener('click', runGrok);
     }
 
     async updateContactStatusInline(contactId, newStatus) {
