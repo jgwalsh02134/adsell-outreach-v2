@@ -2994,6 +2994,59 @@ form {
   margin-bottom: 4px;
 }
 
+/* AI & Enrichment card layout improvements */
+.ai-actions-group,
+.ai-enrich-group {
+  margin-bottom: 16px;
+}
+
+.ai-actions-group:last-child,
+.ai-enrich-group:last-child {
+  margin-bottom: 0;
+}
+
+.ai-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted, #6b7280);
+  margin-bottom: 8px;
+}
+
+.ai-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Perplexity button - black background with white icon/text */
+.btn-perplexity {
+  background-color: #1a1a1a;
+  color: #ffffff;
+  border: 1px solid #1a1a1a;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 80ms ease;
+}
+
+.btn-perplexity:hover {
+  background-color: #333333;
+  border-color: #333333;
+}
+
+.btn-perplexity:active {
+  background-color: #0d0d0d;
+  transform: scale(0.98);
+}
+
+.btn-perplexity:focus-visible {
+  outline: 2px solid var(--color-brand, #1d4ed8);
+  outline-offset: 2px;
+}
+
+.btn-perplexity .ai-action-icon {
+  filter: brightness(0) invert(1);
+}
+
 .ai-provider-indicator {
   display: inline-flex;
   align-items: center;

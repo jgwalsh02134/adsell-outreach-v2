@@ -3772,57 +3772,60 @@ AdSell.ai`,
                     </div>
                 </div>
 
-                <div class="ai-provider-row">
-                    <div class="ai-provider-label">AI Actions</div>
-                </div>
-                <div class="prospect-header-actions">
-                    <button
-                        type="button"
-                        class="btn btn-primary ai-action-btn"
-                        data-action="ai-outreach"
-                    >
-                        <img
-                            src="icons/white-chatgpt-icon.svg"
-                            alt=""
-                            class="ai-action-icon"
-                            aria-hidden="true"
-                        />
-                        <span>Outreach</span>
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-secondary ai-action-btn"
-                        data-action="ai-company-research"
-                    >
-                        <img
-                            src="icons/chatgpt-icon.svg"
-                            alt=""
-                            class="ai-action-icon"
-                            aria-hidden="true"
-                        />
-                        <span>Company Research</span>
-                    </button>
+                <!-- AI Actions Group -->
+                <div class="ai-actions-group">
+                    <div class="ai-group-label">AI Actions</div>
+                    <div class="ai-actions-row">
+                        <button
+                            type="button"
+                            class="btn btn-primary ai-action-btn"
+                            data-action="ai-outreach"
+                        >
+                            <img
+                                src="icons/white-chatgpt-icon.svg"
+                                alt=""
+                                class="ai-action-icon"
+                                aria-hidden="true"
+                            />
+                            <span>Outreach</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-secondary ai-action-btn"
+                            data-action="ai-company-research"
+                        >
+                            <img
+                                src="icons/chatgpt-icon.svg"
+                                alt=""
+                                class="ai-action-icon"
+                                aria-hidden="true"
+                            />
+                            <span>Company Research</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div class="ai-enrich-header" style="margin-top: 12px;">
+                <!-- Perplexity Enrichment Group -->
+                <div class="ai-enrich-group">
+                    <div class="ai-group-label">Perplexity Enrichment</div>
                     <button
                         type="button"
-                        class="btn btn-secondary ai-action-btn"
+                        class="btn btn-perplexity ai-action-btn"
                         id="btn-enrich-enhance"
                     >
                         <img
-                            src="icons/perplexity-ai.svg"
+                            src="icons/white-perplexity-icon.svg"
                             alt=""
                             class="ai-action-icon"
                             aria-hidden="true"
                         />
                         <span>Enhance Profile</span>
                     </button>
-                </div>
-                <div id="ai-enrich-result" class="ai-enrich-result">
-                    <p class="muted">
-                        Enhance this profile to discover missing contact info, social links, and key people for outreach.
-                    </p>
+                    <div id="ai-enrich-result" class="ai-enrich-result">
+                        <p class="muted">
+                            Enhance this profile to discover missing contact info, social links, and key people for outreach.
+                        </p>
+                    </div>
                 </div>
             </article>
 
