@@ -540,6 +540,27 @@ body {
     font-size: 12px;
 }
 
+.btn-xs {
+    padding: 0.25rem 0.5rem;
+    font-size: 12px;
+    line-height: 1;
+}
+
+/* Project select with inline add button */
+.project-select-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.project-select-row select {
+    flex: 1 1 auto;
+}
+
+.project-select-row .btn {
+    flex-shrink: 0;
+}
+
 .btn-primary {
     background-color: var(--color-brand);
     border-color: var(--color-brand);
@@ -2378,36 +2399,87 @@ body {
     overflow-y: auto;
 }
 
-/* Contact sheet (bottom sheet on mobile, carded modal on desktop) */
+/* ─────────────────────────────────────────────────────────────────────────
+   Contact Modal (Apple-style bottom sheet on mobile, centered on desktop)
+   ───────────────────────────────────────────────────────────────────────── */
+
 .modal.contact-sheet {
     align-items: flex-end;
 }
 
-.contact-sheet-content {
+/* Base modal content */
+.contact-modal-content {
+    width: 100%;
+    max-width: 640px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     border-radius: 16px 16px 0 0;
-    padding: 0;
+    background: var(--color-bg-primary, #ffffff);
 }
 
-.contact-sheet-header {
-    padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border);
+@media (min-width: 768px) {
+    .modal.contact-sheet {
+        align-items: center;
+    }
+    .contact-modal-content {
+        border-radius: 16px;
+        max-height: 85vh;
+    }
 }
 
-.contact-sheet-title {
-    font-size: 1.25rem;
-    line-height: 1.4;
+/* Sticky header */
+.contact-modal-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border-subtle, #e5e7eb);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.contact-modal-header h2 {
+    font-size: 1.125rem;
     font-weight: 600;
+    margin: 0;
+    color: var(--color-text-primary, #111827);
 }
 
-.contact-sheet-form {
-    padding: 0 1.25rem 1.25rem;
-    max-height: calc(90vh - 60px);
+/* Scrollable form body */
+.contact-form {
+    flex: 1 1 auto;
+    padding: 12px 16px 8px;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
+/* Sticky actions footer */
+.contact-modal-actions {
+    padding: 10px 16px 14px;
+    border-top: 1px solid var(--color-border-subtle, #e5e7eb);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    background: var(--color-bg-primary, #ffffff);
+}
+
+.contact-modal-actions-right {
+    display: flex;
+    gap: 8px;
+}
+
+/* Form sections */
 .contact-section {
-    margin-top: 1rem;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-border-subtle, #f0f0f0);
+}
+
+.contact-section:last-of-type {
+    border-bottom: none;
 }
 
 .contact-section-header {
@@ -2416,7 +2488,201 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--color-text-muted, #6b7280);
+    margin-bottom: 8px;
+}
+
+.contact-section-subtext {
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+    margin: 0 0 8px 0;
+}
+
+/* Form grid */
+.contact-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
+}
+
+@media (max-width: 767px) {
+    .contact-form-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+}
+
+.form-group-full {
+    grid-column: 1 / -1;
+}
+
+/* Subsections (emails, phones) */
+.contact-subsection {
+    margin-top: 10px;
+    margin-bottom: 8px;
+}
+
+.contact-subsection-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-muted, #6b7280);
+    margin-bottom: 4px;
+}
+
+/* Advanced toggle */
+.contact-advanced-toggle {
+    margin: 8px 0;
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-size: 13px;
+    color: var(--color-brand, #1d4ed8);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.contact-advanced-toggle:hover {
+    text-decoration: underline;
+}
+
+.contact-advanced-body.collapsed {
+    display: none;
+}
+
+/* Multi-field rows (emails, phones) */
+.multi-field-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     margin-bottom: 6px;
+}
+
+.multi-field-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.multi-field-input {
+    flex: 1 1 auto;
+}
+
+.multi-field-remove-btn {
+    border: none;
+    background: transparent;
+    font-size: 18px;
+    line-height: 1;
+    color: #b91c1c;
+    cursor: pointer;
+    padding: 0 4px;
+    opacity: 0.7;
+}
+
+.multi-field-remove-btn:hover {
+    opacity: 1;
+}
+
+/* Extra contact cards (other people) */
+#extra-contacts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.extra-contact-card {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--color-border-subtle, #e5e7eb);
+    background: #f9fafb;
+}
+
+.extra-contact-card .multi-field-row {
+    margin-bottom: 6px;
+}
+
+.extra-contact-card .multi-field-row:last-child {
+    margin-bottom: 0;
+}
+
+.extra-contact-remove-person {
+    border: none;
+    background: transparent;
+    font-size: 12px;
+    color: #b91c1c;
+    cursor: pointer;
+    padding: 4px 0;
+    margin-top: 4px;
+}
+
+.extra-contact-remove-person:hover {
+    text-decoration: underline;
+}
+
+/* Org contact info lists */
+#org-email-list,
+#org-phone-list,
+#primary-email-list,
+#primary-phone-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+/* Prospect profile: extra people section */
+.prospect-subsection-header {
+    margin-top: 12px;
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted, #6b7280);
+}
+
+.prospect-people-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.prospect-person-row {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-border-subtle, #e5e7eb);
+}
+
+.prospect-person-row:last-child {
+    border-bottom: none;
+}
+
+.prospect-person-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary, #111827);
+}
+
+.prospect-person-role {
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+}
+
+.prospect-person-email,
+.prospect-person-phone {
+    font-size: 12px;
+    color: var(--color-text-primary, #111827);
+}
+
+.prospect-person-email a,
+.prospect-person-phone a {
+    color: var(--color-brand, #1d4ed8);
+    text-decoration: none;
+}
+
+.prospect-person-email a:hover,
+.prospect-person-phone a:hover {
+    text-decoration: underline;
 }
 
 .contact-essentials .overline-label,

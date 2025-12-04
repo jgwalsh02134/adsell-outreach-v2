@@ -514,6 +514,90 @@ class OutreachTracker {
         });
         }
 
+        // Extra contact add button (in Edit modal)
+        const addExtraBtn = document.getElementById('extra-contact-add-btn');
+        if (addExtraBtn) {
+            addExtraBtn.addEventListener('click', () => {
+                const listEl = document.getElementById('extra-contacts-list');
+                if (!listEl) return;
+                const card = this.createExtraContactCard({});
+                listEl.appendChild(card);
+            });
+        }
+
+        // Multi-field add buttons
+        const primaryEmailAddBtn = document.getElementById('primary-email-add-btn');
+        if (primaryEmailAddBtn) {
+            primaryEmailAddBtn.addEventListener('click', () => {
+                const list = document.getElementById('primary-email-list');
+                if (list) list.appendChild(this.createMultiFieldRow('', 'Email', 'email'));
+            });
+        }
+
+        const primaryPhoneAddBtn = document.getElementById('primary-phone-add-btn');
+        if (primaryPhoneAddBtn) {
+            primaryPhoneAddBtn.addEventListener('click', () => {
+                const list = document.getElementById('primary-phone-list');
+                if (list) list.appendChild(this.createMultiFieldRow('', 'Phone', 'tel'));
+            });
+        }
+
+        const orgEmailAddBtn = document.getElementById('org-email-add-btn');
+        if (orgEmailAddBtn) {
+            orgEmailAddBtn.addEventListener('click', () => {
+                const list = document.getElementById('org-email-list');
+                if (list) list.appendChild(this.createMultiFieldRow('', 'Email (e.g., info@...)', 'email'));
+            });
+        }
+
+        const orgPhoneAddBtn = document.getElementById('org-phone-add-btn');
+        if (orgPhoneAddBtn) {
+            orgPhoneAddBtn.addEventListener('click', () => {
+                const list = document.getElementById('org-phone-list');
+                if (list) list.appendChild(this.createMultiFieldRow('', 'Phone', 'tel'));
+            });
+        }
+
+        // Project "+ New" button
+        const projectAddBtn = document.getElementById('project-add-btn');
+        const projectNewWrapper = document.getElementById('project-new-wrapper');
+        const projectNewInput = document.getElementById('project-new-input');
+        if (projectAddBtn && projectNewWrapper && projectNewInput) {
+            projectAddBtn.addEventListener('click', () => {
+                projectNewWrapper.style.display = 'block';
+                projectNewInput.focus();
+            });
+        }
+
+        // Contact modal close/cancel buttons
+        const contactModalClose = document.getElementById('contact-modal-close');
+        if (contactModalClose) {
+            contactModalClose.addEventListener('click', () => this.closeContactModal());
+        }
+
+        const contactCancelBtn = document.getElementById('contact-cancel-btn');
+        if (contactCancelBtn) {
+            contactCancelBtn.addEventListener('click', () => this.closeContactModal());
+        }
+
+        // Advanced toggle (new structure)
+        const advToggle = document.getElementById('contact-advanced-toggle');
+        const advBody = document.getElementById('contact-advanced-body');
+        if (advToggle && advBody) {
+            advToggle.addEventListener('click', () => {
+                const collapsed = advBody.classList.contains('collapsed');
+                if (collapsed) {
+                    advBody.classList.remove('collapsed');
+                    advToggle.textContent = 'Hide advanced fields';
+                    advToggle.setAttribute('aria-expanded', 'true');
+                } else {
+                    advBody.classList.add('collapsed');
+                    advToggle.textContent = 'Show advanced fields';
+                    advToggle.setAttribute('aria-expanded', 'false');
+                }
+        });
+        }
+
         // Activity form
         const activityForm = document.getElementById('activity-form');
         if (activityForm) {
@@ -770,6 +854,17 @@ class OutreachTracker {
         });
         this.projects = normalizedProjects;
 
+        // Normalize contacts: ensure arrays exist
+        (this.contacts || []).forEach(c => {
+            if (c) {
+                c.people = Array.isArray(c.people) ? c.people : [];
+                c.primaryEmails = Array.isArray(c.primaryEmails) ? c.primaryEmails : [];
+                c.primaryPhones = Array.isArray(c.primaryPhones) ? c.primaryPhones : [];
+                c.companyEmails = Array.isArray(c.companyEmails) ? c.companyEmails : [];
+                c.companyPhones = Array.isArray(c.companyPhones) ? c.companyPhones : [];
+            }
+        });
+
         // Ensure projects list includes any project strings on contacts and tasks
         (this.contacts || []).forEach(c => {
             if (c && c.project) {
@@ -1023,6 +1118,43 @@ class OutreachTracker {
             .map(p => (p.name || '').trim())
             .filter(Boolean);
         return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
+    }
+
+    /**
+     * Render project options in the Edit Prospect modal dropdown
+     */
+    renderProjectOptions(currentValue = '') {
+        const select = document.getElementById('project-select');
+        if (!select) return;
+
+        const projects = this.getProjectNames();
+
+        select.innerHTML = '<option value="">Select project</option>';
+
+        projects.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            select.appendChild(opt);
+        });
+
+        // Set current value if it exists
+        if (currentValue) {
+            // Check if current value is in the list, if not add it
+            if (!projects.includes(currentValue)) {
+                const opt = document.createElement('option');
+                opt.value = currentValue;
+                opt.textContent = currentValue;
+                select.appendChild(opt);
+            }
+            select.value = currentValue;
+        }
+
+        // Reset the new project input
+        const projectNewWrapper = document.getElementById('project-new-wrapper');
+        const projectNewInput = document.getElementById('project-new-input');
+        if (projectNewWrapper) projectNewWrapper.style.display = 'none';
+        if (projectNewInput) projectNewInput.value = '';
     }
 
     ensureProjectExists(projectName) {
@@ -2652,8 +2784,9 @@ class OutreachTracker {
     openContactSheet(mode = 'add', contactIdOrData = null) {
         const form = document.getElementById('contact-form');
         const modal = document.getElementById('contact-modal');
-        const titleEl = document.getElementById('modal-title');
-        if (!form || !modal || !titleEl) return;
+        // Support both old and new title element IDs
+        const titleEl = document.getElementById('contact-modal-title') || document.getElementById('modal-title');
+        if (!form || !modal) return;
 
         let contact = null;
         if (mode === 'edit') {
@@ -2667,26 +2800,66 @@ class OutreachTracker {
         }
 
         if (mode === 'add' || !contact) {
-        this.editingContactId = null;
-            titleEl.textContent = 'Add Contact';
+            this.editingContactId = null;
+            if (titleEl) titleEl.textContent = 'Add Prospect';
             form.reset();
+            
+            // Initialize project dropdown for add mode
+            this.renderProjectOptions('');
+            
+            // Initialize empty multi-field lists for add mode
+            this.populateMultiFieldList('primary-email-list', [], 'Email', 'email');
+            this.populateMultiFieldList('primary-phone-list', [], 'Phone', 'tel');
+            this.populateMultiFieldList('org-email-list', [], 'Email (e.g., info@...)', 'email');
+            this.populateMultiFieldList('org-phone-list', [], 'Phone', 'tel');
+            this.populateExtraContacts(null);
         } else {
             this.editingContactId = contact.id;
-            titleEl.textContent = 'Edit Contact';
+            if (titleEl) titleEl.textContent = 'Edit Prospect';
 
-            // Essentials
-            form.vendorName.value = contact.vendorName || '';
-            form.contactName.value = contact.contactName || '';
-            form.email.value = contact.email || '';
-            form.phone.value = contact.phone || '';
-            form.category.value = contact.category || '';
-            form.status.value = contact.status || 'Not Started';
-            form.project.value = contact.project || '';
-            form.segment.value = contact.segment || '';
-
-            // Advanced
-            if (form.companyName) form.companyName.value = contact.companyName || '';
+            // Organization section
+            if (form.vendorName) form.vendorName.value = contact.vendorName || '';
             if (form.website) form.website.value = contact.website || '';
+            
+            // Project dropdown
+            this.renderProjectOptions(contact.project || '');
+            
+            if (form.segment) form.segment.value = contact.segment || '';
+            if (form.category) form.category.value = contact.category || '';
+            if (form.status) form.status.value = contact.status || 'Not Started';
+
+            // Primary contact section
+            if (form.contactName) form.contactName.value = contact.contactName || '';
+            if (form.title) form.title.value = contact.title || '';
+
+            // Multi-field lists for primary contact
+            const primaryEmails = contact.primaryEmails || (contact.email ? [contact.email] : []);
+            const primaryPhones = contact.primaryPhones || (contact.phone ? [contact.phone] : []);
+            this.populateMultiFieldList('primary-email-list', primaryEmails, 'Email', 'email');
+            this.populateMultiFieldList('primary-phone-list', primaryPhones, 'Phone', 'tel');
+
+            // Org contact info
+            const orgEmails = contact.companyEmails || [];
+            const orgPhones = contact.companyPhones || [];
+            this.populateMultiFieldList('org-email-list', orgEmails, 'Email (e.g., info@...)', 'email');
+            this.populateMultiFieldList('org-phone-list', orgPhones, 'Phone', 'tel');
+
+            // Social links
+            if (form.linkedin) form.linkedin.value = contact.linkedin || '';
+            if (form.facebook) form.facebook.value = contact.facebook || '';
+            if (form.instagram) form.instagram.value = contact.instagram || '';
+            if (form.twitter) form.twitter.value = contact.twitter || '';
+            if (form.youtube) form.youtube.value = contact.youtube || '';
+
+            // Address
+            if (form.address) form.address.value = contact.address || '';
+            if (form.city) form.city.value = contact.city || '';
+            if (form.state) form.state.value = contact.state || '';
+            if (form.zipCode) form.zipCode.value = contact.zipCode || '';
+            if (form.country) form.country.value = contact.country || 'USA';
+
+            // Advanced fields
+            if (form.companyName) form.companyName.value = contact.companyName || '';
             if (form.leadSource) form.leadSource.value = contact.leadSource || '';
             if (form.companySize) form.companySize.value = contact.companySize || '';
             if (form.annualRevenue) form.annualRevenue.value = contact.annualRevenue || '';
@@ -2698,31 +2871,31 @@ class OutreachTracker {
             if (form.decisionMaker) form.decisionMaker.value = contact.decisionMaker ? 'true' : 'false';
             if (form.budget) form.budget.value = contact.budget || '';
             if (form.authority) form.authority.value = contact.authority || '';
-            if (form.linkedin) form.linkedin.value = contact.linkedin || '';
-            if (form.twitter) form.twitter.value = contact.twitter || '';
-            if (form.facebook) form.facebook.value = contact.facebook || '';
-            if (form.instagram) form.instagram.value = contact.instagram || '';
-            if (form.address) form.address.value = contact.address || '';
-            if (form.city) form.city.value = contact.city || '';
-            if (form.state) form.state.value = contact.state || '';
-            if (form.zipCode) form.zipCode.value = contact.zipCode || '';
             if (form.notes) form.notes.value = contact.notes || '';
             if (form.internalNotes) form.internalNotes.value = contact.internalNotes || '';
             if (form.nextSteps) form.nextSteps.value = contact.nextSteps || '';
             if (form.followUpDate) form.followUpDate.value = contact.followUpDate || '';
+
+            // Other contacts (people array)
+            this.populateExtraContacts(contact);
         }
 
         // Render tag selector with current selections
         this.renderTagSelector();
 
         // Ensure advanced section is collapsed by default when opening
-        const advancedSection = document.getElementById('contact-advanced-section');
+        const advancedBody = document.getElementById('contact-advanced-body');
         const advancedToggle = document.getElementById('contact-advanced-toggle');
+        if (advancedBody && advancedToggle) {
+            advancedBody.classList.add('collapsed');
+            advancedToggle.textContent = 'Show advanced fields';
+            advancedToggle.setAttribute('aria-expanded', 'false');
+        }
+        // Also handle old structure if present
+        const advancedSection = document.getElementById('contact-advanced-section');
         if (advancedSection && advancedToggle) {
             advancedSection.classList.add('collapsed');
             advancedSection.hidden = true;
-            advancedToggle.textContent = 'Show advanced fields';
-            advancedToggle.setAttribute('aria-expanded', 'false');
         }
 
         // Show Delete button only when editing an existing contact
@@ -2760,6 +2933,155 @@ class OutreachTracker {
                 <span class="tag-label" style="background: ${tag.color}20; color: ${tag.color};">${tag.name}</span>
             </label>
         `).join('');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Multi-Field Helpers (emails, phones, people)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Create a simple multi-field row (email or phone)
+     */
+    createMultiFieldRow(value, placeholder, inputType = 'text') {
+        const row = document.createElement('div');
+        row.className = 'multi-field-row';
+
+        const input = document.createElement('input');
+        input.type = inputType;
+        input.placeholder = placeholder;
+        input.value = value || '';
+        input.className = 'form-input multi-field-input';
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'multi-field-remove-btn';
+        removeBtn.textContent = '−';
+        removeBtn.title = 'Remove';
+        removeBtn.addEventListener('click', () => row.remove());
+
+        row.appendChild(input);
+        row.appendChild(removeBtn);
+
+        return row;
+    }
+
+    /**
+     * Read all values from a multi-field list
+     */
+    readMultiFieldValues(listId) {
+        const listEl = document.getElementById(listId);
+        if (!listEl) return [];
+        return Array.from(listEl.querySelectorAll('.multi-field-row input'))
+            .map(input => input.value.trim())
+            .filter(Boolean);
+    }
+
+    /**
+     * Populate a multi-field list with values
+     */
+    populateMultiFieldList(listId, values, placeholder, inputType = 'text') {
+        const listEl = document.getElementById(listId);
+        if (!listEl) return;
+
+        listEl.innerHTML = '';
+        const arr = Array.isArray(values) ? values : (values ? [values] : []);
+        
+        // Always have at least one empty row for convenience
+        if (arr.length === 0) {
+            listEl.appendChild(this.createMultiFieldRow('', placeholder, inputType));
+        } else {
+            arr.forEach(val => {
+                listEl.appendChild(this.createMultiFieldRow(val, placeholder, inputType));
+            });
+        }
+    }
+
+    /**
+     * Create an extra contact card (other person at org)
+     */
+    createExtraContactCard(person) {
+        const card = document.createElement('div');
+        card.className = 'extra-contact-card';
+
+        const nameRow = this.createMultiFieldRow(person?.name || '', 'Name');
+        const roleRow = this.createMultiFieldRow(person?.role || '', 'Role / Title');
+        const emailRow = this.createMultiFieldRow(person?.email || '', 'Email', 'email');
+        const phoneRow = this.createMultiFieldRow(person?.phone || '', 'Phone', 'tel');
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'extra-contact-remove-person';
+        removeBtn.textContent = 'Remove person';
+        removeBtn.addEventListener('click', () => card.remove());
+
+        card.appendChild(nameRow);
+        card.appendChild(roleRow);
+        card.appendChild(emailRow);
+        card.appendChild(phoneRow);
+        card.appendChild(removeBtn);
+
+        return card;
+    }
+
+    /**
+     * Populate extra contacts list when opening the edit modal
+     */
+    populateExtraContacts(contact) {
+        const listEl = document.getElementById('extra-contacts-list');
+        if (!listEl) return;
+
+        listEl.innerHTML = '';
+        const people = Array.isArray(contact?.people) ? contact.people : [];
+        people.forEach(person => {
+            const card = this.createExtraContactCard(person);
+            listEl.appendChild(card);
+        });
+    }
+
+    /**
+     * Read extra contacts from the form
+     */
+    readExtraContactsFromForm() {
+        const extraList = document.getElementById('extra-contacts-list');
+        if (!extraList) return [];
+
+        const cards = Array.from(extraList.querySelectorAll('.extra-contact-card'));
+        const people = [];
+
+        cards.forEach(card => {
+            const inputs = card.querySelectorAll('.multi-field-row input');
+            let name = '';
+            let role = '';
+            let email = '';
+            let phone = '';
+
+            inputs.forEach(input => {
+                const ph = (input.placeholder || '').toLowerCase();
+                const val = input.value.trim();
+                if (!val) return;
+
+                if (ph.includes('name')) name = val;
+                else if (ph.includes('role')) role = val;
+                else if (ph.includes('email')) email = val;
+                else if (ph.includes('phone')) phone = val;
+            });
+
+            if (name || email || phone || role) {
+                people.push({ name, role, email, phone });
+            }
+        });
+
+        return people;
+    }
+
+    // Legacy alias for backward compatibility
+    buildExtraContactsFromForm() {
+        return this.readExtraContactsFromForm();
+    }
+
+    // Legacy alias
+    createExtraContactRow(person) {
+        return this.createExtraContactCard(person);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -2820,10 +3142,35 @@ class OutreachTracker {
             errorEl.remove();
         }
 
-        // Inline validation
-        if (!this.validateContactForm(form)) {
-            return; // Stop if validation fails
+        // Read multi-field values
+        const primaryEmails = this.readMultiFieldValues('primary-email-list');
+        const primaryPhones = this.readMultiFieldValues('primary-phone-list');
+        const orgEmails = this.readMultiFieldValues('org-email-list');
+        const orgPhones = this.readMultiFieldValues('org-phone-list');
+
+        // Validate: check vendorName and at least one primary email
+        this.clearContactFormErrors(form);
+        const vendorName = (formData.get('vendorName') || '').trim();
+        let hasError = false;
+
+        if (!vendorName) {
+            this.setContactFieldError(form.vendorName, 'Business / Organization Name is required.');
+            hasError = true;
         }
+
+        if (primaryEmails.length === 0) {
+            // Show error near the primary email list
+            const emailList = document.getElementById('primary-email-list');
+            if (emailList) {
+                const errDiv = document.createElement('div');
+                errDiv.className = 'contact-error-msg';
+                errDiv.textContent = 'At least one email is required.';
+                emailList.parentNode.insertBefore(errDiv, emailList.nextSibling);
+            }
+            hasError = true;
+        }
+
+        if (hasError) return;
         
         // Show loading state
         const originalBtnText = submitBtn?.textContent || 'Save';
@@ -2843,16 +3190,50 @@ class OutreachTracker {
                 ? this.contacts.find(c => c.id === this.editingContactId) 
                 : null;
 
+            // Normalize social URLs
+            const normalizeUrl = (val, domain) => {
+                if (!val) return '';
+                val = val.trim();
+                if (val.startsWith('@')) {
+                    return `https://${domain}/${val.slice(1)}`;
+                }
+                if (val && !val.startsWith('http')) {
+                    return `https://${val}`;
+                }
+                return val;
+            };
+
+            // Get project from dropdown or new input
+            const projectSelect = document.getElementById('project-select');
+            const projectNewInput = document.getElementById('project-new-input');
+            let projectName = projectSelect ? projectSelect.value.trim() : '';
+            
+            // If user typed a new project name, use that instead
+            if (projectNewInput && projectNewInput.value.trim()) {
+                projectName = projectNewInput.value.trim();
+                // Ensure it exists in the projects list
+                this.ensureProjectExists(projectName);
+            }
+
         const contact = {
             id: this.editingContactId || this.generateId(),
-            // Basic Info
+                
+                // Organization info
             vendorName: formData.get('vendorName'),
             companyName: formData.get('companyName') || formData.get('vendorName'),
+                website: formData.get('website'),
+                
+                // Primary contact
             contactName: formData.get('contactName'),
             title: formData.get('title'),
-            email: formData.get('email'),
-            phone: formData.get('phone'),
-            website: formData.get('website'),
+                email: primaryEmails[0] || '',  // First email for backward compatibility
+                phone: primaryPhones[0] || '',  // First phone for backward compatibility
+                primaryEmails: primaryEmails,
+                primaryPhones: primaryPhones,
+                
+                // Org-level contact info
+                companyEmails: orgEmails,
+                companyPhones: orgPhones,
             
             // Business Info
             category: formData.get('category'),
@@ -2862,11 +3243,12 @@ class OutreachTracker {
             companySize: formData.get('companySize'),
             annualRevenue: formData.get('annualRevenue'),
             
-            // Contact Details
-            linkedin: formData.get('linkedin'),
-            twitter: formData.get('twitter'),
-            facebook: formData.get('facebook'),
-            instagram: formData.get('instagram'),
+                // Social Links (with URL normalization)
+                linkedin: normalizeUrl(formData.get('linkedin'), 'linkedin.com'),
+                twitter: normalizeUrl(formData.get('twitter'), 'x.com'),
+                facebook: normalizeUrl(formData.get('facebook'), 'facebook.com'),
+                instagram: normalizeUrl(formData.get('instagram'), 'instagram.com'),
+                youtube: formData.get('youtube') || '',
             
             // Address
             address: formData.get('address'),
@@ -2892,7 +3274,7 @@ class OutreachTracker {
             tags: selectedTags,
             
             // Tracking
-            project: formData.get('project') || '',
+            project: projectName,
             leadSource: formData.get('leadSource') || 'Albany Ski Expo',
             referredBy: formData.get('referredBy'),
             
@@ -2903,7 +3285,10 @@ class OutreachTracker {
             nextSteps: formData.get('nextSteps'),
             
             // Custom fields
-                customFields: existingContact?.customFields || {}
+                customFields: existingContact?.customFields || {},
+                
+                // Additional contacts (people array)
+                people: this.readExtraContactsFromForm()
         };
 
         if (contact.project) {
@@ -3613,6 +3998,34 @@ AdSell.ai`,
                 : ''
         ].filter(Boolean).join('');
 
+        // Additional contacts (people array)
+        const people = Array.isArray(contact.people) ? contact.people : [];
+        let extraPeopleHtml = '';
+        if (people.length > 0) {
+            extraPeopleHtml += `
+                <div class="prospect-subsection-header">Other Contacts</div>
+                <div class="prospect-people-list">
+            `;
+            people.forEach((p) => {
+                const name = p.name || '';
+                const role = p.role || '';
+                const email = p.email || '';
+                const phone = p.phone || '';
+
+                extraPeopleHtml += `
+                    <div class="prospect-person-row">
+                        <div class="prospect-person-main">
+                            ${name ? `<div class="prospect-person-name">${this.escapeHtml(name)}</div>` : ''}
+                            ${role ? `<div class="prospect-person-role">${this.escapeHtml(role)}</div>` : ''}
+                            ${email ? `<div class="prospect-person-email"><a href="mailto:${this.escapeHtml(email)}">${this.escapeHtml(email)}</a></div>` : ''}
+                            ${phone ? `<div class="prospect-person-phone"><a href="tel:${phone.replace(/[^0-9+]/g, '')}">${this.escapeHtml(phone)}</a></div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            extraPeopleHtml += `</div>`;
+        }
+
         // Web & Location group
         const webRows = [
             websiteHref 
@@ -3641,11 +4054,12 @@ AdSell.ai`,
             `;
         }
 
-        if (peopleRows) {
+        if (peopleRows || extraPeopleHtml) {
             groupsHtml += `
                 <div class="details-group">
                     <div class="details-group-title">People & Contact</div>
-                    <div class="details-rows-grid">${peopleRows}</div>
+                    ${peopleRows ? `<div class="details-rows-grid">${peopleRows}</div>` : ''}
+                    ${extraPeopleHtml}
                 </div>
             `;
         }
@@ -5157,6 +5571,13 @@ AdSell.ai`,
     // Utilities
     generateId() {
         return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
     }
 
     formatDate(dateString) {

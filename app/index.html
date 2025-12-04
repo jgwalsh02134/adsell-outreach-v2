@@ -730,293 +730,319 @@
         </button>
     </nav>
 
-    <!-- Contact Sheet Modal (Add/Edit Contact) -->
+    <!-- Contact Sheet Modal (Add/Edit Prospect) -->
     <div id="contact-modal" class="modal contact-sheet">
-        <div class="modal-content modal-large contact-sheet-content">
-            <header class="modal-header contact-sheet-header">
-                <h2 id="modal-title" class="contact-sheet-title">Add Contact</h2>
-                <button class="modal-close" type="button" onclick="app.closeContactModal()">&times;</button>
+        <div class="modal-content contact-modal-content">
+            <header class="modal-header contact-modal-header">
+                <h2 id="contact-modal-title">Edit Prospect</h2>
+                <button type="button" class="modal-close" id="contact-modal-close" aria-label="Close">&times;</button>
             </header>
 
-            <form id="contact-form" class="contact-sheet-form">
-                <!-- Essentials section -->
-                <section class="contact-section contact-essentials">
-                    <div class="overline-label">Essentials</div>
-                    <div class="form-row">
-                        <div class="form-group">
+            <form id="contact-form" class="contact-form">
+                <!-- 1. Organization -->
+                <section class="contact-section" id="section-organization">
+                    <div class="contact-section-header">Organization</div>
+                    <div class="contact-form-grid">
+                        <div class="form-group form-group-full">
                             <label>Business / Organization Name *</label>
-                            <input type="text" name="vendorName" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Contact Person Name</label>
-                            <input type="text" name="contactName">
+                            <input type="text" name="vendorName" class="form-input" required>
                         </div>
                         <div class="form-group">
-                            <label>Title/Position</label>
-                            <input type="text" name="title" placeholder="e.g., Owner, Marketing Director">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Email *</label>
-                            <input type="email" name="email" required>
+                            <label>Website</label>
+                            <input type="url" name="website" class="form-input" placeholder="https://example.com">
                         </div>
                         <div class="form-group">
-                            <label>Phone</label>
-                            <input type="tel" name="phone">
+                            <label for="project-select">Project / Campaign</label>
+                            <div class="project-select-row">
+                                <select id="project-select" name="project" class="form-input">
+                                    <option value="">Select project</option>
+                                    <!-- options injected by JS -->
+                                </select>
+                                <button type="button" class="btn btn-secondary btn-xs" id="project-add-btn" title="New Project">+</button>
+                            </div>
+                            <div id="project-new-wrapper" style="display:none; margin-top: 6px;">
+                                <input type="text" id="project-new-input" class="form-input" placeholder="New project name">
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-row">
                         <div class="form-group">
-                            <label>Category</label>
-                            <select name="category">
-                                <option value="">Select category</option>
-                                <option value="Vendor / Supplier">Vendor / Supplier</option>
-                                <option value="Customer / Advertiser">Customer / Advertiser</option>
-                                <option value="Partner">Partner</option>
-                                <option value="Media / Press">Media / Press</option>
-                                <option value="Prospect / Lead">Prospect / Lead</option>
+                            <label for="segment-select">Segment</label>
+                            <select id="segment-select" name="segment" class="form-input">
+                                <option value="">Select Segment</option>
+                                <option value="Retail">Retail</option>
+                                <option value="Local Services">Local Services</option>
+                                <option value="Travel & Tourism">Travel & Tourism</option>
+                                <option value="Hospitality">Hospitality</option>
+                                <option value="Sports & Recreation">Sports & Recreation</option>
+                                <option value="Media & Publishing">Media & Publishing</option>
+                                <option value="Nonprofit / Community">Nonprofit / Community</option>
+                                <option value="Education">Education</option>
+                                <option value="Healthcare">Healthcare</option>
+                                <option value="Financial Services">Financial Services</option>
+                                <option value="Technology / SaaS">Technology / SaaS</option>
+                                <option value="Real Estate">Real Estate</option>
+                                <option value="Government / Public Sector">Government / Public Sector</option>
                                 <option value="Other">Other</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="category-select">Advertiser Type (Category)</label>
+                            <select id="category-select" name="category" class="form-input">
+                                <option value="">Select Advertiser Type</option>
+                                <option value="Local Business">Local Business</option>
+                                <option value="Tourism / Hospitality">Tourism / Hospitality</option>
+                                <option value="Event / Organization">Event / Organization</option>
+                                <option value="Nonprofit / Community">Nonprofit / Community</option>
+                                <option value="Retail">Retail</option>
+                                <option value="Professional Services">Professional Services</option>
+                                <option value="Media / Entertainment">Media / Entertainment</option>
+                                <option value="Government">Government</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
                         <div class="form-group">
                             <label>Status</label>
-                            <select name="status">
+                            <select name="status" class="form-input">
                                 <option value="Not Started">Not Started</option>
                                 <option value="In Progress">In Progress</option>
                                 <option value="Responded">Responded</option>
                                 <option value="Signed Up">Signed Up</option>
                             </select>
                         </div>
+                    </div>
+                </section>
+
+                <!-- 2. Primary Contact -->
+                <section class="contact-section" id="section-primary-contact">
+                    <div class="contact-section-header">Primary Contact</div>
+                    <div class="contact-form-grid">
                         <div class="form-group">
-                            <label>Project / Campaign</label>
-                            <input type="text" name="project" placeholder="e.g., Albany Ski Expo Free Trial">
+                            <label>Name</label>
+                            <input type="text" name="contactName" class="form-input" placeholder="e.g., John Smith">
+                        </div>
+                        <div class="form-group">
+                            <label>Title / Role</label>
+                            <input type="text" name="title" class="form-input" placeholder="e.g., Marketing Director">
                         </div>
                     </div>
-                    <div class="form-row">
+                    <div class="contact-subsection">
+                        <div class="contact-subsection-label">Emails</div>
+                        <div id="primary-email-list"></div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="primary-email-add-btn">+ Add email</button>
+                    </div>
+                    <div class="contact-subsection">
+                        <div class="contact-subsection-label">Phones</div>
+                        <div id="primary-phone-list"></div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="primary-phone-add-btn">+ Add phone</button>
+                    </div>
+                </section>
+
+                <!-- 3. Other Contacts -->
+                <section class="contact-section" id="section-other-contacts">
+                    <div class="contact-section-header">Other Contacts (optional)</div>
+                    <p class="contact-section-subtext">Add other people at this organization (marketing, PR, partnerships, sales, etc.).</p>
+                    <div id="extra-contacts-list"></div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="extra-contact-add-btn">+ Add Person</button>
+                </section>
+
+                <!-- 4. Organization Contact Info -->
+                <section class="contact-section" id="section-org-contact-info">
+                    <div class="contact-section-header">Organization Contact Info</div>
+                    <p class="contact-section-subtext">General contact info for the organization (info@, main phone, etc.).</p>
+                    <div class="contact-subsection">
+                        <div class="contact-subsection-label">Org Emails</div>
+                        <div id="org-email-list"></div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="org-email-add-btn">+ Add email</button>
+                    </div>
+                    <div class="contact-subsection">
+                        <div class="contact-subsection-label">Org Phones</div>
+                        <div id="org-phone-list"></div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="org-phone-add-btn">+ Add phone</button>
+                    </div>
+                </section>
+
+                <!-- 5. Social Links -->
+                <section class="contact-section" id="section-social">
+                    <div class="contact-section-header">Social Links</div>
+                    <div class="contact-form-grid">
                         <div class="form-group">
-                            <label>Segment (if applicable)</label>
-                            <select name="segment">
-                                <option value="">Select Segment</option>
-                                <option value="Expo">Expo</option>
-                                <option value="NE">Northeast</option>
-                                <option value="Club">Club</option>
-                            </select>
+                            <label>LinkedIn</label>
+                            <input type="url" name="linkedin" class="form-input" placeholder="https://linkedin.com/company/...">
+                        </div>
+                        <div class="form-group">
+                            <label>Facebook</label>
+                            <input type="url" name="facebook" class="form-input" placeholder="https://facebook.com/...">
+                        </div>
+                        <div class="form-group">
+                            <label>Instagram</label>
+                            <input type="text" name="instagram" class="form-input" placeholder="@username or URL">
+                        </div>
+                        <div class="form-group">
+                            <label>X (Twitter)</label>
+                            <input type="text" name="twitter" class="form-input" placeholder="@username or URL">
+                        </div>
+                        <div class="form-group form-group-full">
+                            <label>YouTube</label>
+                            <input type="url" name="youtube" class="form-input" placeholder="https://youtube.com/@...">
                         </div>
                     </div>
                 </section>
 
-                <!-- Advanced fields toggle -->
-                <button
-                    type="button"
-                    class="contact-advanced-toggle"
-                    id="contact-advanced-toggle"
-                    aria-expanded="false"
-                    aria-controls="contact-advanced-section"
-                >
-                    Show advanced fields
-                </button>
-
-                <!-- Advanced section -->
-                <section
-                    id="contact-advanced-section"
-                    class="contact-section contact-advanced collapsed"
-                    hidden
-                >
-                    <div class="overline-label">Advanced</div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Company Name (if different)</label>
-                            <input type="text" name="companyName">
+                <!-- 6. Address -->
+                <section class="contact-section" id="section-address">
+                    <div class="contact-section-header">Address</div>
+                    <div class="contact-form-grid">
+                        <div class="form-group form-group-full">
+                            <label>Street Address</label>
+                            <input type="text" name="address" class="form-input" placeholder="123 Main St">
                         </div>
-                        <div class="form-group">
-                            <label>Website</label>
-                            <input type="url" name="website" placeholder="https://example.com">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Lead Source</label>
-                            <input type="text" name="leadSource" value="Albany Ski Expo">
-                        </div>
-                        <div class="form-group">
-                            <label>Company Size</label>
-                            <select name="companySize">
-                                <option value="">Select Size</option>
-                                <option value="1-10">1-10 employees</option>
-                                <option value="11-50">11-50 employees</option>
-                                <option value="51-200">51-200 employees</option>
-                                <option value="201-500">201-500 employees</option>
-                                <option value="500+">500+ employees</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Annual Revenue</label>
-                            <select name="annualRevenue">
-                                <option value="">Select Revenue</option>
-                                <option value="<$1M">Less than $1M</option>
-                                <option value="$1M-$5M">$1M - $5M</option>
-                                <option value="$5M-$20M">$5M - $20M</option>
-                                <option value="$20M-$50M">$20M - $50M</option>
-                                <option value="$50M+">$50M+</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Referred By</label>
-                            <input type="text" name="referredBy" placeholder="Name or source of referral">
-                        </div>
-                    </div>
-
-                    <h4 class="form-section-title">Sales Pipeline</h4>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Deal Stage</label>
-                            <select name="dealStage">
-                                <option value="">Select Stage</option>
-                                <option value="Prospecting">Prospecting</option>
-                                <option value="Qualified">Qualified</option>
-                                <option value="Proposal">Proposal Sent</option>
-                                <option value="Negotiation">Negotiation</option>
-                                <option value="Closed Won">Closed Won</option>
-                                <option value="Closed Lost">Closed Lost</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Expected Deal Value ($)</label>
-                            <input type="number" name="dealValue" placeholder="5000">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Probability (%)</label>
-                            <input type="number" name="dealProbability" min="0" max="100" placeholder="50">
-                        </div>
-                        <div class="form-group">
-                            <label>Expected Close Date</label>
-                            <input type="date" name="expectedCloseDate">
-                        </div>
-                    </div>
-
-                    <h4 class="form-section-title">Decision Making</h4>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Decision Maker?</label>
-                            <select name="decisionMaker">
-                                <option value="false">No</option>
-                                <option value="true">Yes</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Authority Level</label>
-                            <select name="authority">
-                                <option value="">Select Authority</option>
-                                <option value="Recommender">Recommender</option>
-                                <option value="Influencer">Influencer</option>
-                                <option value="Decision Maker">Decision Maker</option>
-                                <option value="Economic Buyer">Economic Buyer</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Budget Info</label>
-                        <input type="text" name="budget" placeholder="e.g., $5K-10K annual marketing budget">
-                    </div>
-
-                    <h4 class="form-section-title">Social Media</h4>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>LinkedIn Profile</label>
-                            <input type="url" name="linkedin" placeholder="https://linkedin.com/in/...">
-                        </div>
-                        <div class="form-group">
-                            <label>Twitter/X Handle</label>
-                            <input type="text" name="twitter" placeholder="@username">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Facebook Page</label>
-                            <input type="url" name="facebook" placeholder="https://facebook.com/...">
-                        </div>
-                        <div class="form-group">
-                            <label>Instagram Handle</label>
-                            <input type="text" name="instagram" placeholder="@username">
-                        </div>
-                    </div>
-
-                    <h4 class="form-section-title">Address</h4>
-                    <div class="form-group">
-                        <label>Street Address</label>
-                        <input type="text" name="address" placeholder="123 Main St">
-                    </div>
-                    <div class="form-row">
                         <div class="form-group">
                             <label>City</label>
-                            <input type="text" name="city">
+                            <input type="text" name="city" class="form-input">
                         </div>
                         <div class="form-group">
                             <label>State</label>
-                            <input type="text" name="state" placeholder="NY">
+                            <input type="text" name="state" class="form-input" placeholder="NY">
                         </div>
                         <div class="form-group">
                             <label>ZIP Code</label>
-                            <input type="text" name="zipCode">
+                            <input type="text" name="zipCode" class="form-input">
                         </div>
-                    </div>
-
-                    <h4 class="form-section-title">Notes & Tags</h4>
-                    <div class="form-group">
-                        <label>Public Notes</label>
-                        <textarea name="notes" rows="3" placeholder="Notes that can be shared with the client..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Internal Notes (Private)</label>
-                        <textarea name="internalNotes" rows="3" placeholder="Internal team notes, not for client..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Next Steps</label>
-                        <textarea name="nextSteps" rows="2" placeholder="What needs to happen next..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Follow-Up Date</label>
-                        <input type="date" name="followUpDate">
-                    </div>
-
-                    <h4 class="form-section-title">Tags</h4>
-                    <div id="tag-selector" class="tag-selector">
-                        <!-- Tags will be populated by JavaScript -->
+                        <div class="form-group">
+                            <label>Country</label>
+                            <input type="text" name="country" class="form-input" placeholder="USA" value="USA">
+                        </div>
                     </div>
                 </section>
 
-                <div class="modal-actions contact-sheet-actions">
-                    <button
-                        type="button"
-                        class="btn btn-danger contact-delete-btn"
-                        id="contact-delete-btn"
-                        style="display: none;"
-                    >
-                        Delete
+                <!-- 7. Advanced (collapsible) -->
+                <section class="contact-section" id="section-advanced">
+                    <button type="button" class="contact-advanced-toggle" id="contact-advanced-toggle" aria-expanded="false">
+                        Show advanced fields
                     </button>
-                    <div class="contact-sheet-actions-right">
-                        <button
-                            type="button"
-                            class="btn btn-secondary contact-sheet-cancel"
-                            onclick="app.closeContactModal()"
-                        >
-                            Cancel
-                        </button>
-                        <button type="submit" class="btn btn-primary contact-sheet-save">
-                            Save Contact
-                        </button>
+                    <div id="contact-advanced-body" class="contact-advanced-body collapsed">
+                        <div class="contact-section-header">Advanced</div>
+                        <div class="contact-form-grid">
+                            <div class="form-group">
+                                <label>Company Name (if different)</label>
+                                <input type="text" name="companyName" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Lead Source</label>
+                                <input type="text" name="leadSource" class="form-input" value="Albany Ski Expo">
+                            </div>
+                            <div class="form-group">
+                                <label>Company Size</label>
+                                <select name="companySize" class="form-input">
+                                    <option value="">Select Size</option>
+                                    <option value="1-10">1-10 employees</option>
+                                    <option value="11-50">11-50 employees</option>
+                                    <option value="51-200">51-200 employees</option>
+                                    <option value="201-500">201-500 employees</option>
+                                    <option value="500+">500+ employees</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Annual Revenue</label>
+                                <select name="annualRevenue" class="form-input">
+                                    <option value="">Select Revenue</option>
+                                    <option value="<$1M">Less than $1M</option>
+                                    <option value="$1M-$5M">$1M - $5M</option>
+                                    <option value="$5M-$20M">$5M - $20M</option>
+                                    <option value="$20M-$50M">$20M - $50M</option>
+                                    <option value="$50M+">$50M+</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Referred By</label>
+                                <input type="text" name="referredBy" class="form-input" placeholder="Name or source">
+                            </div>
+                        </div>
+
+                        <div class="contact-section-header" style="margin-top: 12px;">Sales Pipeline</div>
+                        <div class="contact-form-grid">
+                            <div class="form-group">
+                                <label>Deal Stage</label>
+                                <select name="dealStage" class="form-input">
+                                    <option value="">Select Stage</option>
+                                    <option value="Prospecting">Prospecting</option>
+                                    <option value="Qualified">Qualified</option>
+                                    <option value="Proposal">Proposal Sent</option>
+                                    <option value="Negotiation">Negotiation</option>
+                                    <option value="Closed Won">Closed Won</option>
+                                    <option value="Closed Lost">Closed Lost</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Deal Value ($)</label>
+                                <input type="number" name="dealValue" class="form-input" placeholder="5000">
+                            </div>
+                            <div class="form-group">
+                                <label>Probability (%)</label>
+                                <input type="number" name="dealProbability" class="form-input" min="0" max="100" placeholder="50">
+                            </div>
+                            <div class="form-group">
+                                <label>Expected Close</label>
+                                <input type="date" name="expectedCloseDate" class="form-input">
+                            </div>
+                        </div>
+
+                        <div class="contact-section-header" style="margin-top: 12px;">Decision Making</div>
+                        <div class="contact-form-grid">
+                            <div class="form-group">
+                                <label>Decision Maker?</label>
+                                <select name="decisionMaker" class="form-input">
+                                    <option value="false">No</option>
+                                    <option value="true">Yes</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Authority Level</label>
+                                <select name="authority" class="form-input">
+                                    <option value="">Select Authority</option>
+                                    <option value="Recommender">Recommender</option>
+                                    <option value="Influencer">Influencer</option>
+                                    <option value="Decision Maker">Decision Maker</option>
+                                    <option value="Economic Buyer">Economic Buyer</option>
+                                </select>
+                            </div>
+                            <div class="form-group form-group-full">
+                                <label>Budget Info</label>
+                                <input type="text" name="budget" class="form-input" placeholder="e.g., $5K-10K annual marketing budget">
+                            </div>
+                        </div>
+
+                        <div class="contact-section-header" style="margin-top: 12px;">Notes & Follow-up</div>
+                        <div class="contact-form-grid">
+                            <div class="form-group form-group-full">
+                                <label>Public Notes</label>
+                                <textarea name="notes" class="form-input" rows="2" placeholder="Notes that can be shared..."></textarea>
+                            </div>
+                            <div class="form-group form-group-full">
+                                <label>Internal Notes (Private)</label>
+                                <textarea name="internalNotes" class="form-input" rows="2" placeholder="Internal team notes..."></textarea>
+                            </div>
+                            <div class="form-group form-group-full">
+                                <label>Next Steps</label>
+                                <textarea name="nextSteps" class="form-input" rows="2" placeholder="What needs to happen next..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Follow-Up Date</label>
+                                <input type="date" name="followUpDate" class="form-input">
+                            </div>
+                        </div>
+
+                        <div class="contact-section-header" style="margin-top: 12px;">Tags</div>
+                        <div id="tag-selector" class="tag-selector">
+                            <!-- Tags will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </section>
+
+                <div class="contact-modal-actions">
+                    <button type="button" class="btn btn-danger" id="contact-delete-btn" style="display: none;">Delete</button>
+                    <div class="contact-modal-actions-right">
+                        <button type="button" class="btn btn-secondary" id="contact-cancel-btn">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="contact-save-btn">Save</button>
                     </div>
                 </div>
             </form>
