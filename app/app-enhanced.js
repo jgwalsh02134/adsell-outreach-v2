@@ -115,6 +115,9 @@ class OutreachTracker {
         this.advancedFilters = { statuses: [], categories: [], segments: [], tags: [] };
         this.savedFilters = [];
         
+        // Enrichment cache: { [contactId]: { perplexity?: string, grok?: string, activeProvider?: "perplexity"|"grok" } }
+        this.enrichmentCache = {};
+        
         this.init();
     }
 
@@ -508,7 +511,7 @@ class OutreachTracker {
             contactDeleteBtn.addEventListener('click', () => {
                 if (!this.editingContactId) return;
                 this.deleteContactById(this.editingContactId);
-            });
+        });
         }
 
         // Activity form
@@ -3097,21 +3100,21 @@ class OutreachTracker {
         const contactName = contact?.vendorName || contact?.companyName || 'this contact';
 
         const confirmed = window.confirm(`Delete ${contactName}? This cannot be undone.`);
-        if (!confirmed) return;
+                if (!confirmed) return;
 
         this.contacts = (this.contacts || []).filter(c => c.id !== contactId);
         this.activities = (this.activities || []).filter(a => a.contactId !== contactId);
-        await this.saveData();
+                await this.saveData();
         this.closeContactModal();
         this.renderContacts();
-        this.updateStats();
+                this.updateStats();
         
         // If we were viewing this contact in the profile, go back to contacts list
         if (this.activeContactId === contactId) {
             this.showPage('contacts');
         }
         
-        this.showNotification('Contact deleted successfully!');
+            this.showNotification('Contact deleted successfully!');
     }
 
     // Activity Management
@@ -4168,6 +4171,7 @@ AdSell.ai`,
     /**
      * Set up AI enrichment actions for the current prospect (Perplexity + Grok).
      * Now uses text-based responses with rich formatting.
+     * Results are cached in this.enrichmentCache so they persist across Edit modal open/close.
      */
     setupAIEnrichment() {
         const resultEl = document.getElementById('ai-enrich-result');
@@ -4175,9 +4179,7 @@ AdSell.ai`,
         const btnGrok = document.getElementById('btn-enrich-grok');
         if (!resultEl || !btnPerplexity || !btnGrok) return;
 
-        let activeEngine = null;
-        let perplexityResult = null;
-        let grokResult = null;
+        const self = this;
 
         function getCurrentProspect() {
             if (window.appState && window.appState.selectedContact) {
@@ -4188,22 +4190,11 @@ AdSell.ai`,
 
         // Helper to detect and make URLs clickable
         function linkifyText(text) {
-            // URL pattern
             const urlPattern = /(https?:\/\/[^\s<>\[\]()]+)/gi;
-            // Email pattern
-            const emailPattern = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi;
-            // Phone pattern (basic)
-            const phonePattern = /(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})/g;
-
             let result = text;
-            
-            // Replace URLs with links
             result = result.replace(urlPattern, '<a href="$1" target="_blank" rel="noopener noreferrer" class="ai-link">$1</a>');
-            
-            // Replace emails with mailto links (but not if already in an href)
             result = result.replace(/(?<!href=")([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi, 
                 '<a href="mailto:$1" class="ai-link ai-email">$1</a>');
-
             return result;
         }
 
@@ -4211,7 +4202,6 @@ AdSell.ai`,
         // Quick Copy - Missing field-aware chips with emojis and SVG icons
         // ─────────────────────────────────────────────────────────────────────────
 
-        // Configuration for quick copy fields
         const QUICK_COPY_FIELDS = [
             {
                 key: 'name',
@@ -4219,7 +4209,6 @@ AdSell.ai`,
                 emoji: '👤',
                 getOriginal: (c) => c.contactName || '',
                 extractFromText: (text) => {
-                    // Look for contact name patterns
                     const nameMatch = text.match(/(?:contact|person|name)[:\s]+([A-Z][a-z]+ [A-Z][a-z]+)/i);
                     return nameMatch ? nameMatch[1].trim() : '';
                 }
@@ -4257,7 +4246,6 @@ AdSell.ai`,
                 getOriginal: (c) => c.website || '',
                 extractFromText: (text) => {
                     const urlMatches = text.match(/(https?:\/\/[^\s<>\[\]()]+)/gi) || [];
-                    // Prefer non-social URLs for website
                     const nonSocial = urlMatches.find(u => 
                         !u.includes('linkedin.com') && 
                         !u.includes('facebook.com') && 
@@ -4312,7 +4300,6 @@ AdSell.ai`,
                 const originalVal = (field.getOriginal(contact) || '').trim();
                 const enrichedVal = (field.extractFromText(text) || '').trim();
 
-                // Only show chip if original is missing AND enrichment has a value
                 if (!enrichedVal || originalVal) return;
 
                 const btn = document.createElement('button');
@@ -4338,7 +4325,6 @@ AdSell.ai`,
                     e.stopPropagation();
                     try {
                         await navigator.clipboard.writeText(enrichedVal);
-                        // Visual feedback
                         btn.classList.add('copied');
                         const originalContent = btn.innerHTML;
                         btn.textContent = '✓';
@@ -4358,7 +4344,6 @@ AdSell.ai`,
                 const label = document.createElement('div');
                 label.className = 'quick-copy-label';
                 label.textContent = 'Quick copy (missing fields):';
-
                 containerEl.appendChild(label);
                 containerEl.appendChild(row);
             }
@@ -4376,47 +4361,32 @@ AdSell.ai`,
                 return;
             }
 
-            // Create container
             const container = document.createElement('div');
             container.className = 'ai-research-container';
 
-            // Engine label
             const engineLabel = document.createElement('div');
             engineLabel.className = 'ai-engine-badge';
             engineLabel.innerHTML = `<span class="ai-engine-icon">${engine === 'perplexity' ? '🔍' : '⚡'}</span> ${engine === 'perplexity' ? 'Perplexity' : 'Grok'} Research`;
             container.appendChild(engineLabel);
 
-            // Render quick copy row for missing fields
             const contact = getCurrentProspect();
             renderQuickCopyRow(contact, text, container);
 
-            // Create scrollable text area with formatted content
             const textContainer = document.createElement('div');
             textContainer.className = 'ai-research-text';
 
-            // Process text: convert markdown-style headers and linkify
             let processedText = text
-                // Convert ## headers to styled headers
                 .replace(/^## (.+)$/gm, '<h3 class="ai-research-heading">$1</h3>')
-                // Convert ### headers
                 .replace(/^### (.+)$/gm, '<h4 class="ai-research-subheading">$1</h4>')
-                // Convert bullet points
                 .replace(/^- (.+)$/gm, '<div class="ai-research-bullet">• $1</div>')
-                // Convert bold
                 .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                // Preserve line breaks
                 .replace(/\n\n/g, '</p><p class="ai-research-para">')
                 .replace(/\n/g, '<br>');
 
-            // Linkify URLs and emails
             processedText = linkifyText(processedText);
-
-            // Wrap in paragraph
             textContainer.innerHTML = `<p class="ai-research-para">${processedText}</p>`;
-
             container.appendChild(textContainer);
 
-            // Copy all button
             const copyAllBtn = document.createElement('button');
             copyAllBtn.type = 'button';
             copyAllBtn.className = 'btn btn-ghost ai-copy-all-btn';
@@ -4432,7 +4402,6 @@ AdSell.ai`,
             resultEl.appendChild(container);
         }
 
-        // Show loading state
         function showLoading(engine) {
             resultEl.innerHTML = '';
             const loader = document.createElement('div');
@@ -4445,7 +4414,6 @@ AdSell.ai`,
             resultEl.appendChild(loader);
         }
 
-        // Show error state
         function showError(message) {
             resultEl.innerHTML = '';
             const errorEl = document.createElement('div');
@@ -4457,25 +4425,63 @@ AdSell.ai`,
             resultEl.appendChild(errorEl);
         }
 
-        // Update button states
         function updateButtonStates(activeBtn) {
             btnPerplexity.classList.toggle('is-active', activeBtn === 'perplexity');
             btnGrok.classList.toggle('is-active', activeBtn === 'grok');
         }
 
-        const runPerplexity = async () => {
+        // ─────────────────────────────────────────────────────────────────────────
+        // Cache-aware enrichment functions
+        // ─────────────────────────────────────────────────────────────────────────
+
+        // Store result in cache
+        function cacheResult(contactId, provider, text) {
+            if (!contactId) return;
+            self.enrichmentCache = self.enrichmentCache || {};
+            const entry = self.enrichmentCache[contactId] || {};
+            entry[provider] = text;
+            entry.activeProvider = provider;
+            self.enrichmentCache[contactId] = entry;
+        }
+
+        // Get cached result
+        function getCachedResult(contactId, provider) {
+            if (!contactId) return null;
+            const entry = self.enrichmentCache?.[contactId];
+            return entry?.[provider] || null;
+        }
+
+        // Handle provider button click - use cache if available, else fetch
+        const handleProviderClick = async (provider) => {
             const contact = getCurrentProspect();
             if (!contact) {
                 showError('No prospect selected. Please select a contact first.');
                 return;
             }
 
-            activeEngine = 'perplexity';
-            updateButtonStates('perplexity');
-            showLoading('perplexity');
+            // Check cache first
+            const cachedText = getCachedResult(contact.id, provider);
+            if (cachedText) {
+                // Render from cache without API call
+                updateButtonStates(provider);
+                renderResearchText(cachedText, provider);
+                // Update active provider in cache
+                const entry = self.enrichmentCache[contact.id] || {};
+                entry.activeProvider = provider;
+                self.enrichmentCache[contact.id] = entry;
+                return;
+            }
+
+            // No cache, run API call
+            updateButtonStates(provider);
+            showLoading(provider);
+
+            const endpoint = provider === 'perplexity' 
+                ? 'https://adsell-openai-proxy.jgregorywalsh.workers.dev/perplexity/enrich'
+                : 'https://adsell-openai-proxy.jgregorywalsh.workers.dev/grok/enrich';
 
             try {
-                const res = await fetch('https://adsell-openai-proxy.jgregorywalsh.workers.dev/perplexity/enrich', {
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contact })
@@ -4484,53 +4490,39 @@ AdSell.ai`,
                 const text = await res.text();
                 
                 if (!res.ok) {
-                    showError(`Perplexity research failed: ${text}`);
+                    showError(`${provider === 'perplexity' ? 'Perplexity' : 'Grok'} research failed: ${text}`);
                     return;
                 }
 
-                perplexityResult = text;
-                renderResearchText(text, 'perplexity');
+                // Cache the result
+                cacheResult(contact.id, provider, text);
+                renderResearchText(text, provider);
             } catch (err) {
-                console.error('Perplexity research error:', err);
+                console.error(`${provider} research error:`, err);
                 showError(`Failed to complete research: ${err.message}`);
             }
         };
 
-        const runGrok = async () => {
-            const contact = getCurrentProspect();
-            if (!contact) {
-                showError('No prospect selected. Please select a contact first.');
-                return;
-            }
+        // Wire button click handlers
+        btnPerplexity.addEventListener('click', () => handleProviderClick('perplexity'));
+        btnGrok.addEventListener('click', () => handleProviderClick('grok'));
 
-            activeEngine = 'grok';
-            updateButtonStates('grok');
-            showLoading('grok');
+        // ─────────────────────────────────────────────────────────────────────────
+        // Restore from cache if available (called when profile re-renders)
+        // ─────────────────────────────────────────────────────────────────────────
 
-            try {
-                const res = await fetch('https://adsell-openai-proxy.jgregorywalsh.workers.dev/grok/enrich', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contact })
-                });
-
-                const text = await res.text();
-                
-                if (!res.ok) {
-                    showError(`Grok research failed: ${text}`);
-                    return;
+        const contact = getCurrentProspect();
+        if (contact) {
+            const cache = self.enrichmentCache?.[contact.id];
+            if (cache && cache.activeProvider) {
+                const provider = cache.activeProvider;
+                const cachedText = cache[provider];
+                if (cachedText) {
+                    updateButtonStates(provider);
+                    renderResearchText(cachedText, provider);
                 }
-
-                grokResult = text;
-                renderResearchText(text, 'grok');
-            } catch (err) {
-                console.error('Grok research error:', err);
-                showError(`Failed to complete research: ${err.message}`);
             }
-        };
-
-        btnPerplexity.addEventListener('click', runPerplexity);
-        btnGrok.addEventListener('click', runGrok);
+        }
     }
 
     async updateContactStatusInline(contactId, newStatus) {
