@@ -2800,7 +2800,7 @@ class OutreachTracker {
         }
 
         if (mode === 'add' || !contact) {
-            this.editingContactId = null;
+        this.editingContactId = null;
             if (titleEl) titleEl.textContent = 'Add Prospect';
             form.reset();
             
@@ -4426,11 +4426,11 @@ AdSell.ai`,
                 })}
             </article>
 
-            <!-- AI & Enrichment card -->
+            <!-- AI & Prospect Intelligence card -->
             <article class="card prospect-card" id="prospect-enrichment-card">
                 <div class="prospect-section-header">
                     <div>
-                        <div class="overline-label">AI &amp; ENRICHMENT</div>
+                        <div class="overline-label">AI TOOLS</div>
                     </div>
                 </div>
 
@@ -4467,15 +4467,15 @@ AdSell.ai`,
                     </button>
                 </div>
 
-                <!-- Enrichment row -->
+                <!-- Prospect Intelligence row -->
                 <div class="ai-provider-row prospect-enrich-header-row" style="margin-top: 12px;">
-                    <div class="ai-provider-label">Enrichment</div>
+                    <div class="ai-provider-label">Prospect Intelligence</div>
                     <button
                         type="button"
                         class="enrich-refresh-btn"
                         id="enrich-refresh-btn"
-                        title="Refresh research"
-                        aria-label="Refresh research"
+                        title="Refresh intelligence"
+                        aria-label="Refresh intelligence"
                     >
                         <img src="icons/20-refresh.svg" alt="" class="enrich-refresh-icon" />
                     </button>
@@ -4485,6 +4485,7 @@ AdSell.ai`,
                         type="button"
                         class="btn btn-perplexity ai-action-btn"
                         id="btn-enrich-perplexity"
+                        title="Use AI to complete missing fields on this profile"
                     >
                         <img
                             src="icons/white-perplexity-icon.svg"
@@ -4492,12 +4493,13 @@ AdSell.ai`,
                             class="ai-action-icon"
                             aria-hidden="true"
                         />
-                        <span>Research (Perplexity)</span>
+                        <span>Complete Profile</span>
                     </button>
                     <button
                         type="button"
                         class="btn btn-secondary ai-action-btn"
                         id="btn-enrich-grok"
+                        title="Use AI to verify and refine details for this prospect"
                     >
                         <img
                             src="icons/Grok-icon.svg"
@@ -4505,14 +4507,14 @@ AdSell.ai`,
                             class="ai-action-icon"
                             aria-hidden="true"
                         />
-                        <span>Research (Grok)</span>
+                        <span>Verify Details</span>
                     </button>
                 </div>
 
                 <!-- Result panel -->
                 <div id="ai-enrich-result" class="ai-enrich-result">
                     <p class="muted">
-                        Use Perplexity or Grok to fill missing details and understand this account&apos;s marketing behavior.
+                        Use AI to complete missing profile fields, surface key contacts, and verify organization details.
                     </p>
                 </div>
             </article>
