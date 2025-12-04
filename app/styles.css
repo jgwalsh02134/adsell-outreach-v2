@@ -687,9 +687,9 @@ body {
     z-index: -1;
 }
 
-/* Contacts mobile toggles (hidden by default, shown in mobile media query) */
+/* Contacts mobile toggles - now replaced by .contacts-toolbar */
 .contacts-mobile-toggles {
-    display: none;
+    display: none; /* Legacy, replaced by .contacts-toolbar */
 }
 
 /* Segmented control (used for Filters / Quick Add) */
@@ -897,16 +897,162 @@ body {
     min-width: 150px;
 }
 
-/* Contacts search row */
+/* ─────────────────────────────────────────────────────────────────────────
+   Contacts Page Container - Centered max-width layout
+   ───────────────────────────────────────────────────────────────────────── */
+
+.contacts-page-container {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Contacts Page Header - Clean, iOS-style header
+   ───────────────────────────────────────────────────────────────────────── */
+
+.contacts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.contacts-header-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.contacts-header-overline {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-muted, #9ca3af);
+    font-weight: 500;
+}
+
+.contacts-header-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-text-primary, #111827);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.contacts-header-subtitle {
+    font-size: 12px;
+    color: var(--color-text-muted, #6b7280);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Right-side Add button */
+.contacts-header-actions {
+    flex-shrink: 0;
+}
+
+.contacts-add-btn {
+    padding-inline: 18px;
+    padding-block: 8px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Search bar row */
+.contacts-search-row {
+    margin-bottom: 10px;
+}
+
 .contacts-search {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0;
 }
 
-.contacts-search .search-input {
+.contacts-search-input {
     width: 100%;
-    max-width: 480px;
+    border-radius: 9999px;
+    border: 1px solid var(--color-border-subtle, #e5e7eb);
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--color-text-primary, #111827);
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+.contacts-search-input::placeholder {
+    color: var(--color-text-muted, #9ca3af);
+}
+
+.contacts-search-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+/* Filters / Quick Add toolbar */
+.contacts-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.contacts-toolbar-btn {
+    border-radius: 9999px;
+    border: 1px solid var(--color-border-subtle, #e5e7eb);
+    background: #ffffff;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 14px;
+    color: var(--color-text-primary, #374151);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.contacts-toolbar-btn:hover {
+    background: var(--color-bg-subtle, #f3f4f6);
+    border-color: #d1d5db;
+}
+
+.contacts-toolbar-btn:active {
+    background: #e5e7eb;
+}
+
+/* Mobile responsive header */
+@media (max-width: 767px) {
+    .contacts-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .contacts-header-actions {
+        align-self: stretch;
+        width: 100%;
+    }
+
+    .contacts-add-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .contacts-header-title {
+        font-size: 20px;
+    }
+
+    .contacts-search-input {
+        padding: 11px 16px;
+        font-size: 14px;
+    }
+}
+
+/* Legacy search input styles (for backwards compatibility) */
 .search-input:focus,
 .filter-select:focus {
     outline: none;
@@ -1844,6 +1990,127 @@ body {
 .action-chip-primary:active {
     background: #0066d6;
     border-color: #0066d6;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Contact Cell - iOS-style compact list cells (replaces contact-card-list)
+   ───────────────────────────────────────────────────────────────────────── */
+
+.contact-cell {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    cursor: pointer;
+    transition: background 0.12s ease, box-shadow 0.12s ease;
+}
+
+@media (min-width: 768px) {
+    .contact-cell:hover {
+        background: rgba(245, 247, 255, 0.4);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    }
+}
+
+@media (max-width: 767px) {
+    .contact-cell {
+        padding: 10px 12px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+}
+
+.contact-cell-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.contact-cell-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.25;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.contact-cell-status {
+    padding: 2px 10px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Status colors */
+.contact-status-not-started { background: #f4f4f6; color: #6b7280; }
+.contact-status-in-progress { background: #e5efff; color: #1d4ed8; }
+.contact-status-responded { background: #dcfce7; color: #15803d; }
+.contact-status-signed-up { background: #fef9c3; color: #92400e; }
+
+.contact-cell-meta {
+    font-size: 13px;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.contact-cell-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.contact-cell-tags {
+    display: flex;
+    gap: 6px;
+}
+
+.contact-tag {
+    background: #eef3ff;
+    color: #1d4ed8;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-weight: 500;
+}
+
+.contact-cell-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.contact-action-chip {
+    background: #ffffff;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    border: 1px solid #e5e7eb;
+    font-size: 12px;
+    color: #111827;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s ease;
+}
+
+.contact-action-chip:hover {
+    background: #f3f4f6;
+}
+
+@media (max-width: 767px) {
+    .contact-cell-title { font-size: 14px; }
+    .contact-cell-meta { font-size: 12.5px; }
+    .contact-action-chip { padding: 4px 10px; }
 }
 
 /* Legacy contact-card class (backwards compatibility) */
@@ -2933,11 +3200,9 @@ form {
         display: none;
     }
 
-    /* Contacts mobile toggles bar */
+    /* Contacts mobile toggles bar - now using .contacts-toolbar instead */
     .contacts-mobile-toggles {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 0.75rem;
+        display: none; /* Replaced by .contacts-toolbar */
     }
 
     /* Hide filters and quick add by default on mobile */

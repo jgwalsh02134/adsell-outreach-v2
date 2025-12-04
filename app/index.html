@@ -321,31 +321,44 @@
 
         <!-- Contacts Page -->
         <div id="contacts-page" class="page">
-            <div class="page-header">
-                <div class="page-title-block">
-                    <div class="overline-label">Prospect list</div>
-                    <h1 class="heading-h1">All Contacts</h1>
-                    <p class="text-body text-muted">Central prospect list for outreach across phone, email, and web.</p>
+            <div class="contacts-page-container">
+            <!-- Header block -->
+            <section class="contacts-header">
+                <div class="contacts-header-main">
+                    <div class="contacts-header-overline">PROSPECT LIST</div>
+                    <h1 class="contacts-header-title">All Contacts</h1>
+                    <p class="contacts-header-subtitle">
+                        Central prospect list for outreach across phone, message, email, and web.
+                    </p>
                 </div>
-                <div class="header-actions">
-                    <button class="btn btn-primary" onclick="app.showAddContactModal()">+ Add Contact</button>
+                <div class="contacts-header-actions">
+                    <button type="button" class="btn btn-primary contacts-add-btn" id="contacts-add-btn" onclick="app.showAddContactModal()">
+                        + Add Contact
+                    </button>
+                </div>
+            </section>
+
+            <!-- Search bar -->
+            <div class="contacts-search-row">
+                <div class="contacts-search">
+                    <input
+                        type="text"
+                        id="search-input"
+                        class="contacts-search-input"
+                        placeholder="Search contacts by company, person, email, phone, category, or project"
+                        autocomplete="off"
+                    />
                 </div>
             </div>
 
-            <!-- Contacts search bar -->
-            <div class="contacts-search">
-                <input
-                    type="text"
-                    id="search-input"
-                    class="search-input"
-                    placeholder="Search contacts by company, person, email, phone, category, or project..."
-                    autocomplete="off"
-                />
-            </div>
-
-            <div class="contacts-mobile-toggles">
-                <button type="button" id="contacts-mobile-filters-btn" class="btn btn-secondary">Filters</button>
-                <button type="button" id="contacts-mobile-quickadd-btn" class="btn btn-secondary">Quick Add</button>
+            <!-- Filters + Quick Add toolbar -->
+            <div class="contacts-toolbar">
+                <button type="button" class="contacts-toolbar-btn" id="contacts-mobile-filters-btn">
+                    Filters
+                </button>
+                <button type="button" class="contacts-toolbar-btn" id="contacts-mobile-quickadd-btn">
+                    Quick Add
+                </button>
             </div>
 
             <div class="filters-bar">
@@ -503,6 +516,7 @@
                     </table>
                 </div>
             </div>
+            </div><!-- /.contacts-page-container -->
         </div>
 
         <!-- Contact Detail Page -->

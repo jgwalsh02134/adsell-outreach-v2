@@ -2004,14 +2004,9 @@ class OutreachTracker {
         });
         }
 
-        // --- Mobile rolodex cards ---
+        // --- Mobile rolodex cards (iOS-style list cells) ---
         if (rolodex) {
             const rolodexHtml = filteredContacts.map(contact => {
-                const tags = contact.tags ? contact.tags.map(tagId => {
-                    const tag = this.tags.find(t => t.id === tagId);
-                    return tag ? `<span class="tag-badge" style="background: ${tag.color}20; color: ${tag.color};">${tag.name}</span>` : '';
-                }).join('') : '';
-
                 const fullEmail = contact.email || '';
                 const primaryEmail = fullEmail.split(/[;,]/)[0].trim();
 
@@ -2023,62 +2018,64 @@ class OutreachTracker {
                 const statusSlug = this.slugify(statusText);
 
                 // Organization / company name for primary heading
-                const orgName = contact.vendorName || contact.companyName || '';
+                const companyName = contact.vendorName || contact.companyName || '(No organization)';
 
-                // Contact person name
+                // Build contact line: "Person · Title" or "Person" or "Category" or empty
                 const contactPerson = contact.contactName || '';
-                // Title/role
                 const contactTitle = contact.title || '';
-                // Build meta-primary: "Person Name · Title" or just one
-                let metaPrimary = '';
+                const category = contact.category || '';
+                let contactLine = '';
                 if (contactPerson && contactTitle) {
-                    metaPrimary = `${contactPerson} · ${contactTitle}`;
-                } else {
-                    metaPrimary = contactPerson || contactTitle || '';
+                    contactLine = `${contactPerson} · ${contactTitle}`;
+                } else if (contactPerson) {
+                    contactLine = contactPerson;
+                } else if (contactTitle) {
+                    contactLine = contactTitle;
+                } else if (category) {
+                    contactLine = category;
                 }
 
-                // Project / segment for meta-secondary
+                // Project tag - only ONE, no duplicates
                 const projectName = contact.project || '';
-                const segmentName = contact.segment || '';
+                const projectTagHtml = projectName ? `<span class="contact-tag">${projectName}</span>` : '';
+
+                // Action chips
+                const callChip = primaryPhone ? `<a href="tel:${telHref}" class="contact-action-chip">Call</a>` : '';
+                const emailChip = primaryEmail ? `<a href="mailto:${primaryEmail}" class="contact-action-chip">Email</a>` : '';
+                const profileChip = `<button type="button" class="contact-action-chip" onclick="event.stopPropagation(); app.viewContact('${contact.id}')">Profile</button>`;
 
                 return `
-                    <article class="contact-card-list" data-id="${contact.id}">
-                        <div class="contact-card-header">
-                            <div class="contact-card-title">${orgName || '(No organization)'}</div>
-                            <div class="contact-card-status contact-status-${statusSlug}">${statusText}</div>
+                    <div class="contact-cell" data-id="${contact.id}">
+                        <div class="contact-cell-header">
+                            <div class="contact-cell-title">${companyName}</div>
+                            <div class="contact-cell-status contact-status-${statusSlug}">${statusText}</div>
                         </div>
-                        ${metaPrimary || projectName || segmentName ? `
-                        <div class="contact-card-meta">
-                            ${metaPrimary ? `<div class="contact-card-meta-primary">${metaPrimary}</div>` : ''}
-                            ${projectName ? `<div class="contact-card-meta-secondary">${projectName}</div>` : (segmentName ? `<div class="contact-card-meta-secondary">${segmentName}</div>` : '')}
-                        </div>
-                        ` : ''}
-                        <div class="contact-card-footer">
-                            <div class="contact-card-tags">
-                                ${projectName ? `<span class="contact-chip">${projectName}</span>` : ''}
-                                ${tags}
+                        ${contactLine ? `<div class="contact-cell-meta">${contactLine}</div>` : ''}
+                        <div class="contact-cell-footer">
+                            <div class="contact-cell-tags">
+                                ${projectTagHtml}
                             </div>
-                            <div class="contact-card-actions">
-                                ${primaryPhone ? `<a href="tel:${telHref}" class="action-chip">Call</a>` : ''}
-                                ${primaryEmail ? `<a href="mailto:${primaryEmail}" class="action-chip">Email</a>` : ''}
-                                <button type="button" class="action-chip action-chip-primary" onclick="event.stopPropagation(); app.viewContact('${contact.id}')">Profile</button>
+                            <div class="contact-cell-actions">
+                                ${callChip}
+                                ${emailChip}
+                                ${profileChip}
                             </div>
                         </div>
-                    </article>
+                    </div>
                 `;
             }).join('');
 
             rolodex.innerHTML = rolodexHtml;
 
-            // Card tap → open prospect profile (but let quick action links/buttons work)
-            rolodex.querySelectorAll('.contact-card-list').forEach(card => {
-                card.addEventListener('click', (e) => {
+            // Cell tap → open prospect profile (but let action links/buttons work)
+            rolodex.querySelectorAll('.contact-cell').forEach(cell => {
+                cell.addEventListener('click', (e) => {
                     const target = e.target;
                     if (target.closest('a') || target.closest('button')) {
                         // Allow tel: / mailto: / buttons to work without opening profile
                         return;
                     }
-                    const id = card.getAttribute('data-id');
+                    const id = cell.getAttribute('data-id');
                     if (id) {
                         this.viewContact(id);
                     }
