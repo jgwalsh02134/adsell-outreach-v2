@@ -1000,14 +1000,24 @@
                 <div class="modal-actions contact-sheet-actions">
                     <button
                         type="button"
-                        class="btn btn-secondary contact-sheet-cancel"
-                        onclick="app.closeContactModal()"
+                        class="btn btn-danger contact-delete-btn"
+                        id="contact-delete-btn"
+                        style="display: none;"
                     >
-                        Cancel
+                        Delete
                     </button>
-                    <button type="submit" class="btn btn-primary contact-sheet-save">
-                        Save Contact
-                    </button>
+                    <div class="contact-sheet-actions-right">
+                        <button
+                            type="button"
+                            class="btn btn-secondary contact-sheet-cancel"
+                            onclick="app.closeContactModal()"
+                        >
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary contact-sheet-save">
+                            Save Contact
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>

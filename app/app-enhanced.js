@@ -502,6 +502,15 @@ class OutreachTracker {
         });
         }
 
+        // Contact delete button (in Edit modal)
+        const contactDeleteBtn = document.getElementById('contact-delete-btn');
+        if (contactDeleteBtn) {
+            contactDeleteBtn.addEventListener('click', () => {
+                if (!this.editingContactId) return;
+                this.deleteContactById(this.editingContactId);
+            });
+        }
+
         // Activity form
         const activityForm = document.getElementById('activity-form');
         if (activityForm) {
@@ -2697,6 +2706,15 @@ class OutreachTracker {
             advancedToggle.setAttribute('aria-expanded', 'false');
         }
 
+        // Show Delete button only when editing an existing contact
+        const deleteBtn = document.getElementById('contact-delete-btn');
+        if (deleteBtn) {
+            deleteBtn.style.display = this.editingContactId ? 'inline-flex' : 'none';
+        }
+
+        // Clear any previous validation errors
+        this.clearContactFormErrors(form);
+
         modal.classList.add('active');
     }
 
@@ -2725,10 +2743,68 @@ class OutreachTracker {
         `).join('');
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Contact Form Validation Helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    setContactFieldError(inputEl, message) {
+        if (!inputEl) return;
+        inputEl.classList.add('contact-input-error');
+        // Find or create error message element
+        let msg = inputEl.parentElement.querySelector('.contact-error-msg');
+        if (!msg) {
+            msg = document.createElement('div');
+            msg.className = 'contact-error-msg';
+            inputEl.parentElement.appendChild(msg);
+        }
+        msg.textContent = message;
+    }
+
+    clearContactFormErrors(form) {
+        if (!form) return;
+        form.querySelectorAll('.contact-input-error').forEach(el => el.classList.remove('contact-input-error'));
+        form.querySelectorAll('.contact-error-msg').forEach(el => el.remove());
+    }
+
+    validateContactForm(form) {
+        this.clearContactFormErrors(form);
+        
+        const vendorName = (form.vendorName?.value || '').trim();
+        const email = (form.email?.value || '').trim();
+        let hasError = false;
+
+        // Validate Business/Organization Name (required)
+        if (!vendorName) {
+            this.setContactFieldError(form.vendorName, 'Business / Organization Name is required.');
+            hasError = true;
+        }
+
+        // Validate Email (required and format)
+        if (!email) {
+            this.setContactFieldError(form.email, 'Email is required.');
+            hasError = true;
+        } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+            this.setContactFieldError(form.email, 'Enter a valid email address.');
+            hasError = true;
+        }
+
+        return !hasError;
+    }
+
     async saveContact(form) {
         const formData = new FormData(form);
         const submitBtn = form.querySelector('button[type="submit"]');
         const errorEl = form.querySelector('.contact-modal-error');
+        
+        // Clear previous general errors
+        if (errorEl) {
+            errorEl.remove();
+        }
+
+        // Inline validation
+        if (!this.validateContactForm(form)) {
+            return; // Stop if validation fails
+        }
         
         // Show loading state
         const originalBtnText = submitBtn?.textContent || 'Save';
@@ -2736,11 +2812,6 @@ class OutreachTracker {
             submitBtn.textContent = 'Saving…';
             submitBtn.classList.add('btn-saving');
             submitBtn.disabled = true;
-        }
-        
-        // Clear previous errors
-        if (errorEl) {
-            errorEl.remove();
         }
         
         try {
@@ -3014,6 +3085,33 @@ class OutreachTracker {
             this.updateStats();
             this.showNotification('Contact deleted successfully!');
         }
+    }
+
+    /**
+     * Delete a contact by ID (used from the Edit Contact modal).
+     */
+    async deleteContactById(contactId) {
+        if (!contactId) return;
+
+        const contact = this.contacts.find(c => c.id === contactId);
+        const contactName = contact?.vendorName || contact?.companyName || 'this contact';
+
+        const confirmed = window.confirm(`Delete ${contactName}? This cannot be undone.`);
+        if (!confirmed) return;
+
+        this.contacts = (this.contacts || []).filter(c => c.id !== contactId);
+        this.activities = (this.activities || []).filter(a => a.contactId !== contactId);
+        await this.saveData();
+        this.closeContactModal();
+        this.renderContacts();
+        this.updateStats();
+        
+        // If we were viewing this contact in the profile, go back to contacts list
+        if (this.activeContactId === contactId) {
+            this.showPage('contacts');
+        }
+        
+        this.showNotification('Contact deleted successfully!');
     }
 
     // Activity Management

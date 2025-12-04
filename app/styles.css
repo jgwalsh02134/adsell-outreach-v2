@@ -2407,6 +2407,16 @@ body {
 
 .contact-section {
     margin-top: 1rem;
+    margin-bottom: 12px;
+}
+
+.contact-section-header {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted, #6b7280);
+    margin-bottom: 6px;
 }
 
 .contact-essentials .overline-label,
@@ -2438,8 +2448,20 @@ body {
     padding-top: 0.75rem;
     border-top: 1px solid var(--border);
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
     gap: 0.5rem;
+}
+
+.contact-sheet-actions-right {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.contact-delete-btn {
+    margin-right: auto;
 }
 
 .contact-sheet-save {
@@ -3697,6 +3719,24 @@ form {
   background: #fef2f2;
   border-radius: 6px;
   border: 1px solid #fecaca;
+}
+
+/* Inline field validation */
+.contact-input-error {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.2) !important;
+}
+
+.contact-input-error:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
+}
+
+.contact-error-msg {
+  font-size: 11px;
+  color: #b91c1c;
+  margin-top: 2px;
+  line-height: 1.4;
 }
 
 /* Save button loading state */
