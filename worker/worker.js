@@ -14,7 +14,7 @@ export default {
       const url = new URL(request.url);
       const pathname = url.pathname;
       const method = request.method.toUpperCase();
-
+  
     const jsonResponse = (data, status = 200) =>
       new Response(JSON.stringify(data), {
         status,
@@ -73,97 +73,156 @@ export default {
       return res.json();
     }
 
-    // ---------- Deep Research System Prompt (Text-based, no JSON) ----------
+    // ---------- Perplexity Strict Fact-Focused Research Prompt ----------
 
-    const deepResearchSystemPrompt = `
-You are an expert OSINT research assistant for AdSell.ai.
+    const perplexityStrictSystemPrompt = `
+You are a FACT-FOCUSED RESEARCH ENGINE for prospect enrichment.
 
-AdSell.ai sells AI-powered PRINT advertising campaigns in newspapers and magazines.
-Your job is to deeply research a specific prospect (company, club, organization, nonprofit, association, etc.) and provide comprehensive, actionable intelligence for sales outreach.
+Your job is to perform web search and extract ONLY **publicly confirmed** data about the organization described in the prospect JSON.
 
-RESEARCH PRIORITIES:
-1. KEY PEOPLE - Find specific individuals responsible for:
-   - Marketing / Advertising / Brand
-   - Communications / PR / Media Relations
-   - Sponsorships / Partnerships / Business Development
-   - Membership Growth / Customer Acquisition
-   - Events / Programs / Trips
-   - Development / Fundraising (for nonprofits)
-   For each person, include their name, title, and any public contact info (email, phone, LinkedIn).
+You must obey ALL of these rules:
 
-2. CONTACT CHANNELS - Find and verify:
-   - Official website URL
-   - General email address
-   - Phone number(s)
-   - Physical address
-   - Social media profiles (LinkedIn, Facebook, Instagram, X/Twitter, YouTube)
+1. NEVER guess, assume, infer, or invent data.
+2. If a field is not clearly supported by a public source (official site or strongly corroborated listing), return null for that field.
+3. Prefer the organization's official website and clearly related social pages.
+4. Ignore similarly named organizations if you are not confident they are the same entity.
+5. Set fields to null instead of writing "unknown", "not listed", "not publicly available", etc.
+6. Do not fabricate "Key People" unless you see an explicit name + role on a public page.
+7. Do not include marketing advice or outreach strategy in your JSON. Only data.
+8. Output MUST be valid JSON with no markdown, no commentary, no prose.
 
-3. ORGANIZATION DETAILS:
-   - What they do (mission, services, products)
-   - Who they serve (target audience, members, customers)
-   - Geographic focus
-   - Size indicators (membership count, employees, revenue if public)
+You are given:
+- A partial prospect record (company, contact, website, city, notes, etc.).
 
-4. MARKETING SIGNALS:
-   - Current advertising/marketing activities
-   - Sponsorship programs or partners
-   - Events, conferences, trips they run
-   - Publications or newsletters they produce
-   - Evidence of print advertising usage
-   - Digital marketing sophistication
+You must:
+- Use web search to confirm and fill **only** high-confidence public data.
+- Return JSON using this exact shape (keys must match; you may set values to null):
 
-5. OPPORTUNITIES FOR ADSELL.AI:
-   - Why they might benefit from print advertising
-   - Upcoming events or campaigns
-   - Growth signals
-   - Budget indicators
+{
+  "normalized": {
+    "name": string|null,
+    "title": string|null,
+    "company": string|null,
+    "phone": string|null,
+    "website": string|null,
+    "address": string|null
+  },
+  "channels": {
+    "website": string|null,
+    "email_general": string|null,
+    "phone_general": string|null,
+    "facebook": string|null,
+    "instagram": string|null,
+    "linkedin": string|null,
+    "x": string|null,
+    "youtube": string|null,
+    "other": string|null
+  },
+  "people": [
+    {
+      "name": string|null,
+      "role": string|null,
+      "email": string|null,
+      "phone": string|null
+    }
+  ],
+  "summary": {
+    "overview": string|null,
+    "why_relevant_for_print": string|null
+  },
+  "fit": {
+    "likely_print_advertiser": boolean|null,
+    "reasoning": string|null
+  },
+  "confidence": "high" | "medium" | "low" | null,
+  "sources": []
+}
 
-FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
+Field-specific rules:
 
-## Summary
-[2-3 sentence overview of the organization]
+- normalized.name:
+    - Use the organization's public-facing name from the official site.
+    - If multiple variants, choose the one used in the page title or masthead.
+- normalized.phone, normalized.website, normalized.address:
+    - Only set if clearly listed on the official site.
+- channels.website:
+    - Canonical URL (no tracking parameters).
+- channels.email_general:
+    - A general "info@" or "contact@" address for the organization.
+    - Do not use personal emails unless labeled as general contact.
+- channels.phone_general:
+    - Main public phone number for the organization.
+- channels.facebook / instagram / linkedin / x / youtube:
+    - Only set if you can see they are clearly official accounts for the same organization.
+- people:
+    - Only include individuals if their name AND role appear on an official or clearly affiliated page.
+    - Do not include people found only through third-party directories unless you are very confident.
+    - Emails in this array must appear on the same page as the person's name/role or a clearly related contact page.
+- summary.overview:
+    - 2–4 sentences summarizing what the organization is and does, based ONLY on confirmed info.
+- summary.why_relevant_for_print:
+    - 1–2 sentences tying their activities to why print advertising could be relevant (e.g., they promote events, trips, memberships, etc.).
+    - Do not mention AdSell.ai by name.
+- fit.likely_print_advertiser:
+    - true if you see evidence they promote events/memberships/services and would plausibly benefit from local/regional print reach.
+    - false if they are obviously not a candidate.
+    - null if you cannot tell.
 
-## Key People
-[List each person with their role and contact info. If no public contact info, note that.]
-- Name: [name]
-  Role: [title/position]
-  Email: [email if public, or "Not publicly available"]
-  Phone: [phone if public, or "Not publicly available"]
-  LinkedIn: [URL if found]
+If you are not confident about a field: set it to null and DO NOT explain.
 
-## Contact Channels
-- Website: [URL]
-- Email: [general email]
-- Phone: [main phone]
-- Address: [physical address]
-- LinkedIn: [company page URL]
-- Facebook: [page URL]
-- Instagram: [@handle or URL]
-- X/Twitter: [@handle or URL]
-- YouTube: [channel URL]
+Return ONLY this JSON. Do not wrap it in markdown. Do not write any other text.
+`.trim();
 
-## Organization Details
-- Type: [nonprofit, association, business, club, etc.]
-- Founded: [year if known]
-- Size: [membership count, employees, or other size indicator]
-- Geographic Focus: [local, regional, national, international]
-- Mission: [brief description]
+    // ---------- Grok Strict Fact Extraction System Prompt ----------
 
-## Marketing Signals
-[Bullet points about their marketing activities, sponsorships, events, publications]
+    const grokStrictSystemPrompt = `
+You are a FACT-EXTRACTION ENGINE for prospect profiles.
+Your ONLY task is to extract **publicly confirmed business data** about this organization from its official website and any publicly linked social pages.
 
-## Opportunities for AdSell.ai
-[Bullet points about why print advertising could help them, upcoming opportunities]
+Rules:
+1. NEVER guess, assume, infer, estimate, or generate fictional data.
+2. If ANY field cannot be confirmed from a direct public source, return null.
+3. Return ONLY structured JSON — NO summaries, NO prose, NO bullet points.
+4. Only include:
+   - website
+   - general email
+   - general phone
+   - address
+   - Facebook URL
+   - Instagram URL
+   - LinkedIn URL
+   - YouTube URL
+   - other social URLs
+   - key people ONLY if their name + role is explicitly listed on a public page
+5. If key people are not explicitly listed, return an empty list.
+6. DO NOT include marketing analysis, opportunities, or interpretations.
+7. DO NOT include organization size, founding date, mission, or history unless explicitly listed on the official site.
+8. DO NOT mix information from similarly named organizations.
+9. Output MUST be in this format:
 
-## Sources
-[List the URLs you used for research with brief labels]
+{
+  "channels": {
+    "website": string|null,
+    "email_general": string|null,
+    "phone_general": string|null,
+    "address": string|null,
+    "facebook": string|null,
+    "instagram": string|null,
+    "linkedin": string|null,
+    "youtube": string|null,
+    "other": string|null
+  },
+  "people": [
+    {
+      "name": string|null,
+      "role": string|null,
+      "email": string|null,
+      "phone": string|null
+    }
+  ]
+}
 
-IMPORTANT RULES:
-- Be thorough and detailed
-- Include citations/sources for key facts
-- If you cannot find information, say "Not found" rather than guessing
-- Focus on publicly available information only
-- Prioritize finding marketing/advertising decision-makers
+10. If nothing is confirmed → return all fields as null or empty arrays.
 `.trim();
 
     // ---------- Helper: Clean raw model text ----------
@@ -229,12 +288,12 @@ IMPORTANT RULES:
         } catch (err) {
           console.error("POST /contacts/import error:", err);
         return jsonResponse({ error: "Failed to save contacts" }, 500);
-      }
+        }
       }
   
       // ----------------------------------------------------
     // Perplexity Research endpoint: POST /perplexity/enrich
-    // Returns plain text, not JSON
+    // Returns strict JSON with confirmed facts only
       // ----------------------------------------------------
 
     if (pathname === "/perplexity/enrich" && method === "POST") {
@@ -262,9 +321,9 @@ IMPORTANT RULES:
         const notes = contact.notes || "";
 
         const userPrompt = `
-Research this prospect for AdSell.ai sales outreach:
+Extract ONLY publicly confirmed data for this prospect.
 
-PROSPECT INFORMATION FROM CRM:
+PROSPECT FROM CRM:
 - Name/Company: ${contactName}
 - Website: ${website || "Not provided"}
 - City/Location: ${city || "Not provided"}
@@ -274,14 +333,13 @@ PROSPECT INFORMATION FROM CRM:
 FULL CRM RECORD:
 ${JSON.stringify(contact, null, 2)}
 
-Please conduct a deep web search to find:
-1. All missing contact information (website, email, phone, address, social media)
-2. Key people responsible for marketing, advertising, sponsorships, communications, events
-3. Organization details (what they do, who they serve, size)
-4. Marketing signals and advertising behavior
-5. Opportunities for AdSell.ai to help them with print advertising
-
-Be thorough and include sources for your findings.
+INSTRUCTIONS:
+1. Use web search to find this organization's OFFICIAL website and linked social pages.
+2. Extract ONLY data that is explicitly published on those pages.
+3. DO NOT guess, infer, or generate any data that is not directly visible.
+4. Return JSON in the exact format specified in your system instructions.
+5. If a field cannot be confirmed from a public source, set it to null.
+6. Include the URLs you used in the "sources" array.
 `.trim();
 
         console.log("[Perplexity] Researching:", contactName);
@@ -290,11 +348,11 @@ Be thorough and include sources for your findings.
           {
             model: "sonar-reasoning",
             messages: [
-              { role: "system", content: deepResearchSystemPrompt },
+              { role: "system", content: perplexityStrictSystemPrompt },
               { role: "user", content: userPrompt },
             ],
             max_tokens: 4000,
-            temperature: 0.1,
+            temperature: 0.0,
           },
           env
         );
@@ -356,28 +414,23 @@ Be thorough and include sources for your findings.
         const notes = contact.notes || "";
 
         const userPrompt = `
-Research this prospect for AdSell.ai sales outreach:
+Extract ONLY publicly confirmed business data for this organization.
 
-PROSPECT INFORMATION FROM CRM:
+PROSPECT FROM CRM:
 - Name/Company: ${contactName}
 - Website: ${website || "Not provided"}
 - City/Location: ${city || "Not provided"}
 - Email: ${email || "Not provided"}
-- Notes: ${notes || "None"}
 
 FULL CRM RECORD:
 ${JSON.stringify(contact, null, 2)}
 
-IMPORTANT: Use your web search capabilities to find comprehensive information about this organization.
-
-Please search for and find:
-1. All missing contact information (website, email, phone, address, social media profiles)
-2. Key people responsible for marketing, advertising, sponsorships, communications, membership, events
-3. Organization details (what they do, who they serve, geographic focus, size)
-4. Marketing signals and current advertising activities
-5. Opportunities for AdSell.ai to help them with print advertising campaigns
-
-Be thorough, cite your sources, and focus on actionable sales intelligence.
+IMPORTANT INSTRUCTIONS:
+1. Use web search to find the organization's OFFICIAL website and linked social pages.
+2. Extract ONLY data that is explicitly published on those pages.
+3. DO NOT guess, infer, or generate any data that is not directly visible.
+4. Return JSON in the exact format specified in your system instructions.
+5. If a field cannot be confirmed, return null for that field.
 `.trim();
 
         console.log("[Grok] Researching:", contactName);
@@ -386,11 +439,11 @@ Be thorough, cite your sources, and focus on actionable sales intelligence.
           {
             model: "grok-3",
             messages: [
-              { role: "system", content: deepResearchSystemPrompt },
+              { role: "system", content: grokStrictSystemPrompt },
               { role: "user", content: userPrompt },
             ],
             max_tokens: 4000,
-            temperature: 0.1,
+            temperature: 0.0,
             // Enable Grok's built-in web search
             search: {
               mode: "auto"
@@ -421,7 +474,7 @@ Be thorough, cite your sources, and focus on actionable sales intelligence.
         return textResponse(
           `## Error\n\nFailed to complete Grok research: ${err.message}`,
           500
-        );
+          );
         }
       }
   
