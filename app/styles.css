@@ -4220,6 +4220,61 @@ form {
   transform: scale(0.95);
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   Quick Copy - Missing field chips with emojis and SVG icons
+   ───────────────────────────────────────────────────────────────────────── */
+
+.quick-copy-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted, #6b7280);
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.quick-copy-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.quick-copy-chip {
+  border-radius: 9999px;
+  border: 1px solid var(--color-border-subtle, #e5e7eb);
+  background: #ffffff;
+  font-size: 14px;
+  padding: 4px 9px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.1s ease;
+}
+
+.quick-copy-chip:hover {
+  background: var(--color-bg-subtle, #f3f4f6);
+  border-color: #d1d5db;
+}
+
+.quick-copy-chip:active {
+  transform: scale(0.95);
+}
+
+.quick-copy-chip.copied {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #15803d;
+}
+
+.quick-copy-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
 .ai-research-text {
   max-height: 500px;
   overflow-y: auto;

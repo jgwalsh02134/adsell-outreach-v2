@@ -4109,54 +4109,161 @@ AdSell.ai`,
             return result;
         }
 
-        // Helper to create copy button for a value
-        function createCopyButton(value, label = 'Copy') {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'ai-copy-chip';
-            btn.textContent = label;
-            btn.title = `Copy: ${value}`;
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                navigator.clipboard?.writeText(value).then(() => {
-                    btn.textContent = 'Copied!';
-                    setTimeout(() => { btn.textContent = label; }, 1500);
+        // ─────────────────────────────────────────────────────────────────────────
+        // Quick Copy - Missing field-aware chips with emojis and SVG icons
+        // ─────────────────────────────────────────────────────────────────────────
+
+        // Configuration for quick copy fields
+        const QUICK_COPY_FIELDS = [
+            {
+                key: 'name',
+                label: 'Name',
+                emoji: '👤',
+                getOriginal: (c) => c.contactName || '',
+                extractFromText: (text) => {
+                    // Look for contact name patterns
+                    const nameMatch = text.match(/(?:contact|person|name)[:\s]+([A-Z][a-z]+ [A-Z][a-z]+)/i);
+                    return nameMatch ? nameMatch[1].trim() : '';
+                }
+            },
+            {
+                key: 'email',
+                label: 'Email',
+                emoji: '✉️',
+                getOriginal: (c) => c.email || '',
+                extractFromText: (text) => {
+                    const emailMatches = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi);
+                    return emailMatches && emailMatches.length > 0 ? emailMatches[0] : '';
+                }
+            },
+            {
+                key: 'phone',
+                label: 'Phone',
+                emoji: '☎️',
+                getOriginal: (c) => c.phone || '',
+                extractFromText: (text) => {
+                    const phoneMatches = text.match(/(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})/g);
+                    if (phoneMatches) {
+                        for (const phone of phoneMatches) {
+                            const cleaned = phone.replace(/[^\d+]/g, '');
+                            if (cleaned.length >= 10) return phone;
+                        }
+                    }
+                    return '';
+                }
+            },
+            {
+                key: 'website',
+                label: 'Website',
+                emoji: '🌐',
+                getOriginal: (c) => c.website || '',
+                extractFromText: (text) => {
+                    const urlMatches = text.match(/(https?:\/\/[^\s<>\[\]()]+)/gi) || [];
+                    // Prefer non-social URLs for website
+                    const nonSocial = urlMatches.find(u => 
+                        !u.includes('linkedin.com') && 
+                        !u.includes('facebook.com') && 
+                        !u.includes('twitter.com') && 
+                        !u.includes('x.com')
+                    );
+                    return nonSocial || '';
+                }
+            },
+            {
+                key: 'linkedin',
+                label: 'LinkedIn',
+                iconPath: 'icons/qc-linkedin.svg',
+                getOriginal: (c) => c.linkedin || '',
+                extractFromText: (text) => {
+                    const match = text.match(/(https?:\/\/(?:www\.)?linkedin\.com\/[^\s<>\[\]()]+)/i);
+                    return match ? match[1] : '';
+                }
+            },
+            {
+                key: 'facebook',
+                label: 'Facebook',
+                iconPath: 'icons/qc-facebook.svg',
+                getOriginal: (c) => c.facebook || '',
+                extractFromText: (text) => {
+                    const match = text.match(/(https?:\/\/(?:www\.)?facebook\.com\/[^\s<>\[\]()]+)/i);
+                    return match ? match[1] : '';
+                }
+            },
+            {
+                key: 'x',
+                label: 'X',
+                iconPath: 'icons/qc-x.svg',
+                getOriginal: (c) => c.x || c.twitter || '',
+                extractFromText: (text) => {
+                    const xMatch = text.match(/(https?:\/\/(?:www\.)?x\.com\/[^\s<>\[\]()]+)/i);
+                    if (xMatch) return xMatch[1];
+                    const twitterMatch = text.match(/(https?:\/\/(?:www\.)?twitter\.com\/[^\s<>\[\]()]+)/i);
+                    return twitterMatch ? twitterMatch[1] : '';
+                }
+            }
+        ];
+
+        // Render quick copy row for missing fields
+        function renderQuickCopyRow(contact, text, containerEl) {
+            if (!contact || !text) return;
+
+            const row = document.createElement('div');
+            row.className = 'quick-copy-row';
+
+            QUICK_COPY_FIELDS.forEach(field => {
+                const originalVal = (field.getOriginal(contact) || '').trim();
+                const enrichedVal = (field.extractFromText(text) || '').trim();
+
+                // Only show chip if original is missing AND enrichment has a value
+                if (!enrichedVal || originalVal) return;
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'quick-copy-chip';
+                btn.title = `Copy ${field.label}: ${enrichedVal}`;
+                btn.setAttribute('aria-label', `Copy ${field.label}`);
+
+                if (field.iconPath) {
+                    const img = document.createElement('img');
+                    img.src = field.iconPath;
+                    img.className = 'quick-copy-icon';
+                    img.alt = field.label;
+                    btn.appendChild(img);
+                } else if (field.emoji) {
+                    btn.textContent = field.emoji;
+                } else {
+                    btn.textContent = field.label;
+                }
+
+                btn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    try {
+                        await navigator.clipboard.writeText(enrichedVal);
+                        // Visual feedback
+                        btn.classList.add('copied');
+                        const originalContent = btn.innerHTML;
+                        btn.textContent = '✓';
+                        setTimeout(() => {
+                            btn.innerHTML = originalContent;
+                            btn.classList.remove('copied');
+                        }, 1500);
+                    } catch (err) {
+                        console.error('Clipboard copy failed', err);
+                    }
                 });
-            });
-            return btn;
-        }
 
-        // Extract copyable items from text
-        function extractCopyableItems(text) {
-            const items = [];
-            
-            // Extract URLs
-            const urlMatches = text.match(/(https?:\/\/[^\s<>\[\]()]+)/gi) || [];
-            urlMatches.forEach(url => {
-                if (!items.some(i => i.value === url)) {
-                    items.push({ type: 'url', value: url, label: 'Website' });
-                }
+                row.appendChild(btn);
             });
 
-            // Extract emails
-            const emailMatches = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi) || [];
-            emailMatches.forEach(email => {
-                if (!items.some(i => i.value === email)) {
-                    items.push({ type: 'email', value: email, label: 'Email' });
-                }
-            });
+            if (row.childNodes.length > 0) {
+                const label = document.createElement('div');
+                label.className = 'quick-copy-label';
+                label.textContent = 'Quick copy (missing fields):';
 
-            // Extract phone numbers
-            const phoneMatches = text.match(/(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})/g) || [];
-            phoneMatches.forEach(phone => {
-                const cleaned = phone.replace(/[^\d+]/g, '');
-                if (cleaned.length >= 10 && !items.some(i => i.value === phone)) {
-                    items.push({ type: 'phone', value: phone, label: 'Phone' });
-                }
-            });
-
-            return items;
+                containerEl.appendChild(label);
+                containerEl.appendChild(row);
+            }
         }
 
         // Render text-based research results
@@ -4181,25 +4288,9 @@ AdSell.ai`,
             engineLabel.innerHTML = `<span class="ai-engine-icon">${engine === 'perplexity' ? '🔍' : '⚡'}</span> ${engine === 'perplexity' ? 'Perplexity' : 'Grok'} Research`;
             container.appendChild(engineLabel);
 
-            // Extract copyable items and create quick-copy bar
-            const copyableItems = extractCopyableItems(text);
-            if (copyableItems.length > 0) {
-                const copyBar = document.createElement('div');
-                copyBar.className = 'ai-copy-bar';
-                
-                const copyLabel = document.createElement('span');
-                copyLabel.className = 'ai-copy-bar-label';
-                copyLabel.textContent = 'Quick Copy:';
-                copyBar.appendChild(copyLabel);
-
-                // Limit to first 6 items
-                copyableItems.slice(0, 6).forEach(item => {
-                    const chip = createCopyButton(item.value, item.type === 'email' ? '📧' : item.type === 'phone' ? '📞' : '🔗');
-                    copyBar.appendChild(chip);
-                });
-
-                container.appendChild(copyBar);
-            }
+            // Render quick copy row for missing fields
+            const contact = getCurrentProspect();
+            renderQuickCopyRow(contact, text, container);
 
             // Create scrollable text area with formatted content
             const textContainer = document.createElement('div');
