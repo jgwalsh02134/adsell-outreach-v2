@@ -3833,6 +3833,43 @@ form {
   color: var(--color-text-muted);
 }
 
+/* Enrichment header row with refresh button */
+.prospect-enrich-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.enrich-refresh-btn {
+  border: none;
+  background: transparent;
+  padding: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.enrich-refresh-btn:hover {
+  background: var(--color-bg-subtle, #f3f4f6);
+}
+
+.enrich-refresh-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.enrich-refresh-btn:hover .enrich-refresh-icon {
+  opacity: 1;
+  filter: drop-shadow(0 0 3px rgba(0, 122, 255, 0.4));
+}
+
 .ai-provider-buttons {
   display: inline-flex;
   gap: 8px;

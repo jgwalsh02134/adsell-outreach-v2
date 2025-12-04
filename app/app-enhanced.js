@@ -2236,6 +2236,22 @@ class OutreachTracker {
         return contact;
     }
 
+    /**
+     * Get the currently active enrichment provider for the active contact.
+     * Returns "perplexity" or "grok" based on cache, defaulting to "perplexity".
+     */
+    getActiveEnrichProvider() {
+        const contact = this.getActiveContact();
+        if (!contact) return 'perplexity';
+
+        this.enrichmentCache = this.enrichmentCache || {};
+        const entry = this.enrichmentCache[contact.id];
+        if (entry && entry.activeProvider) {
+            return entry.activeProvider;
+        }
+        return 'perplexity';
+    }
+
     getActivitiesForContact(contactId) {
         if (!contactId) return [];
         return (this.activities || [])
@@ -4038,8 +4054,17 @@ AdSell.ai`,
                 </div>
 
                 <!-- Enrichment row -->
-                <div class="ai-provider-row" style="margin-top: 12px;">
+                <div class="ai-provider-row prospect-enrich-header-row" style="margin-top: 12px;">
                     <div class="ai-provider-label">Enrichment</div>
+                    <button
+                        type="button"
+                        class="enrich-refresh-btn"
+                        id="enrich-refresh-btn"
+                        title="Refresh research"
+                        aria-label="Refresh research"
+                    >
+                        <img src="icons/20-refresh.svg" alt="" class="enrich-refresh-icon" />
+                    </button>
                 </div>
                 <div class="prospect-header-actions">
                     <button
@@ -4286,6 +4311,51 @@ AdSell.ai`,
                     const twitterMatch = text.match(/(https?:\/\/(?:www\.)?twitter\.com\/[^\s<>\[\]()]+)/i);
                     return twitterMatch ? twitterMatch[1] : '';
                 }
+            },
+            {
+                key: 'instagram',
+                label: 'Instagram',
+                iconPath: 'icons/qc-instagram.svg',
+                getOriginal: (c) => c.instagram || '',
+                extractFromText: (text) => {
+                    const match = text.match(/(https?:\/\/(?:www\.)?instagram\.com\/[^\s<>\[\]()]+)/i);
+                    return match ? match[1] : '';
+                }
+            },
+            {
+                key: 'youtube',
+                label: 'YouTube',
+                iconPath: 'icons/qc-youtube.svg',
+                getOriginal: (c) => c.youtube || '',
+                extractFromText: (text) => {
+                    // Match youtube.com or youtu.be URLs
+                    const match = text.match(/(https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\/[^\s<>\[\]()]+)/i);
+                    return match ? match[1] : '';
+                }
+            },
+            {
+                key: 'location',
+                label: 'Location',
+                iconPath: 'icons/qc-location.svg',
+                getOriginal: (c) => {
+                    // Combine address fields from the contact
+                    const parts = [];
+                    if (c.address) parts.push(c.address);
+                    if (c.city) parts.push(c.city);
+                    if (c.state) parts.push(c.state);
+                    if (c.zipCode) parts.push(c.zipCode);
+                    return parts.join(', ');
+                },
+                extractFromText: (text) => {
+                    // Look for address patterns in text
+                    // Try to find "Address:" or "Location:" followed by text
+                    const addressMatch = text.match(/(?:address|location|headquarters)[:\s]+([^,\n]+(?:,\s*[^,\n]+){0,3})/i);
+                    if (addressMatch) return addressMatch[1].trim();
+                    // Try city, state pattern
+                    const cityStateMatch = text.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z]{2}\s*\d{5})/);
+                    if (cityStateMatch) return cityStateMatch[1];
+                    return '';
+                }
             }
         ];
 
@@ -4506,6 +4576,61 @@ AdSell.ai`,
         // Wire button click handlers
         btnPerplexity.addEventListener('click', () => handleProviderClick('perplexity'));
         btnGrok.addEventListener('click', () => handleProviderClick('grok'));
+
+        // ─────────────────────────────────────────────────────────────────────────
+        // Refresh button - force re-run enrichment (clear cache for active provider)
+        // ─────────────────────────────────────────────────────────────────────────
+
+        const runEnrichFresh = async (provider) => {
+            const contact = getCurrentProspect();
+            if (!contact) {
+                showError('No prospect selected. Please select a contact first.');
+                return;
+            }
+
+            // Clear cached result for this provider
+            if (self.enrichmentCache && self.enrichmentCache[contact.id]) {
+                delete self.enrichmentCache[contact.id][provider];
+            }
+
+            // Force API call (bypass cache check)
+            updateButtonStates(provider);
+            showLoading(provider);
+
+            const endpoint = provider === 'perplexity' 
+                ? 'https://adsell-openai-proxy.jgregorywalsh.workers.dev/perplexity/enrich'
+                : 'https://adsell-openai-proxy.jgregorywalsh.workers.dev/grok/enrich';
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contact })
+                });
+
+                const text = await res.text();
+                
+                if (!res.ok) {
+                    showError(`${provider === 'perplexity' ? 'Perplexity' : 'Grok'} research failed: ${text}`);
+                    return;
+                }
+
+                cacheResult(contact.id, provider, text);
+                renderResearchText(text, provider);
+            } catch (err) {
+                console.error(`${provider} research error:`, err);
+                showError(`Failed to complete research: ${err.message}`);
+            }
+        };
+
+        // Wire refresh button
+        const refreshBtn = document.getElementById('enrich-refresh-btn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                const provider = self.getActiveEnrichProvider();
+                runEnrichFresh(provider);
+            });
+        }
 
         // ─────────────────────────────────────────────────────────────────────────
         // Restore from cache if available (called when profile re-renders)
