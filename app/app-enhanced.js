@@ -2907,6 +2907,8 @@ class OutreachTracker {
         // Clear any previous validation errors
         this.clearContactFormErrors(form);
 
+        // Prevent body scroll when modal is open
+        document.body.classList.add('modal-open');
         modal.classList.add('active');
     }
 
@@ -2916,7 +2918,10 @@ class OutreachTracker {
     }
 
     closeContactModal() {
-        document.getElementById('contact-modal').classList.remove('active');
+        const modal = document.getElementById('contact-modal');
+        if (modal) modal.classList.remove('active');
+        // Restore body scroll
+        document.body.classList.remove('modal-open');
         this.editingContactId = null;
     }
 
@@ -3111,7 +3116,6 @@ class OutreachTracker {
         this.clearContactFormErrors(form);
         
         const vendorName = (form.vendorName?.value || '').trim();
-        const email = (form.email?.value || '').trim();
         let hasError = false;
 
         // Validate Business/Organization Name (required)
@@ -3120,14 +3124,7 @@ class OutreachTracker {
             hasError = true;
         }
 
-        // Validate Email (required and format)
-        if (!email) {
-            this.setContactFieldError(form.email, 'Email is required.');
-            hasError = true;
-        } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-            this.setContactFieldError(form.email, 'Enter a valid email address.');
-            hasError = true;
-        }
+        // Email is optional - no validation required
 
         return !hasError;
     }
@@ -3148,7 +3145,7 @@ class OutreachTracker {
         const orgEmails = this.readMultiFieldValues('org-email-list');
         const orgPhones = this.readMultiFieldValues('org-phone-list');
 
-        // Validate: check vendorName and at least one primary email
+        // Validate: only vendorName is required
         this.clearContactFormErrors(form);
         const vendorName = (formData.get('vendorName') || '').trim();
         let hasError = false;
@@ -3158,17 +3155,7 @@ class OutreachTracker {
             hasError = true;
         }
 
-        if (primaryEmails.length === 0) {
-            // Show error near the primary email list
-            const emailList = document.getElementById('primary-email-list');
-            if (emailList) {
-                const errDiv = document.createElement('div');
-                errDiv.className = 'contact-error-msg';
-                errDiv.textContent = 'At least one email is required.';
-                emailList.parentNode.insertBefore(errDiv, emailList.nextSibling);
-            }
-            hasError = true;
-        }
+        // Email is optional - no validation required
 
         if (hasError) return;
         
@@ -3215,17 +3202,20 @@ class OutreachTracker {
                 this.ensureProjectExists(projectName);
             }
 
-        const contact = {
-            id: this.editingContactId || this.generateId(),
+            // Safe value helper - ensures no undefined/null breaks serialization
+            const safe = (v) => (v === undefined || v === null ? '' : v);
+
+            const contact = {
+                id: this.editingContactId || this.generateId(),
                 
                 // Organization info
-            vendorName: formData.get('vendorName'),
-            companyName: formData.get('companyName') || formData.get('vendorName'),
-                website: formData.get('website'),
+                vendorName: safe(formData.get('vendorName')),
+                companyName: safe(formData.get('companyName')) || safe(formData.get('vendorName')),
+                website: safe(formData.get('website')),
                 
                 // Primary contact
-            contactName: formData.get('contactName'),
-            title: formData.get('title'),
+                contactName: safe(formData.get('contactName')),
+                title: safe(formData.get('title')),
                 email: primaryEmails[0] || '',  // First email for backward compatibility
                 phone: primaryPhones[0] || '',  // First phone for backward compatibility
                 primaryEmails: primaryEmails,
@@ -3234,55 +3224,55 @@ class OutreachTracker {
                 // Org-level contact info
                 companyEmails: orgEmails,
                 companyPhones: orgPhones,
-            
-            // Business Info
-            category: formData.get('category'),
-            segment: formData.get('segment'),
-            status: formData.get('status'),
-            industryVertical: formData.get('industryVertical'),
-            companySize: formData.get('companySize'),
-            annualRevenue: formData.get('annualRevenue'),
-            
+                
+                // Business Info
+                category: safe(formData.get('category')),
+                segment: safe(formData.get('segment')),
+                status: safe(formData.get('status')),
+                industryVertical: safe(formData.get('industryVertical')),
+                companySize: safe(formData.get('companySize')),
+                annualRevenue: safe(formData.get('annualRevenue')),
+                
                 // Social Links (with URL normalization)
                 linkedin: normalizeUrl(formData.get('linkedin'), 'linkedin.com'),
                 twitter: normalizeUrl(formData.get('twitter'), 'x.com'),
                 facebook: normalizeUrl(formData.get('facebook'), 'facebook.com'),
                 instagram: normalizeUrl(formData.get('instagram'), 'instagram.com'),
-                youtube: formData.get('youtube') || '',
-            
-            // Address
-            address: formData.get('address'),
-            city: formData.get('city'),
-            state: formData.get('state'),
-            zipCode: formData.get('zipCode'),
-            country: formData.get('country') || 'USA',
-            
-            // Deal Info
-            dealStage: formData.get('dealStage'),
-            dealValue: formData.get('dealValue'),
-            dealProbability: formData.get('dealProbability'),
-            expectedCloseDate: formData.get('expectedCloseDate'),
-            
-            // Decision Making
-            decisionMaker: formData.get('decisionMaker') === 'true',
-            budget: formData.get('budget'),
-            authority: formData.get('authority'),
-            
-            // Notes & Tags
-            notes: formData.get('notes'),
-            internalNotes: formData.get('internalNotes'),
-            tags: selectedTags,
-            
-            // Tracking
-            project: projectName,
-            leadSource: formData.get('leadSource') || 'Albany Ski Expo',
-            referredBy: formData.get('referredBy'),
-            
+                youtube: safe(formData.get('youtube')),
+                
+                // Address
+                address: safe(formData.get('address')),
+                city: safe(formData.get('city')),
+                state: safe(formData.get('state')),
+                zipCode: safe(formData.get('zipCode')),
+                country: safe(formData.get('country')) || 'USA',
+                
+                // Deal Info
+                dealStage: safe(formData.get('dealStage')),
+                dealValue: safe(formData.get('dealValue')),
+                dealProbability: safe(formData.get('dealProbability')),
+                expectedCloseDate: safe(formData.get('expectedCloseDate')),
+                
+                // Decision Making
+                decisionMaker: formData.get('decisionMaker') === 'true',
+                budget: safe(formData.get('budget')),
+                authority: safe(formData.get('authority')),
+                
+                // Notes & Tags
+                notes: safe(formData.get('notes')),
+                internalNotes: safe(formData.get('internalNotes')),
+                tags: selectedTags,
+                
+                // Tracking
+                project: projectName,
+                leadSource: safe(formData.get('leadSource')) || 'Albany Ski Expo',
+                referredBy: safe(formData.get('referredBy')),
+                
                 // Metadata - preserve from existing or create new
                 createdAt: existingContact?.createdAt || new Date().toISOString(),
                 lastContact: existingContact?.lastContact || null,
-            followUpDate: formData.get('followUpDate') || null,
-            nextSteps: formData.get('nextSteps'),
+                followUpDate: safe(formData.get('followUpDate')) || null,
+                nextSteps: safe(formData.get('nextSteps')),
             
             // Custom fields
                 customFields: existingContact?.customFields || {},
