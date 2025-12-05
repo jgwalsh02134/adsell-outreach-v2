@@ -736,6 +736,45 @@ class OutreachTracker {
         });
     }
 
+    initTagColorPicker(pickerEl, hiddenInput, currentKey) {
+        if (!pickerEl || !hiddenInput) return;
+        const COLORS = [
+            "blue","indigo","purple","pink","red",
+            "orange","gold","green","mint","teal","gray"
+        ];
+        const selectedKey = currentKey || hiddenInput.value || "blue";
+        pickerEl.innerHTML = "";
+        COLORS.forEach((key) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "tag-color-swatch";
+            btn.dataset.colorKey = key;
+            btn.style.setProperty(
+                "--tag-color-swatch-bg",
+                getComputedStyle(document.documentElement)
+                    .getPropertyValue("--tag-" + key)
+            );
+            if (key === selectedKey) {
+                btn.classList.add("tag-color-swatch--selected");
+            }
+            btn.addEventListener("click", () => {
+                pickerEl.querySelectorAll(".tag-color-swatch--selected")
+                    .forEach((el) => el.classList.remove("tag-color-swatch--selected"));
+                btn.classList.add("tag-color-swatch--selected");
+                hiddenInput.value = key;
+            });
+            pickerEl.appendChild(btn);
+        });
+        hiddenInput.value = selectedKey;
+    }
+
+    initLeadSourceTagColorPicker(formEl, currentKey) {
+        const picker = formEl.querySelector("#leadsource-tag-color-picker");
+        const hidden = formEl.querySelector("#leadsource-tag-color-input");
+        if (!picker || !hidden) return;
+        this.initTagColorPicker(picker, hidden, currentKey);
+    }
+
     // Data Management
     async loadData() {
         let apiData = null;
@@ -1190,7 +1229,8 @@ class OutreachTracker {
             owner: '',
             startDate: '',
             endDate: '',
-            description: ''
+            description: '',
+            tagColor: 'blue'
         };
         this.projects.push(project);
         return project;
@@ -1398,6 +1438,13 @@ class OutreachTracker {
             if (startDateInput) startDateInput.value = '';
             if (endDateInput) endDateInput.value = '';
             if (descInput) descInput.value = '';
+            // init tag color picker with default
+            const hidden = form.querySelector('#project-tag-color-input');
+            const picker = form.querySelector('#project-tag-color-picker');
+            if (hidden && picker) {
+                hidden.value = 'blue';
+                this.initTagColorPicker(picker, hidden, 'blue');
+            }
         } else {
             const project = this.getProjectById(projectId);
             if (!project) return;
@@ -1409,6 +1456,13 @@ class OutreachTracker {
             if (startDateInput) startDateInput.value = project.startDate || '';
             if (endDateInput) endDateInput.value = project.endDate || '';
             if (descInput) descInput.value = project.description || '';
+            const hidden = form.querySelector('#project-tag-color-input');
+            const picker = form.querySelector('#project-tag-color-picker');
+            if (hidden && picker) {
+                const colorKey = project.tagColor ? project.tagColor : 'blue';
+                hidden.value = colorKey;
+                this.initTagColorPicker(picker, hidden, colorKey);
+            }
         }
 
         modal.classList.add('active');
@@ -1434,6 +1488,7 @@ class OutreachTracker {
         const startDate = (formData.get('startDate') || '').toString().trim();
         const endDate = (formData.get('endDate') || '').toString().trim();
         const description = (formData.get('description') || '').toString().trim();
+        const tagColor = (formData.get('tagColor') || 'blue').toString().trim();
 
         if (!name) {
             alert('Project name is required.');
@@ -1447,7 +1502,8 @@ class OutreachTracker {
             owner,
             startDate,
             endDate,
-            description
+            description,
+            tagColor
         };
 
         this.upsertProject(projectData);
@@ -2914,6 +2970,15 @@ class OutreachTracker {
             advancedSection.hidden = true;
         }
 
+        // Initialize Lead Source tag color picker
+        const colorKey = contact && contact.leadSourceTagColor ? contact.leadSourceTagColor : 'gray';
+        const hidden = form.querySelector('#leadsource-tag-color-input');
+        const picker = form.querySelector('#leadsource-tag-color-picker');
+        if (hidden && picker) {
+            hidden.value = colorKey;
+            this.initLeadSourceTagColorPicker(form, colorKey);
+        }
+
         // Show Delete button only when editing an existing contact
         const deleteBtn = document.getElementById('contact-delete-btn');
         if (deleteBtn) {
@@ -3281,6 +3346,7 @@ class OutreachTracker {
             
             // Tracking
                 project: projectName,
+                leadSourceTagColor: safe(formData.get('leadSourceTagColor')) || 'gray',
                 leadSource: safe(formData.get('leadSource')) || 'Albany Ski Expo',
                 referredBy: safe(formData.get('referredBy')),
                 
@@ -4425,6 +4491,74 @@ AdSell.ai`,
         }
     }
 
+    renderChannelsForProspect(contact) {
+        if (!contact) return;
+
+        const normalizedPhones = this.normalizeContactPhones(contact);
+        const normalizedEmails = this.normalizeContactEmails(contact);
+
+        const primaryPhone = normalizedPhones[0]?.number || '';
+        const primaryEmail = normalizedEmails[0]?.email || '';
+        const websiteRaw = contact.website || '';
+
+        const hasPhone = !!primaryPhone.trim();
+        const hasEmail = !!primaryEmail.trim();
+        const hasWebsite = !!websiteRaw.trim();
+        const hasMessage = hasPhone;
+
+        const callBtn = document.getElementById('channel-call-btn');
+        const msgBtn = document.getElementById('channel-message-btn');
+        const emailBtn = document.getElementById('channel-email-btn');
+        const webBtn = document.getElementById('channel-website-btn');
+
+        const setChannelState = (btn, hasData) => {
+            if (!btn) return;
+            btn.classList.remove('channel-card--available', 'channel-card--disabled');
+            if (hasData) {
+                btn.classList.add('channel-card--available');
+                btn.removeAttribute('aria-disabled');
+            } else {
+                btn.classList.add('channel-card--disabled');
+                btn.setAttribute('aria-disabled', 'true');
+            }
+        };
+
+        setChannelState(callBtn, hasPhone);
+        setChannelState(msgBtn, hasMessage);
+        setChannelState(emailBtn, hasEmail);
+        setChannelState(webBtn, hasWebsite);
+
+        if (callBtn) {
+            callBtn.onclick = () => {
+                if (!hasPhone) return;
+                window.location.href = 'tel:' + primaryPhone.replace(/[^0-9+]/g, '');
+            };
+        }
+
+        if (msgBtn) {
+            msgBtn.onclick = () => {
+                if (!hasMessage) return;
+                window.location.href = 'sms:' + primaryPhone.replace(/[^0-9+]/g, '');
+            };
+        }
+
+        if (emailBtn) {
+            emailBtn.onclick = () => {
+                if (!hasEmail) return;
+                window.location.href = 'mailto:' + primaryEmail.trim();
+            };
+        }
+
+        if (webBtn) {
+            webBtn.onclick = () => {
+                if (!hasWebsite) return;
+                const val = websiteRaw.trim();
+                const url = /^https?:\/\//i.test(val) ? val : 'https://' + val;
+                window.open(url, '_blank', 'noopener');
+            };
+        }
+    }
+
     /**
      * Handle channel click with multi-option support (legacy)
      */
@@ -4721,38 +4855,6 @@ AdSell.ai`,
         // Check if we have any channels to show
         const hasChannels = allPhones.length > 0 || allEmails.length > 0 || websiteHref;
 
-        // Build Channels card HTML with multi-select buttons
-        const channelsHtml = `
-            <div class="prospect-channels-grid">
-                <button type="button" class="prospect-channel-btn ${allPhones.length === 0 ? 'disabled' : ''}" id="channel-call" ${allPhones.length === 0 ? 'disabled' : ''}>
-                    <svg class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M2.25 6.75c0 8.284 6.716 15 15 15h1.5a2.25 2.25 0 0 0 2.25-2.25v-1.086c0-.516-.351-.966-.852-1.091l-3.423-.856a1.125 1.125 0 0 0-1.173.417l-.97 1.293a1.125 1.125 0 0 1-1.21.38 12.035 12.035 0 0 1-7.143-7.143 1.125 1.125 0 0 1 .38-1.21l1.293-.97a1.125 1.125 0 0 0 .417-1.173L7.677 3.102A1.125 1.125 0 0 0 6.586 2.25H5.25A3 3 0 0 0 2.25 5.25v1.5Z"/>
-                    </svg>
-                    <span class="prospect-channel-label">Call</span>
-                </button>
-                <button type="button" class="prospect-channel-btn ${allPhones.length === 0 ? 'disabled' : ''}" id="channel-message" ${allPhones.length === 0 ? 'disabled' : ''}>
-                    <svg class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 21c5.523 0 10-4.03 10-9s-4.477-9-10-9S2 7.03 2 12c0 2.14.832 4.1 2.217 5.6L3 21l4.163-1.325A10.68 10.68 0 0 0 12 21Z"/>
-                    </svg>
-                    <span class="prospect-channel-label">Message</span>
-                </button>
-                <button type="button" class="prospect-channel-btn ${allEmails.length === 0 ? 'disabled' : ''}" id="channel-email" ${allEmails.length === 0 ? 'disabled' : ''}>
-                    <svg class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21.75 6.75v10.5A2.25 2.25 0 0 1 19.5 19.5h-15A2.25 2.25 0 0 1 2.25 17.25V6.75A2.25 2.25 0 0 1 4.5 4.5h15A2.25 2.25 0 0 1 21.75 6.75Z"/>
-                        <path d="M5.25 6.75 12 12l6.75-5.25"/>
-                    </svg>
-                    <span class="prospect-channel-label">Email</span>
-                </button>
-                <button type="button" class="prospect-channel-btn ${!websiteHref ? 'disabled' : ''}" id="channel-website" ${!websiteHref ? 'disabled' : ''}>
-                    <svg class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"/>
-                        <path d="M3.6 9h16.8M3.6 15h16.8M12 3a15.3 15.3 0 0 1 4.5 9A15.3 15.3 0 0 1 12 21a15.3 15.3 0 0 1-4.5-9A15.3 15.3 0 0 1 12 3Z"/>
-                    </svg>
-                    <span class="prospect-channel-label">Website</span>
-                </button>
-            </div>
-        `;
-
         // Build Prospect Info card
         const prospectInfoHtml = `
             <div class="info-rows">
@@ -4771,13 +4873,13 @@ AdSell.ai`,
                 ${contact.project ? `
                     <div class="info-row">
                         <div class="info-label">Project</div>
-                        <div class="info-value">${this.escapeHtml(contact.project)}</div>
+                        <div class="info-value prospect-project-value"></div>
                     </div>
                 ` : ''}
                 ${contact.leadSource ? `
                     <div class="info-row">
                         <div class="info-label">Lead Source</div>
-                        <div class="info-value">${this.escapeHtml(contact.leadSource)}</div>
+                        <div class="info-value prospect-leadsource-value"></div>
                     </div>
                 ` : ''}
             </div>
@@ -4874,30 +4976,9 @@ AdSell.ai`,
             `;
         }
         
-        // Social links
-        const socialLinks = [];
-        if (linkedinHref) socialLinks.push({ href: linkedinHref, label: 'LinkedIn', icon: 'icons/linkedin-icon.svg' });
-        if (facebookHref) socialLinks.push({ href: facebookHref, label: 'Facebook', icon: 'icons/facebook-icon.svg' });
-        if (twitterHref) socialLinks.push({ href: twitterHref, label: 'X (Twitter)', icon: 'icons/x-icon.svg' });
-        
-        if (socialLinks.length > 0) {
-            contactInfoHtml += `
-                <div class="contact-info-section">
-                    <div class="contact-info-section-label">Social</div>
-                    <div class="contact-info-social-row">
-                        ${socialLinks.map(s => `
-                            <a href="${s.href}" target="_blank" rel="noopener noreferrer" class="contact-info-social-btn" aria-label="${s.label}">
-                                <img src="${s.icon}" alt="" class="contact-info-social-icon" />
-                            </a>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-        
         contactInfoHtml += '</div>';
         
-        const hasContactInfo = orgEmails.length > 0 || orgPhones.length > 0 || fullAddress || websiteHref || socialLinks.length > 0;
+        const hasContactInfo = orgEmails.length > 0 || orgPhones.length > 0 || fullAddress || websiteHref;
 
         // Build People card
         const people = Array.isArray(contact.people) ? contact.people : [];
@@ -5024,7 +5105,7 @@ AdSell.ai`,
 
         container.innerHTML = `
             <!-- Header card -->
-            <article class="card prospect-card prospect-profile-header-card">
+            <article class="card prospect-card prospect-profile-header-card card-level-1">
                 <div class="prospect-header-top">
                     <button type="button" class="prospect-back-link" data-role="back-to-contacts">
                         ← Contacts
@@ -5046,24 +5127,80 @@ AdSell.ai`,
             </article>
 
             <!-- Channels card -->
-            <article class="card prospect-card">
-                <div class="prospect-section-header">
-                    <div class="overline-label">CHANNELS</div>
+            <article class="card prospect-card card-level-2 prospect-channels-card">
+                <div class="section-title">Channels</div>
+                <div class="channels-grid">
+                    <button
+                        type="button"
+                        class="channel-card channel-card--call"
+                        id="channel-call-btn"
+                    >
+                        <div class="channel-card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2.25 6.75c0 8.284 6.716 15 15 15h1.5a2.25 2.25 0 0 0 2.25-2.25v-1.086c0-.516-.351-.966-.852-1.091l-3.423-.856a1.125 1.125 0 0 0-1.173.417l-.97 1.293a1.125 1.125 0 0 1-1.21.38 12.035 12.035 0 0 1-7.143-7.143 1.125 1.125 0 0 1 .38-1.21l1.293-.97a1.125 1.125 0 0 0 .417-1.173L7.677 3.102A1.125 1.125 0 0 0 6.586 2.25H5.25A3 3 0 0 0 2.25 5.25v1.5Z"/>
+                            </svg>
+                        </div>
+                        <div class="channel-card-label">Call</div>
+                    </button>
+
+                    <button
+                        type="button"
+                        class="channel-card channel-card--message"
+                        id="channel-message-btn"
+                    >
+                        <div class="channel-card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 21c5.523 0 10-4.03 10-9s-4.477-9-10-9S2 7.03 2 12c0 2.14.832 4.1 2.217 5.6L3 21l4.163-1.325A10.68 10.68 0 0 0 12 21Z"/>
+                            </svg>
+                        </div>
+                        <div class="channel-card-label">Message</div>
+                    </button>
+
+                    <button
+                        type="button"
+                        class="channel-card channel-card--email"
+                        id="channel-email-btn"
+                    >
+                        <div class="channel-card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.75 6.75v10.5A2.25 2.25 0 0 1 19.5 19.5h-15A2.25 2.25 0 0 1 2.25 17.25V6.75A2.25 2.25 0 0 1 4.5 4.5h15A2.25 2.25 0 0 1 21.75 6.75Z"/>
+                                <path d="M5.25 6.75 12 12l6.75-5.25"/>
+                            </svg>
+                        </div>
+                        <div class="channel-card-label">Email</div>
+                    </button>
+
+                    <button
+                        type="button"
+                        class="channel-card channel-card--website"
+                        id="channel-website-btn"
+                    >
+                        <div class="channel-card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"/>
+                                <path d="M3.6 9h16.8M3.6 15h16.8M12 3a15.3 15.3 0 0 1 4.5 9A15.3 15.3 0 0 1 12 21a15.3 15.3 0 0 1-4.5-9A15.3 15.3 0 0 1 12 3Z"/>
+                            </svg>
+                        </div>
+                        <div class="channel-card-label">Website</div>
+                    </button>
                 </div>
-                ${channelsHtml}
             </article>
 
             <!-- Prospect Info card -->
-            <article class="card prospect-card">
+            <article class="card prospect-card card-level-1 prospect-details-card">
                 <div class="prospect-section-header">
                     <div class="overline-label">PROSPECT INFO</div>
                 </div>
                 ${prospectInfoHtml}
+                <div class="details-row">
+                    <div class="details-label">Social</div>
+                    <div class="details-value prospect-social"></div>
+                </div>
             </article>
 
             <!-- Contact Information card -->
             ${hasContactInfo ? `
-                <article class="card prospect-card">
+                <article class="card prospect-card card-level-1">
                     <div class="prospect-section-header">
                         <div class="overline-label">CONTACT INFORMATION</div>
                     </div>
@@ -5072,7 +5209,7 @@ AdSell.ai`,
             ` : ''}
 
             <!-- People card -->
-            <article class="card prospect-card">
+            <article class="card prospect-card card-level-1">
                 <div class="prospect-section-header">
                     <div class="overline-label">PEOPLE</div>
                     <button type="button" class="btn btn-sm btn-secondary" data-role="add-person">
@@ -5083,7 +5220,7 @@ AdSell.ai`,
             </article>
 
             <!-- AI Tools card -->
-            <article class="card prospect-card ai-tools-card" id="prospect-enrichment-card">
+            <article class="card prospect-card card-level-1 ai-tools-card" id="prospect-enrichment-card">
                 <div class="prospect-section-header">
                     <div class="overline-label">AI TOOLS</div>
                 </div>
@@ -5144,7 +5281,7 @@ AdSell.ai`,
             </article>
 
             <!-- Activity card -->
-            <article class="card prospect-card">
+            <article class="card prospect-card card-level-1">
                 <div class="prospect-section-header">
                     <div class="overline-label">ACTIVITY</div>
                     <button type="button" class="btn btn-secondary btn-sm" data-role="log-activity">
@@ -5155,7 +5292,7 @@ AdSell.ai`,
             </article>
 
             <!-- Tasks card -->
-            <article class="card prospect-card">
+            <article class="card prospect-card card-level-1">
                 <div class="prospect-section-header">
                     <div class="overline-label">TASKS</div>
                     <button type="button" class="btn btn-secondary btn-sm" data-role="add-task">
@@ -5196,8 +5333,8 @@ AdSell.ai`,
             });
         }
 
-        // Channel buttons with multi-select support
-        this.bindChannelButtons();
+        // Channel buttons with Apple-style grid
+        this.renderChannelsForProspect(contact);
 
         // Activity / tasks actions
         const logActivityBtn = container.querySelector('[data-role="log-activity"]');
@@ -5230,6 +5367,108 @@ AdSell.ai`,
 
         // Wire AI enrichment card within the prospect profile
         this.setupAIEnrichment();
+
+        // Populate Project and Lead Source chips
+        const detailsCard = container.querySelector('.prospect-details-card');
+
+        const projectValueEl = detailsCard ? detailsCard.querySelector('.prospect-project-value') : null;
+        if (projectValueEl) {
+            projectValueEl.innerHTML = '';
+            const projectName = contact?.project || '';
+            let projectColorKey = 'blue';
+            if (projectName) {
+                const proj = (this.projects || []).find(p => p.name === projectName);
+                if (proj && proj.tagColor) projectColorKey = proj.tagColor;
+            }
+            if (projectName) {
+                const chip = document.createElement('span');
+                chip.className = 'tag-chip tag--' + (projectColorKey || 'blue');
+                chip.textContent = projectName;
+                projectValueEl.appendChild(chip);
+            }
+        }
+
+        const leadValueEl = detailsCard ? detailsCard.querySelector('.prospect-leadsource-value') : null;
+        if (leadValueEl) {
+            leadValueEl.innerHTML = '';
+            const leadSourceLabel = contact?.leadSource || '';
+            const leadSourceColorKey = contact?.leadSourceTagColor || 'gray';
+            if (leadSourceLabel) {
+                const chip = document.createElement('span');
+                chip.className = 'tag-chip tag--' + (leadSourceColorKey || 'gray');
+                chip.textContent = leadSourceLabel;
+                leadValueEl.appendChild(chip);
+            }
+        }
+
+        // Social icons in Prospect Info
+        const socialContainer = detailsCard ? detailsCard.querySelector('.prospect-social') : null;
+        if (socialContainer) {
+            socialContainer.innerHTML = '';
+            const links = this.getSocialLinksForContact(contact);
+            if (links.length) {
+                const list = document.createElement('div');
+                list.className = 'social-icon-list';
+                links.forEach((link) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'social-icon-button social-icon-button--' + link.type;
+                    if (link.label) btn.setAttribute('aria-label', link.label);
+                    const img = document.createElement('img');
+                    img.src = link.icon;
+                    img.alt = '';
+                    img.className = 'social-icon-image';
+                    btn.appendChild(img);
+                    btn.addEventListener('click', () => {
+                        window.open(link.url, '_blank', 'noopener');
+                    });
+                    list.appendChild(btn);
+                });
+                socialContainer.appendChild(list);
+            } else {
+                const section = socialContainer.closest('.contact-info-section');
+                if (section) section.style.display = 'none';
+            }
+        }
+    }
+
+    getSocialLinksForContact(contact) {
+        if (!contact) return [];
+        const links = [];
+        const add = (type, value, baseUrl, iconPath, label) => {
+            if (!value) return;
+            let v = String(value).trim();
+            if (!v) return;
+            let url = v;
+            if (!/^https?:\/\//i.test(v) && baseUrl) {
+                url = baseUrl + v.replace(/^@/, '');
+            }
+            links.push({ type, url, icon: iconPath, label });
+        };
+        if (contact.linkedin) {
+            add('linkedin', contact.linkedin, 'https://www.linkedin.com/in/', 'icons/24-color-linkedin.svg', 'Open LinkedIn');
+        }
+        if (contact.facebook) {
+            add('facebook', contact.facebook, 'https://www.facebook.com/', 'icons/24-color-facebook.svg', 'Open Facebook');
+        }
+        if (contact.instagram) {
+            add('instagram', contact.instagram, 'https://www.instagram.com/', 'icons/24-color-instagram.svg', 'Open Instagram');
+        }
+        if (contact.twitter || contact.x) {
+            add('x', contact.twitter || contact.x, 'https://twitter.com/', 'icons/24-color-x.svg', 'Open X');
+        }
+        if (contact.youtube) {
+            add('youtube', contact.youtube, '', 'icons/24-color-youtube.svg', 'Open YouTube');
+        }
+        if (contact.whatsapp) {
+            let v = String(contact.whatsapp).trim();
+            let url = /^https?:\/\//i.test(v) ? v : 'https://wa.me/' + v.replace(/[^0-9]/g, '');
+            links.push({ type: 'whatsapp', url, icon: 'icons/24-color-whatsapp.svg', label: 'Open WhatsApp' });
+        }
+        if (contact.messenger) {
+            add('messenger', contact.messenger, 'https://m.me/', 'icons/24-color-fb-messenger.svg', 'Open Messenger');
+        }
+        return links;
     }
 
     /**

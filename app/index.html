@@ -938,6 +938,11 @@
                                 <input type="text" name="leadSource" class="form-input" value="Albany Ski Expo">
                             </div>
                             <div class="form-group">
+                                <label class="form-label">Lead Source Color</label>
+                                <div class="tag-color-picker" id="leadsource-tag-color-picker"></div>
+                                <input type="hidden" name="leadSourceTagColor" id="leadsource-tag-color-input">
+                            </div>
+                            <div class="form-group">
                                 <label>Company Size</label>
                                 <select name="companySize" class="form-input">
                                     <option value="">Select Size</option>
@@ -1251,6 +1256,11 @@
                 <div class="form-group">
                     <label>Description</label>
                     <textarea name="description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tag Color</label>
+                    <div class="tag-color-picker" id="project-tag-color-picker"></div>
+                    <input type="hidden" name="tagColor" id="project-tag-color-input">
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="project-cancel-btn">Cancel</button>
