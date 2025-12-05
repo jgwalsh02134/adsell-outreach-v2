@@ -4433,7 +4433,7 @@ AdSell.ai`,
             </article>
 
             <!-- AI & Prospect Intelligence card -->
-            <article class="card prospect-card" id="prospect-enrichment-card">
+            <article class="card prospect-card ai-tools-card" id="prospect-enrichment-card">
                 <div class="prospect-section-header">
                     <div>
                         <div class="overline-label">AI TOOLS</div>
@@ -4441,88 +4441,77 @@ AdSell.ai`,
                 </div>
 
                 <!-- AI Actions row -->
-                <div class="ai-provider-row">
-                    <div class="ai-provider-label">AI Actions</div>
-                </div>
-                <div class="prospect-header-actions">
-                    <button
-                        type="button"
-                        class="btn btn-primary ai-action-btn"
-                        data-action="ai-outreach"
-                    >
-                        <img
-                            src="icons/white-chatgpt-icon.svg"
-                            alt=""
-                            class="ai-action-icon"
-                            aria-hidden="true"
-                        />
-                        <span>Outreach</span>
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-secondary ai-action-btn"
-                        data-action="ai-company-research"
-                    >
-                        <img
-                            src="icons/chatgpt-icon.svg"
-                            alt=""
-                            class="ai-action-icon"
-                            aria-hidden="true"
-                        />
-                        <span>Company Research</span>
-                    </button>
+                <div class="ai-subsection">
+                    <div class="ai-subtitle">AI Actions</div>
+                    <div class="ai-actions-row">
+                        <button
+                            type="button"
+                            class="btn btn-ai btn-ai-secondary"
+                            id="btn-ai-company-research"
+                            data-action="ai-company-research"
+                            aria-label="Company Research"
+                        >
+                            <img src="icons/chatgpt-icon.svg" alt="" class="ai-action-icon" aria-hidden="true" />
+                            <span class="btn-label">Company Research</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-ai btn-ai-primary"
+                            id="btn-ai-outreach"
+                            data-action="ai-outreach"
+                            aria-label="Outreach"
+                        >
+                            <img src="icons/white-chatgpt-icon.svg" alt="" class="ai-action-icon" aria-hidden="true" />
+                            <span class="btn-label">Outreach</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Prospect Intelligence row -->
-                <div class="ai-provider-row prospect-enrich-header-row" style="margin-top: 12px;">
-                    <div class="ai-provider-label">Prospect Intelligence</div>
-                    <button
-                        type="button"
-                        class="enrich-refresh-btn"
-                        id="enrich-refresh-btn"
-                        title="Refresh intelligence"
-                        aria-label="Refresh intelligence"
-                    >
-                        <img src="icons/20-refresh.svg" alt="" class="enrich-refresh-icon" />
-                    </button>
-                </div>
-                <div class="prospect-header-actions">
-                    <button
-                        type="button"
-                        class="btn btn-perplexity ai-action-btn"
-                        id="btn-enrich-perplexity"
-                        title="Use AI to complete missing fields on this profile"
-                    >
-                        <img
-                            src="icons/white-perplexity-icon.svg"
-                            alt=""
-                            class="ai-action-icon"
-                            aria-hidden="true"
-                        />
-                        <span>Complete Profile</span>
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-secondary ai-action-btn"
-                        id="btn-enrich-grok"
-                        title="Use AI to verify and refine details for this prospect"
-                    >
-                        <img
-                            src="icons/Grok-icon.svg"
-                            alt=""
-                            class="ai-action-icon"
-                            aria-hidden="true"
-                        />
-                        <span>Verify Details</span>
-                    </button>
+                <div class="ai-subsection ai-intel">
+                    <div class="ai-intel-header">
+                        <div class="ai-subtitle">Prospect Intelligence</div>
+                        <button
+                            type="button"
+                            class="ai-intel-refresh-btn"
+                            id="enrich-refresh-btn"
+                            title="Refresh intelligence"
+                            aria-label="Refresh prospect intelligence"
+                        >
+                            <img src="icons/20-refresh.svg" alt="" class="ai-refresh-icon" aria-hidden="true" />
+                        </button>
+                    </div>
+                    <div class="ai-intel-button-row">
+                        <button
+                            type="button"
+                            class="btn btn-intel btn-intel-primary"
+                            id="btn-enrich-perplexity"
+                            data-provider="perplexity"
+                            title="Use AI to complete missing fields and surface key contacts"
+                            aria-label="Complete Insight"
+                        >
+                            <img src="icons/white-perplexity-icon.svg" alt="" class="ai-intel-icon" aria-hidden="true" />
+                            <span class="btn-label">Complete Insight</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-intel btn-intel-secondary"
+                            id="btn-enrich-grok"
+                            data-provider="grok"
+                            title="Use AI to deliver deeper organizational insight"
+                            aria-label="Full Insight"
+                        >
+                            <img src="icons/Grok-icon.svg" alt="" class="ai-intel-icon" aria-hidden="true" />
+                            <span class="btn-label">Full Insight</span>
+                        </button>
+                    </div>
+                    <div class="ai-intel-description">
+                        Use AI to complete missing profile fields, surface key contacts, and deliver deeper organizational insight.
+                    </div>
                 </div>
 
                 <!-- Result panel -->
-                <div id="ai-enrich-result" class="ai-enrich-result">
-                    <p class="muted">
-                        Use AI to complete missing profile fields, surface key contacts, and verify organization details.
-                    </p>
-                </div>
+                <div id="ai-enrich-result" class="ai-enrich-result"></div>
             </article>
 
             <!-- Activity card -->
