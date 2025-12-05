@@ -11,134 +11,166 @@ This repository contains the browser-based application (SPA) that powers the sal
 | Resource            | Link                                                                 |
 |---------------------|----------------------------------------------------------------------|
 | Live App            | https://adsell-outreach-v2.pages.dev                                 |
-| AdSell.ai           | https://adsell.ai                                                    |
-| GitHub Repository   | https://github.com/jgwalsh02134/adsell-outreach-v2                  |
-| Cloudflare Worker   | https://adsell-openai-proxy.jgregorywalsh.workers.dev               |
+# AdSell Sales Desk
 
-──────────────────────────────────────────
+AdSell Sales Desk is a mobile-first, AI-assisted sales-outreach platform built to **source**, **qualify**, **enrich**, and **activate** new advertising prospects for the [AdSell.ai](https://adsell.ai) print-media marketplace.
 
-## ▣ Purpose
+This repository contains the browser-based single-page application (SPA) and Cloudflare Worker backend that together power the sales workflow: contact discovery, enrichment, AI research, outreach execution, activity logging, pipeline progression, and campaign-level reporting.
 
-AdSell Sales Desk is **not** a general CRM.  
+---
+
+## Official Links
+
+| Resource              | Link                                                                 |
+|-----------------------|----------------------------------------------------------------------|
+| Live App              | https://adsell-outreach-v2.pages.dev                                 |
+| AdSell.ai             | https://adsell.ai                                                    |
+| GitHub Repository     | https://github.com/jgwalsh02134/adsell-outreach-v2                  |
+| Cloudflare Worker API | https://adsell-openai-proxy.jgregorywalsh.workers.dev               |
+
+---
+
+## Purpose
+
+AdSell Sales Desk is **not** a general-purpose CRM.  
 It is a focused **outreach cockpit** designed for:
 
-- discovering and onboarding new advertisers and publishers 
+- discovering and onboarding new advertisers  
 - qualifying prospect records  
-- enriching missing data  
-- organizing structured, campaign-based outreach  
-- recording contact attempts and outcomes  
-- executing multi-channel communication  
+- enriching missing contact and company data via AI  
+- organizing structured, project-based outreach  
+- recording calls, emails, messages, and social touches  
+- executing multi-channel communication (phone, SMS, email, maps)  
 - routing prospects into the AdSell.ai advertising platform  
 
-Success is measured by:
+### Success Metric  
+**→ New, high-quality prospects reached, enriched, and converted.**
 
-**new, high-quality prospects reached, enriched, and converted.**
+---
 
-──────────────────────────────────────────
+## Design Philosophy
 
-## ▣ Design Philosophy
-
-### ◆ Print-Heritage Craft  
-Inspired by the visual language of print media:
+### Print-Heritage Craft  
+Inspired by traditional print-media design:
 
 - editorial-style typography  
-- grid-aligned layout and spacing  
-- low-glare, paper-toned surfaces  
+- grid-aligned spacing  
+- parchment background (`#F7F5EF`)  
 - masthead-style headers  
-- clean dividers and restrained visual hierarchy  
+- subtle dividers and restrained hierarchy  
 
-This aesthetic honors AdSell’s roots in traditional print advertising.
-
-### ◆ Modern Mobile Interaction  
+### Modern Mobile Interaction  
 Optimized for speed and clarity:
 
-- mobile-first interface  
-- tap-driven actions (minimal required typing)  
+- mobile-first design (iPhone-first)  
+- tap-driven actions (minimal typing)  
 - zero horizontal scrolling  
-- card-based list and detail views  
-- large, reliable touch targets  
-- smooth transitions and predictable behavior  
+- card-based list + profile views  
+- large touch targets  
+- predictable, smooth behavior  
 
-The result: a tool that **looks editorial, but behaves like a fast, modern app.**
+**A tool that looks editorial, but behaves like a fast modern app.**
 
-──────────────────────────────────────────
+---
 
-## ▣ Core Features
+## Core Features
 
-### ◆ Prospect Profiles  
-A complete sales-outreach cockpit centered on a single organization or contact.
+### Prospect Profiles
+
+A complete outreach cockpit for each organization.
 
 Includes:
 
-- identity fields (company, person, title, segment, project, lead source)  
-- social links (LinkedIn, Facebook, X)  
-- website, phone, email, full address  
-- device-native deep links (`tel:`, `sms:`, `mailto:`, maps)  
-- AI enrichment panel  
-- structured log of all activities  
-- associated tasks (overdue, today, upcoming, completed)
+- identity fields (company, contact, title, category, segment, project, lead source)  
+- communication channels: **Call, Message, Email, Website**  
+- social icons: **LinkedIn, Facebook, Instagram, X, YouTube, WhatsApp, Messenger**  
+- device-native links (`tel:`, `sms:`, `mailto:`, maps)  
+- AI enrichment panel (Perplexity + Grok)  
+- activity timeline (calls, emails, notes, enrichment events)  
+- tasks (overdue, today, upcoming, completed)
 
-### ◆ CSV Ingestion Pipeline  
-A robust lead-intake system for large lists:
+### CSV Ingestion Pipeline
 
 - flexible column mapping  
 - deduplication  
 - project assignment  
-- enrichment queueing  
-- data normalization and cleanup  
+- normalization + cleanup  
+- optional enrichment queue  
 
-CSV import behaves as a **pipeline**, not a basic file dump.
+### Projects & Campaigns
 
-### ◆ Projects & Campaigns  
 Organize outreach by:
 
 - expo  
 - region  
 - season  
 - vertical  
-- thematic push  
+- campaign  
 
-Each project aggregates performance based on its prospects.
+Each project aggregates performance across its prospects.
 
-### ◆ AI Outreach Tools  
-Powered by OpenAI Responses API:
+### AI Tools
 
-- outreach scripts  
-- summaries and briefings  
-- enrichment intelligence  
-- field inference and cleanup  
-- classification and prioritization  
+Powered by:
 
-### ◆ Multi-Provider Enrichment  
-Current + future sources:
+#### OpenAI Responses API (`gpt-4.1-mini`)
+- outreach script generation  
+- company research  
+- detail cleanup and classification  
 
-- RocketReach  
-- Additional APIs (planned)  
-- AI-based inference  
-- public-data integrations  
+#### Perplexity (Prospect Insight)
+- strict, fact-based research  
+- returns structured JSON only  
 
-Enrichment flows through the Worker and is merged into profiles safely.
+#### Grok (Full Insight)
+- official-site extraction  
+- never invents people or emails  
+- returns verified channels + people  
 
-──────────────────────────────────────────
+**The Worker enforces strict rules (no guessing, no invented emails, no auto-overwrite).**
 
-## ▣ System Architecture (High-Level)
+---
 
-### ▪ Front-End SPA (Browser / Mobile)
+## System Architecture (High-Level)
+
+### Front-End SPA
+
+Files:
+
 - `app/index.html`  
 - `app/styles.css`  
-- `app/app-enhanced.js`  
-Handles UI, state, navigation, contact rendering, CSV upload, enrichment triggers, and device-native actions.
+- `app/app-enhanced.js`
 
-### ▪ Cloudflare Worker (Backend API)
-Provides endpoints for:
+Responsibilities:
 
-- contacts retrieval & updates  
-- CSV validation and structured import  
-- enrichment calls  
-- OpenAI Responses API proxy  
+- UI, navigation, and state management  
+- Prospect List + Profile rendering  
+- device-native actions (call / sms / mail / maps)  
+- enrichment + AI triggers  
+- CSV upload and mapping  
 
-### ▪ Cloudflare KV Storage  
-Stores unified application state as a single structured snapshot:
+### Cloudflare Worker API
+
+Location: `worker/worker.js`
+
+Endpoints:
+
+- `GET /contacts`  
+- `POST /contacts/import`  
+- `POST /perplexity/enrich`  
+- `POST /grok/enrich`  
+- `POST /openai`  
+
+Worker responsibilities:
+
+- maintain unified KV snapshot document  
+- orchestrate enrichment calls (Perplexity + Grok)  
+- clean AI output (strip `<think>`, enforce JSON)  
+- provide CORS for SPA  
+
+### Cloudflare KV Storage
+
+Stores entire application state in one JSON document:
 
 ```json
 {
@@ -152,104 +184,128 @@ Stores unified application state as a single structured snapshot:
 }
 ```
 
-### ▪ External Providers  
-- RocketReach (current)  
-- OpenAI Responses API  
-- Additional enrichment APIs (future)  
+### **External Providers**
 
-### ▪ Device-Native Actions  
-Executed on the client:
+- Perplexity (sonar-reasoning)
+- Grok (grok-3)
+- OpenAI Responses API
+- Additional enrichment APIs (future)
 
-- `tel:`  
-- `sms:`  
-- `mailto:`  
-- Maps links  
+  
 
-──────────────────────────────────────────
+### **Device-Native Actions**
 
-## ▣ File Structure
+- tel:
+- sms:
+- mailto:
+- Apple Maps / Google Maps / Browser links
+* * *
 
-```
-adsell-outreach-v2/
-│
-├── app/
-│   ├── icons/
-│   ├── images/
-│   ├── app-enhanced.js
-│   ├── data-loader.html
-│   ├── favicon.png
-│   ├── favicon.svg
-│   ├── index.html
-│   └── styles.css
-│
-├── assets/
-│
-├── campaign/
-│   ├── CAMPAIGN_BRIEF.md
-│   └── SALES_CHEAT_SHEET.md
-│
-├── data/
-│   ├── backups/
-│   ├── exports/
-│   └── imports/
-│
-├── docs/
-│   ├── CUSTOM_SETUP_JGW.md
-│   ├── ENHANCED_FEATURES.md
-│   ├── QUICKSTART.md
-│   ├── README.md
-│   └── START_HERE.md
-│
-└── (Cloudflare Worker source to be added)
-```
+## **File Structure**
+    
+    
+    adsell-outreach-v2/
+    │
+    ├── app/
+    │   ├── icons/
+    │   ├── images/
+    │   ├── app-enhanced.js
+    │   ├── data-loader.html
+    │   ├── favicon.png
+    │   ├── favicon.svg
+    │   ├── index.html
+    │   └── styles.css
+    │
+    ├── worker/
+    │   ├── worker.js
+    │   └── wrangler.toml
+    │
+    ├── assets/
+    │
+    ├── campaign/
+    │   ├── CAMPAIGN_BRIEF.md
+    │   └── SALES_CHEAT_SHEET.md
+    │
+    ├── data/
+    │   ├── backups/
+    │   ├── exports/
+    │   └── imports/
+    │
+    ├── docs/
+    │   ├── CUSTOM_SETUP_JGW.md
+    │   ├── ENHANCED_FEATURES.md
+    │   ├── QUICKSTART.md
+    │   ├── README.md
+    │   └── START_HERE.md
+    │
+    └── (additional config files)
 
-──────────────────────────────────────────
+* * *
 
-## ▣ Deployment
+## **Deployment**
 
-1. GitHub → Cloudflare Pages hosts the front-end SPA.  
-2. Cloudflare Worker powers the backend API.  
-3. Cloudflare KV stores persistent data.  
-4. Deployments update automatically on each push to `main`.
+1. Push to GitHub → Cloudflare Pages builds and deploys the SPA.
 
-Worker source will be added to this repository in a dedicated directory.
+2. Cloudflare Worker deployed via Wrangler.
 
-──────────────────────────────────────────
+3. Cloudflare KV stores persistent state.
 
-## ▣ Roadmap
+4. Deployments update automatically on every push to main.
 
-### Immediate
-- Contact list redesign  
-- Prospect Profile header + channels bar  
-- Social & location integration  
-- Enrichment panel upgrades  
-- Desktop header improvements  
+* * *
 
-### Near-Term
-- Project analytics  
-- Pipeline visualization  
-- Task manager improvements  
-- AI-guided prioritization  
+## **Roadmap**
 
-### Long-Term
-- “Contacts Near Me” (geo-based discovery)  
-- Multi-user + permissions  
-- Shared team workspaces  
-- CRM export + optional two-way sync  
+  
 
-──────────────────────────────────────────
+### **Immediate**
 
-## ▣ Contribution Workflow
+- contact edit UX overhaul
+- multi-person editing
+- Prospect Profile polish (channels, spacing, social icons)
+- enrichment reliability improvements
 
-1. Clone the repository  
-   `git clone https://github.com/jgwalsh02134/adsell-outreach-v2`
+  
 
-2. Open in **Cursor IDE**.  
-3. Use **Codex** for surgical, single-file changes.  
-4. Use **Cursor Chat** for multi-file or conceptual refactors.  
-5. Test on both desktop and mobile breakpoints.  
-6. Push to GitHub; Cloudflare handles deployment.
+### **Near-Term**
 
-──────────────────────────────────────────
+- project analytics
+- pipeline visualizations
+- task manager enhancements
+- AI-guided prioritization
+
+  
+
+### **Long-Term**
+
+- geo-based prospect discovery
+- multi-user support
+- team workspaces
+- CRM sync integrations
+* * *
+
+## **Contribution Workflow**
+    
+    
+    git clone https://github.com/jgwalsh02134/adsell-outreach-v2
+
+Steps:
+
+1. Clone the repo.
+
+2. Open in Cursor or VS Code.
+
+3. Make focused, single-scope changes.
+
+4. Test on both mobile and desktop.
+
+5. Commit and push.
+
+6. Verify Cloudflare deployment.
+
+* * *
 
 End of README.
+    
+    
+---
