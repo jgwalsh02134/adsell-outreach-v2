@@ -1286,6 +1286,25 @@
             </div>
         </div>
     </div>
+
+    <!-- Channel Sheet (bottom sheet for multi-option selection) -->
+    <div id="channel-sheet-overlay" class="channel-sheet-overlay" hidden>
+        <div class="channel-sheet" role="dialog" aria-modal="true">
+            <div class="channel-sheet-handle"></div>
+            <div class="channel-sheet-header">
+                <div id="channel-sheet-title" class="channel-sheet-title">Choose contact</div>
+                <button type="button" id="channel-sheet-close" class="channel-sheet-close" aria-label="Close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="channel-sheet-list" class="channel-sheet-list">
+                <!-- options will be injected by JS -->
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="app-enhanced.js"></script>
     </div>

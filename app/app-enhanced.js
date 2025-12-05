@@ -3944,6 +3944,502 @@ AdSell.ai`,
     /**
      * Render the Details card with grouped layout (Organization, People & Contact, Web & Location)
      */
+    /**
+     * Normalize all phone numbers from a contact (org-level + people)
+     * Returns array of { number, label, source }
+     */
+    normalizeContactPhones(contact) {
+        const phones = [];
+        
+        // Primary phone (from contact.phone - could be semicolon-separated)
+        const phoneString = contact.phone || '';
+        if (phoneString) {
+            phoneString.split(/[;,]/).map(p => p.trim()).filter(Boolean).forEach((num, idx) => {
+                phones.push({
+                    number: num,
+                    label: idx === 0 ? 'Main' : `Phone ${idx + 1}`,
+                    source: 'org'
+                });
+            });
+        }
+        
+        // Company phones array
+        const companyPhones = Array.isArray(contact.companyPhones) ? contact.companyPhones : [];
+        companyPhones.filter(Boolean).forEach((num, idx) => {
+            if (!phones.find(p => p.number === num)) {
+                phones.push({
+                    number: num,
+                    label: `Office ${idx + 1}`,
+                    source: 'org'
+                });
+            }
+        });
+        
+        // Primary contact phones
+        const primaryPhones = Array.isArray(contact.primaryPhones) ? contact.primaryPhones : [];
+        const primaryName = contact.contactName || 'Primary Contact';
+        primaryPhones.filter(Boolean).forEach((num, idx) => {
+            if (!phones.find(p => p.number === num)) {
+                phones.push({
+                    number: num,
+                    label: `${primaryName}${idx > 0 ? ` (${idx + 1})` : ''}`,
+                    source: 'primary'
+                });
+            }
+        });
+        
+        // People phones
+        const people = Array.isArray(contact.people) ? contact.people : [];
+        people.forEach((person) => {
+            const personPhones = Array.isArray(person.phones) ? person.phones : (person.phone ? [person.phone] : []);
+            personPhones.filter(Boolean).forEach((num, idx) => {
+                if (!phones.find(p => p.number === num)) {
+                    phones.push({
+                        number: num,
+                        label: `${person.name || 'Contact'}${idx > 0 ? ` (${idx + 1})` : ''}`,
+                        source: 'person'
+                    });
+                }
+            });
+        });
+        
+        return phones;
+    }
+    
+    /**
+     * Normalize all emails from a contact (org-level + people)
+     * Returns array of { email, label, source }
+     */
+    normalizeContactEmails(contact) {
+        const emails = [];
+        
+        // Primary email (from contact.email - could be semicolon-separated)
+        const emailString = contact.email || '';
+        if (emailString) {
+            emailString.split(/[;,]/).map(e => e.trim()).filter(Boolean).forEach((addr, idx) => {
+                emails.push({
+                    email: addr,
+                    label: idx === 0 ? 'Main' : `Email ${idx + 1}`,
+                    source: 'org'
+                });
+            });
+        }
+        
+        // Company emails array
+        const companyEmails = Array.isArray(contact.companyEmails) ? contact.companyEmails : [];
+        companyEmails.filter(Boolean).forEach((addr, idx) => {
+            if (!emails.find(e => e.email.toLowerCase() === addr.toLowerCase())) {
+                emails.push({
+                    email: addr,
+                    label: `General ${idx + 1}`,
+                    source: 'org'
+                });
+            }
+        });
+        
+        // Primary contact emails
+        const primaryEmails = Array.isArray(contact.primaryEmails) ? contact.primaryEmails : [];
+        const primaryName = contact.contactName || 'Primary Contact';
+        primaryEmails.filter(Boolean).forEach((addr, idx) => {
+            if (!emails.find(e => e.email.toLowerCase() === addr.toLowerCase())) {
+                emails.push({
+                    email: addr,
+                    label: `${primaryName}${idx > 0 ? ` (${idx + 1})` : ''}`,
+                    source: 'primary'
+                });
+            }
+        });
+        
+        // People emails
+        const people = Array.isArray(contact.people) ? contact.people : [];
+        people.forEach((person) => {
+            const personEmails = Array.isArray(person.emails) ? person.emails : (person.email ? [person.email] : []);
+            personEmails.filter(Boolean).forEach((addr, idx) => {
+                if (!emails.find(e => e.email.toLowerCase() === addr.toLowerCase())) {
+                    emails.push({
+                        email: addr,
+                        label: `${person.name || 'Contact'}${idx > 0 ? ` (${idx + 1})` : ''}`,
+                        source: 'person'
+                    });
+                }
+            });
+        });
+        
+        return emails;
+    }
+    
+    /**
+     * Show bottom sheet selector for multiple options
+     * @param {string} title - Sheet title
+     * @param {Array} options - Array of { value, label, icon? }
+     * @param {Function} onSelect - Callback when option selected
+     */
+    /**
+     * Open the static channel sheet with options
+     * Uses the HTML component in index.html
+     */
+    openChannelSheet(options, title, onSelect) {
+        const overlay = document.getElementById('channel-sheet-overlay');
+        const titleEl = document.getElementById('channel-sheet-title');
+        const listEl = document.getElementById('channel-sheet-list');
+        const closeBtn = document.getElementById('channel-sheet-close');
+
+        if (!overlay || !titleEl || !listEl) return;
+
+        titleEl.textContent = title || 'Choose contact';
+        listEl.innerHTML = '';
+
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'channel-sheet-option';
+
+            const labels = document.createElement('div');
+            labels.className = 'channel-sheet-option-labels';
+
+            const main = document.createElement('div');
+            main.className = 'channel-sheet-option-main';
+            main.textContent = opt.value;
+
+            const sub = document.createElement('div');
+            sub.className = 'channel-sheet-option-sub';
+            sub.textContent = opt.label || '';
+
+            labels.appendChild(main);
+            if (opt.label) labels.appendChild(sub);
+
+            btn.appendChild(labels);
+
+            // Add chevron
+            const chevron = document.createElement('span');
+            chevron.className = 'channel-sheet-option-chevron';
+            chevron.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`;
+            btn.appendChild(chevron);
+
+            btn.addEventListener('click', () => {
+                this.closeChannelSheet();
+                if (typeof onSelect === 'function') {
+                    onSelect(opt);
+                }
+            });
+
+            listEl.appendChild(btn);
+        });
+
+        overlay.hidden = false;
+        document.body.classList.add('sheet-open');
+
+        // Close handlers
+        const close = () => this.closeChannelSheet();
+
+        closeBtn.onclick = close;
+        overlay.onclick = (evt) => {
+            if (evt.target === overlay) {
+                close();
+            }
+        };
+    }
+
+    closeChannelSheet() {
+        const overlay = document.getElementById('channel-sheet-overlay');
+        if (overlay) {
+            overlay.hidden = true;
+        }
+        document.body.classList.remove('sheet-open');
+    }
+
+    /**
+     * Legacy showBottomSheet - now uses openChannelSheet
+     */
+    showBottomSheet(title, options, onSelect) {
+        // Transform options for openChannelSheet format
+        const transformedOptions = options.map(opt => ({
+            value: opt.value,
+            label: opt.label
+        }));
+        this.openChannelSheet(transformedOptions, title, onSelect);
+    }
+    
+    closeBottomSheet() {
+        this.closeChannelSheet();
+    }
+
+    /**
+     * Get all phone options for the active prospect
+     * Returns array of { value, label, source }
+     */
+    getAllPhoneOptionsForActiveProspect() {
+        const contact = this.getActiveContact?.() || this.currentContact;
+        if (!contact) return [];
+
+        const options = [];
+
+        // 1) Org-level phone(s)
+        if (contact.phone) {
+            const raw = String(contact.phone);
+            const parts = raw.split(/[\/,|;]/).map(p => p.trim()).filter(Boolean);
+            parts.forEach((num, index) => {
+                options.push({
+                    value: num,
+                    label: index === 0 ? 'Main line (prospect)' : 'Phone ' + (index + 1),
+                    source: 'prospect'
+                });
+            });
+        }
+
+        // Company phones array
+        const companyPhones = Array.isArray(contact.companyPhones) ? contact.companyPhones : [];
+        companyPhones.filter(Boolean).forEach((num, idx) => {
+            if (!options.find(p => p.value === num)) {
+                options.push({
+                    value: num,
+                    label: `Office ${idx + 1}`,
+                    source: 'prospect'
+                });
+            }
+        });
+
+        // Primary contact phones
+        const primaryPhones = Array.isArray(contact.primaryPhones) ? contact.primaryPhones : [];
+        const primaryName = contact.contactName || 'Primary Contact';
+        primaryPhones.filter(Boolean).forEach((num, idx) => {
+            if (!options.find(p => p.value === num)) {
+                options.push({
+                    value: num,
+                    label: `${primaryName}${idx > 0 ? ' (' + (idx + 1) + ')' : ''}`,
+                    source: 'primary'
+                });
+            }
+        });
+
+        // 2) People-level phone(s)
+        if (Array.isArray(contact.people)) {
+            contact.people.forEach(person => {
+                if (!person) return;
+                const personPhones = Array.isArray(person.phones) ? person.phones : (person.phone ? [person.phone] : []);
+                personPhones.filter(Boolean).forEach((num, index) => {
+                    if (!options.find(p => p.value === num)) {
+                        options.push({
+                            value: num,
+                            label: (person.name || person.contactName || 'Contact') +
+                                (personPhones.length > 1 ? ' (' + (index + 1) + ')' : ''),
+                            source: 'person'
+                        });
+                    }
+                });
+            });
+        }
+
+        // Remove duplicates (same value)
+        const seen = new Set();
+        return options.filter(opt => {
+            const k = opt.value.replace(/\s+/g, '');
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+        });
+    }
+
+    /**
+     * Get all email options for the active prospect
+     * Returns array of { value, label, source }
+     */
+    getAllEmailOptionsForActiveProspect() {
+        const contact = this.getActiveContact?.() || this.currentContact;
+        if (!contact) return [];
+
+        const options = [];
+
+        // 1) Org-level email(s)
+        if (contact.email) {
+            const raw = String(contact.email);
+            const parts = raw.split(/[;,\s]/).map(p => p.trim()).filter(Boolean);
+            parts.forEach((addr, index) => {
+                options.push({
+                    value: addr,
+                    label: index === 0 ? 'General email (prospect)' : 'Email ' + (index + 1),
+                    source: 'prospect'
+                });
+            });
+        }
+
+        // Company emails array
+        const companyEmails = Array.isArray(contact.companyEmails) ? contact.companyEmails : [];
+        companyEmails.filter(Boolean).forEach((addr, idx) => {
+            if (!options.find(e => e.value.toLowerCase() === addr.toLowerCase())) {
+                options.push({
+                    value: addr,
+                    label: `General ${idx + 1}`,
+                    source: 'prospect'
+                });
+            }
+        });
+
+        // Primary contact emails
+        const primaryEmails = Array.isArray(contact.primaryEmails) ? contact.primaryEmails : [];
+        const primaryName = contact.contactName || 'Primary Contact';
+        primaryEmails.filter(Boolean).forEach((addr, idx) => {
+            if (!options.find(e => e.value.toLowerCase() === addr.toLowerCase())) {
+                options.push({
+                    value: addr,
+                    label: `${primaryName}${idx > 0 ? ' (' + (idx + 1) + ')' : ''}`,
+                    source: 'primary'
+                });
+            }
+        });
+
+        // 2) People-level email(s)
+        if (Array.isArray(contact.people)) {
+            contact.people.forEach(person => {
+                if (!person) return;
+                const personEmails = Array.isArray(person.emails) ? person.emails : (person.email ? [person.email] : []);
+                personEmails.filter(Boolean).forEach((addr, index) => {
+                    if (!options.find(e => e.value.toLowerCase() === addr.toLowerCase())) {
+                        options.push({
+                            value: addr,
+                            label: (person.name || person.contactName || 'Contact') +
+                                (personEmails.length > 1 ? ' (' + (index + 1) + ')' : ''),
+                            source: 'person'
+                        });
+                    }
+                });
+            });
+        }
+
+        // Remove duplicates
+        const seen = new Set();
+        return options.filter(opt => {
+            const k = opt.value.toLowerCase();
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+        });
+    }
+
+    /**
+     * Get the primary website URL for the active prospect
+     */
+    getPrimaryWebsiteForActiveProspect() {
+        const contact = this.getActiveContact?.() || this.currentContact;
+        if (!contact || !contact.website) return null;
+        let url = String(contact.website).trim();
+        if (!/^https?:\/\//i.test(url)) {
+            url = 'https://' + url;
+        }
+        return url;
+    }
+
+    /**
+     * Handle Call channel button
+     */
+    handleCallChannel() {
+        const options = this.getAllPhoneOptionsForActiveProspect();
+        if (!options.length) {
+            console.warn('No phone numbers for this prospect.');
+            return;
+        }
+        if (options.length === 1) {
+            const num = options[0].value;
+            window.location.href = 'tel:' + num.replace(/\s+/g, '');
+            return;
+        }
+        this.openChannelSheet(options, 'Choose number', (opt) => {
+            const num = opt.value;
+            window.location.href = 'tel:' + num.replace(/\s+/g, '');
+        });
+    }
+
+    /**
+     * Handle Message channel button
+     */
+    handleMessageChannel() {
+        const options = this.getAllPhoneOptionsForActiveProspect();
+        if (!options.length) {
+            console.warn('No phone numbers for this prospect.');
+            return;
+        }
+        if (options.length === 1) {
+            const num = options[0].value;
+            window.location.href = 'sms:' + num.replace(/\s+/g, '');
+            return;
+        }
+        this.openChannelSheet(options, 'Choose number', (opt) => {
+            const num = opt.value;
+            window.location.href = 'sms:' + num.replace(/\s+/g, '');
+        });
+    }
+
+    /**
+     * Handle Email channel button
+     */
+    handleEmailChannel() {
+        const options = this.getAllEmailOptionsForActiveProspect();
+        if (!options.length) {
+            console.warn('No emails for this prospect.');
+            return;
+        }
+        if (options.length === 1) {
+            const addr = options[0].value;
+            window.location.href = 'mailto:' + addr;
+            return;
+        }
+        this.openChannelSheet(options, 'Choose email', (opt) => {
+            const addr = opt.value;
+            window.location.href = 'mailto:' + addr;
+        });
+    }
+
+    /**
+     * Handle Website channel button
+     */
+    handleWebsiteChannel() {
+        const url = this.getPrimaryWebsiteForActiveProspect();
+        if (!url) {
+            console.warn('No website for this prospect.');
+            return;
+        }
+        window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
+    /**
+     * Bind channel buttons to their handlers
+     * Called after rendering prospect profile
+     */
+    bindChannelButtons() {
+        const callBtn = document.getElementById('channel-call');
+        const msgBtn = document.getElementById('channel-message');
+        const emailBtn = document.getElementById('channel-email');
+        const webBtn = document.getElementById('channel-website');
+
+        if (callBtn) {
+            callBtn.onclick = () => this.handleCallChannel();
+        }
+        if (msgBtn) {
+            msgBtn.onclick = () => this.handleMessageChannel();
+        }
+        if (emailBtn) {
+            emailBtn.onclick = () => this.handleEmailChannel();
+        }
+        if (webBtn) {
+            webBtn.onclick = () => this.handleWebsiteChannel();
+        }
+    }
+
+    /**
+     * Handle channel click with multi-option support (legacy)
+     */
+    handleChannelClick(type, contact) {
+        if (type === 'call') {
+            this.handleCallChannel();
+        } else if (type === 'message') {
+            this.handleMessageChannel();
+        } else if (type === 'email') {
+            this.handleEmailChannel();
+        } else if (type === 'website') {
+            this.handleWebsiteChannel();
+        }
+    }
+
     renderDetailsGroups(contact, helpers) {
         const { displayCompany, displayContact, displayTitle, primaryEmail, websiteHref, fullAddress } = helpers;
 
@@ -4140,21 +4636,14 @@ AdSell.ai`,
         const metaParts = [];
         if (contact.category) metaParts.push(contact.category);
         if (contact.segment) metaParts.push(contact.segment);
-        if (contact.project) metaParts.push(contact.project);
-        if (contact.status) metaParts.push(contact.status);
         const metaLine = metaParts.join(' • ');
 
-        const emailString = contact.email || '';
-        const emailParts = emailString
-            ? emailString.split(/[;,]/).map(e => e.trim()).filter(Boolean)
-            : [];
-        const primaryEmail = emailParts[0] || '';
-
-        const phoneString = contact.phone || '';
-        const phoneParts = phoneString
-            ? phoneString.split(/[;,]/).map(p => p.trim()).filter(Boolean)
-            : [];
-        const primaryPhone = phoneParts[0] || '';
+        // Normalize all contact data
+        const allPhones = this.normalizeContactPhones(contact);
+        const allEmails = this.normalizeContactEmails(contact);
+        
+        const primaryEmail = allEmails[0]?.email || '';
+        const primaryPhone = allPhones[0]?.number || '';
         const telHref = primaryPhone ? primaryPhone.replace(/[^0-9+]/g, '') : '';
 
         const addressParts = [
@@ -4189,24 +4678,24 @@ AdSell.ai`,
         const todayTasks = tasks.filter(t => t.dueDate === todayKey && t.status !== 'completed');
         const upcomingTasks = tasks.filter(t => t.dueDate && t.dueDate > todayKey && t.status !== 'completed');
 
-        const renderTaskGroup = (label, group) => {
+        const renderTaskGroup = (label, group, colorClass = '') => {
             if (!group.length) return '';
             return `
-                <div class="prospect-task-group">
-                    <div class="prospect-task-meta">${label}</div>
+                <div class="prospect-task-group ${colorClass}">
+                    <div class="prospect-task-group-label">${label}</div>
                     <div class="prospect-tasks-list">
                         ${group.map(t => {
                             const dueLabel = t.dueDate ? this.formatDate(t.dueDate) : 'No due date';
                             return `
                                 <div class="prospect-task-item">
-                                    <div class="prospect-task-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                    <div class="prospect-task-checkbox">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="9"/>
                                         </svg>
                                     </div>
                                     <div class="prospect-task-main">
-                                        <div class="text-body-strong">${t.title}</div>
-                                        <div class="prospect-task-meta">${dueLabel}</div>
+                                        <div class="prospect-task-title">${this.escapeHtml(t.title)}</div>
+                                        <div class="prospect-task-due">${dueLabel}</div>
                                     </div>
                                 </div>
                             `;
@@ -4229,92 +4718,264 @@ AdSell.ai`,
             return `https://x.com/${handle}`;
         })();
 
-        // Generate messaging channel links
-        const messageUrl = this.getMessageLink(contact);  // Unified Message (iMessage on Apple, SMS elsewhere)
-        const whatsAppUrl = this.getWhatsAppLink(contact); // Only shows if contact.hasWhatsApp === true
-        const fbMessageUrl = this.getFacebookMessageLink(contact);
+        // Check if we have any channels to show
+        const hasChannels = allPhones.length > 0 || allEmails.length > 0 || websiteHref;
 
+        // Build Channels card HTML with multi-select buttons
         const channelsHtml = `
-            <div class="prospect-channels">
-                ${primaryPhone ? `
-                    <a href="tel:${telHref}" class="prospect-channel-btn" aria-label="Call ${displayContact || primaryName}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M2.25 6.75c0 8.284 6.716 15 15 15h1.5a2.25 2.25 0 0 0 2.25-2.25v-1.086c0-.516-.351-.966-.852-1.091l-3.423-.856a1.125 1.125 0 0 0-1.173.417l-.97 1.293a1.125 1.125 0 0 1-1.21.38 12.035 12.035 0 0 1-7.143-7.143 1.125 1.125 0 0 1 .38-1.21l1.293-.97a1.125 1.125 0 0 0 .417-1.173L7.677 3.102A1.125 1.125 0 0 0 6.586 2.25H5.25A3 3 0 0 0 2.25 5.25v1.5Z" />
-                        </svg>
-                        <span class="prospect-channel-label">Call</span>
-                    </a>
+            <div class="prospect-channels-grid">
+                <button type="button" class="prospect-channel-btn ${allPhones.length === 0 ? 'disabled' : ''}" id="channel-call" ${allPhones.length === 0 ? 'disabled' : ''}>
+                    <svg class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2.25 6.75c0 8.284 6.716 15 15 15h1.5a2.25 2.25 0 0 0 2.25-2.25v-1.086c0-.516-.351-.966-.852-1.091l-3.423-.856a1.125 1.125 0 0 0-1.173.417l-.97 1.293a1.125 1.125 0 0 1-1.21.38 12.035 12.035 0 0 1-7.143-7.143 1.125 1.125 0 0 1 .38-1.21l1.293-.97a1.125 1.125 0 0 0 .417-1.173L7.677 3.102A1.125 1.125 0 0 0 6.586 2.25H5.25A3 3 0 0 0 2.25 5.25v1.5Z"/>
+                    </svg>
+                    <span class="prospect-channel-label">Call</span>
+                </button>
+                <button type="button" class="prospect-channel-btn ${allPhones.length === 0 ? 'disabled' : ''}" id="channel-message" ${allPhones.length === 0 ? 'disabled' : ''}>
+                    <svg class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 21c5.523 0 10-4.03 10-9s-4.477-9-10-9S2 7.03 2 12c0 2.14.832 4.1 2.217 5.6L3 21l4.163-1.325A10.68 10.68 0 0 0 12 21Z"/>
+                    </svg>
+                    <span class="prospect-channel-label">Message</span>
+                </button>
+                <button type="button" class="prospect-channel-btn ${allEmails.length === 0 ? 'disabled' : ''}" id="channel-email" ${allEmails.length === 0 ? 'disabled' : ''}>
+                    <svg class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.75 6.75v10.5A2.25 2.25 0 0 1 19.5 19.5h-15A2.25 2.25 0 0 1 2.25 17.25V6.75A2.25 2.25 0 0 1 4.5 4.5h15A2.25 2.25 0 0 1 21.75 6.75Z"/>
+                        <path d="M5.25 6.75 12 12l6.75-5.25"/>
+                    </svg>
+                    <span class="prospect-channel-label">Email</span>
+                </button>
+                <button type="button" class="prospect-channel-btn ${!websiteHref ? 'disabled' : ''}" id="channel-website" ${!websiteHref ? 'disabled' : ''}>
+                    <svg class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"/>
+                        <path d="M3.6 9h16.8M3.6 15h16.8M12 3a15.3 15.3 0 0 1 4.5 9A15.3 15.3 0 0 1 12 21a15.3 15.3 0 0 1-4.5-9A15.3 15.3 0 0 1 12 3Z"/>
+                    </svg>
+                    <span class="prospect-channel-label">Website</span>
+                </button>
+            </div>
+        `;
+
+        // Build Prospect Info card
+        const prospectInfoHtml = `
+            <div class="info-rows">
+                ${contact.category ? `
+                    <div class="info-row">
+                        <div class="info-label">Category</div>
+                        <div class="info-value">${this.escapeHtml(contact.category)}</div>
+                    </div>
                 ` : ''}
-                ${messageUrl ? `
-                    <a href="${messageUrl}" class="prospect-channel-btn prospect-channel-message" aria-label="Message ${displayContact || primaryName}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 21c5.523 0 10-4.03 10-9s-4.477-9-10-9S2 7.03 2 12c0 2.14.832 4.1 2.217 5.6L3 21l4.163-1.325A10.68 10.68 0 0 0 12 21Z" />
-                        </svg>
-                        <span class="prospect-channel-label">Message</span>
-                    </a>
+                ${contact.segment ? `
+                    <div class="info-row">
+                        <div class="info-label">Segment</div>
+                        <div class="info-value">${this.escapeHtml(contact.segment)}</div>
+                    </div>
                 ` : ''}
-                ${whatsAppUrl ? `
-                    <a href="${whatsAppUrl}" target="_blank" rel="noopener noreferrer" class="prospect-channel-btn prospect-channel-whatsapp" aria-label="WhatsApp ${displayContact || primaryName}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
-                        </svg>
-                        <span class="prospect-channel-label">WhatsApp</span>
-                    </a>
+                ${contact.project ? `
+                    <div class="info-row">
+                        <div class="info-label">Project</div>
+                        <div class="info-value">${this.escapeHtml(contact.project)}</div>
+                    </div>
                 ` : ''}
-                ${primaryEmail ? `
-                    <a href="mailto:${primaryEmail}" class="prospect-channel-btn" aria-label="Email ${displayContact || primaryName}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21.75 6.75v10.5A2.25 2.25 0 0 1 19.5 19.5h-15A2.25 2.25 0 0 1 2.25 17.25V6.75A2.25 2.25 0 0 1 4.5 4.5h15A2.25 2.25 0 0 1 21.75 6.75Z" />
-                            <path d="M5.25 6.75 12 12l6.75-5.25" />
-                        </svg>
-                        <span class="prospect-channel-label">Email</span>
-                    </a>
-                ` : ''}
-                ${fbMessageUrl ? `
-                    <a href="${fbMessageUrl}" target="_blank" rel="noopener noreferrer" class="prospect-channel-btn prospect-channel-messenger" aria-label="Facebook Message ${displayContact || primaryName}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.906 1.437 5.502 3.686 7.202V22l3.397-1.866c.905.251 1.867.387 2.917.387 5.523 0 10-4.145 10-9.243S17.523 2 12 2Zm.995 12.442-2.548-2.72-4.973 2.72 5.47-5.806 2.611 2.72 4.909-2.72-5.469 5.806Z"/>
-                        </svg>
-                        <span class="prospect-channel-label">Messenger</span>
-                    </a>
-                ` : ''}
-                ${websiteHref ? `
-                    <a href="${websiteHref}" target="_blank" rel="noopener noreferrer" class="prospect-channel-btn" aria-label="Open website">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
-                            <path d="M3.6 9h16.8M3.6 15h16.8M12 3a15.3 15.3 0 0 1 4.5 9A15.3 15.3 0 0 1 12 21a15.3 15.3 0 0 1-4.5-9A15.3 15.3 0 0 1 12 3Z" />
-                        </svg>
-                        <span class="prospect-channel-label">Website</span>
-                    </a>
-                ` : ''}
-                ${mapsHref ? `
-                    <a href="${mapsHref}" target="_blank" rel="noopener noreferrer" class="prospect-channel-btn" aria-label="Open maps">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="prospect-channel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 21.75s-6.75-4.5-6.75-10.125A6.75 6.75 0 0 1 12 4.125a6.75 6.75 0 0 1 6.75 7.5C18.75 17.25 12 21.75 12 21.75Z" />
-                            <path d="M12 13.5a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z" />
-                        </svg>
-                        <span class="prospect-channel-label">Map</span>
-                    </a>
-                ` : ''}
-                ${linkedinHref ? `
-                    <a href="${linkedinHref}" target="_blank" rel="noopener noreferrer" class="prospect-channel-btn" aria-label="Open LinkedIn">
-                        <img src="icons/linkedin-icon.svg" alt="" class="channel-icon" />
-                        <span class="prospect-channel-label">LinkedIn</span>
-                    </a>
-                ` : ''}
-                ${facebookHref ? `
-                    <a href="${facebookHref}" target="_blank" rel="noopener noreferrer" class="prospect-channel-btn" aria-label="Open Facebook">
-                        <img src="icons/facebook-icon.svg" alt="" class="channel-icon" />
-                        <span class="prospect-channel-label">Facebook</span>
-                    </a>
-                ` : ''}
-                ${twitterHref ? `
-                    <a href="${twitterHref}" target="_blank" rel="noopener noreferrer" class="prospect-channel-btn" aria-label="Open X (Twitter)">
-                        <img src="icons/x-icon.svg" alt="" class="channel-icon" />
-                        <span class="prospect-channel-label">X</span>
-                    </a>
+                ${contact.leadSource ? `
+                    <div class="info-row">
+                        <div class="info-label">Lead Source</div>
+                        <div class="info-value">${this.escapeHtml(contact.leadSource)}</div>
+                    </div>
                 ` : ''}
             </div>
         `;
+
+        // Build Contact Information card (org-level)
+        const orgEmails = allEmails.filter(e => e.source === 'org');
+        const orgPhones = allPhones.filter(p => p.source === 'org');
+        
+        let contactInfoHtml = '<div class="contact-info-sections">';
+        
+        // Emails section
+        if (orgEmails.length > 0) {
+            contactInfoHtml += `
+                <div class="contact-info-section">
+                    <div class="contact-info-section-label">Emails</div>
+                    ${orgEmails.map(e => `
+                        <a href="mailto:${this.escapeHtml(e.email)}" class="contact-info-row clickable">
+                            <svg class="contact-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21.75 6.75v10.5A2.25 2.25 0 0 1 19.5 19.5h-15A2.25 2.25 0 0 1 2.25 17.25V6.75A2.25 2.25 0 0 1 4.5 4.5h15A2.25 2.25 0 0 1 21.75 6.75Z"/>
+                                <path d="M5.25 6.75 12 12l6.75-5.25"/>
+                            </svg>
+                            <span class="contact-info-text">${this.escapeHtml(e.email)}</span>
+                            <svg class="contact-info-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="m9 18 6-6-6-6"/>
+                            </svg>
+                        </a>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        // Phone Numbers section
+        if (orgPhones.length > 0) {
+            contactInfoHtml += `
+                <div class="contact-info-section">
+                    <div class="contact-info-section-label">Phone Numbers</div>
+                    ${orgPhones.map(p => `
+                        <a href="tel:${p.number.replace(/[^0-9+]/g, '')}" class="contact-info-row clickable">
+                            <svg class="contact-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M2.25 6.75c0 8.284 6.716 15 15 15h1.5a2.25 2.25 0 0 0 2.25-2.25v-1.086c0-.516-.351-.966-.852-1.091l-3.423-.856a1.125 1.125 0 0 0-1.173.417l-.97 1.293a1.125 1.125 0 0 1-1.21.38 12.035 12.035 0 0 1-7.143-7.143 1.125 1.125 0 0 1 .38-1.21l1.293-.97a1.125 1.125 0 0 0 .417-1.173L7.677 3.102A1.125 1.125 0 0 0 6.586 2.25H5.25A3 3 0 0 0 2.25 5.25v1.5Z"/>
+                            </svg>
+                            <div class="contact-info-text-group">
+                                <span class="contact-info-text">${this.escapeHtml(p.number)}</span>
+                                ${p.label !== 'Main' ? `<span class="contact-info-sublabel">${this.escapeHtml(p.label)}</span>` : ''}
+                            </div>
+                            <svg class="contact-info-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="m9 18 6-6-6-6"/>
+                            </svg>
+                        </a>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        // Location section
+        if (fullAddress) {
+            contactInfoHtml += `
+                <div class="contact-info-section">
+                    <div class="contact-info-section-label">Location</div>
+                    <div class="contact-info-row">
+                        <svg class="contact-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M12 21.75s-6.75-4.5-6.75-10.125A6.75 6.75 0 0 1 12 4.125a6.75 6.75 0 0 1 6.75 7.5C18.75 17.25 12 21.75 12 21.75Z"/>
+                            <path d="M12 13.5a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z"/>
+                        </svg>
+                        <span class="contact-info-text">${this.escapeHtml(fullAddress)}</span>
+                    </div>
+                    ${mapsHref ? `
+                        <a href="${mapsHref}" target="_blank" rel="noopener noreferrer" class="contact-info-link">
+                            Open in Maps →
+                        </a>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        // Website section
+        if (websiteHref) {
+            const displayUrl = websiteHref.replace(/^https?:\/\//, '').replace(/\/$/, '');
+            contactInfoHtml += `
+                <div class="contact-info-section">
+                    <div class="contact-info-section-label">Website</div>
+                    <a href="${websiteHref}" target="_blank" rel="noopener noreferrer" class="contact-info-row clickable">
+                        <svg class="contact-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"/>
+                            <path d="M3.6 9h16.8M3.6 15h16.8M12 3a15.3 15.3 0 0 1 4.5 9A15.3 15.3 0 0 1 12 21a15.3 15.3 0 0 1-4.5-9A15.3 15.3 0 0 1 12 3Z"/>
+                        </svg>
+                        <span class="contact-info-text">${this.escapeHtml(displayUrl)}</span>
+                        <svg class="contact-info-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m9 18 6-6-6-6"/>
+                        </svg>
+                    </a>
+                </div>
+            `;
+        }
+        
+        // Social links
+        const socialLinks = [];
+        if (linkedinHref) socialLinks.push({ href: linkedinHref, label: 'LinkedIn', icon: 'icons/linkedin-icon.svg' });
+        if (facebookHref) socialLinks.push({ href: facebookHref, label: 'Facebook', icon: 'icons/facebook-icon.svg' });
+        if (twitterHref) socialLinks.push({ href: twitterHref, label: 'X (Twitter)', icon: 'icons/x-icon.svg' });
+        
+        if (socialLinks.length > 0) {
+            contactInfoHtml += `
+                <div class="contact-info-section">
+                    <div class="contact-info-section-label">Social</div>
+                    <div class="contact-info-social-row">
+                        ${socialLinks.map(s => `
+                            <a href="${s.href}" target="_blank" rel="noopener noreferrer" class="contact-info-social-btn" aria-label="${s.label}">
+                                <img src="${s.icon}" alt="" class="contact-info-social-icon" />
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        contactInfoHtml += '</div>';
+        
+        const hasContactInfo = orgEmails.length > 0 || orgPhones.length > 0 || fullAddress || websiteHref || socialLinks.length > 0;
+
+        // Build People card
+        const people = Array.isArray(contact.people) ? contact.people : [];
+        // Also include primary contact as a "person" if they have name
+        const allPeople = [];
+        if (displayContact) {
+            const primaryEmails = allEmails.filter(e => e.source === 'primary').map(e => e.email);
+            const primaryPhones = allPhones.filter(p => p.source === 'primary').map(p => p.number);
+            allPeople.push({
+                name: displayContact,
+                role: displayTitle,
+                emails: primaryEmails.length > 0 ? primaryEmails : (primaryEmail && !orgEmails.find(e => e.email === primaryEmail) ? [primaryEmail] : []),
+                phones: primaryPhones,
+                linkedin: contact.linkedin || '',
+                isPrimary: true
+            });
+        }
+        people.forEach(p => {
+            allPeople.push({
+                name: p.name || '',
+                role: p.role || '',
+                emails: Array.isArray(p.emails) ? p.emails : (p.email ? [p.email] : []),
+                phones: Array.isArray(p.phones) ? p.phones : (p.phone ? [p.phone] : []),
+                linkedin: p.linkedin || '',
+                isPrimary: false
+            });
+        });
+
+        let peopleHtml = '';
+        if (allPeople.length > 0) {
+            peopleHtml = `
+                <div class="people-list">
+                    ${allPeople.map(person => `
+                        <div class="person-card ${person.isPrimary ? 'person-card-primary' : ''}">
+                            <div class="person-header">
+                                <div class="person-avatar">
+                                    ${(person.name || '?').charAt(0).toUpperCase()}
+                                </div>
+                                <div class="person-info">
+                                    <div class="person-name">${this.escapeHtml(person.name || 'Unknown')}</div>
+                                    ${person.role ? `<div class="person-role">${this.escapeHtml(person.role)}</div>` : ''}
+                                    ${person.isPrimary ? `<span class="person-badge">Primary</span>` : ''}
+                                </div>
+                            </div>
+                            ${person.emails.length > 0 || person.phones.length > 0 || person.linkedin ? `
+                                <div class="person-contact-list">
+                                    ${person.emails.map(email => `
+                                        <a href="mailto:${this.escapeHtml(email)}" class="person-contact-row">
+                                            <svg class="person-contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                <path d="M21.75 6.75v10.5A2.25 2.25 0 0 1 19.5 19.5h-15A2.25 2.25 0 0 1 2.25 17.25V6.75A2.25 2.25 0 0 1 4.5 4.5h15A2.25 2.25 0 0 1 21.75 6.75Z"/>
+                                                <path d="M5.25 6.75 12 12l6.75-5.25"/>
+                                            </svg>
+                                            <span>${this.escapeHtml(email)}</span>
+                                        </a>
+                                    `).join('')}
+                                    ${person.phones.map(phone => `
+                                        <a href="tel:${phone.replace(/[^0-9+]/g, '')}" class="person-contact-row">
+                                            <svg class="person-contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                <path d="M2.25 6.75c0 8.284 6.716 15 15 15h1.5a2.25 2.25 0 0 0 2.25-2.25v-1.086c0-.516-.351-.966-.852-1.091l-3.423-.856a1.125 1.125 0 0 0-1.173.417l-.97 1.293a1.125 1.125 0 0 1-1.21.38 12.035 12.035 0 0 1-7.143-7.143 1.125 1.125 0 0 1 .38-1.21l1.293-.97a1.125 1.125 0 0 0 .417-1.173L7.677 3.102A1.125 1.125 0 0 0 6.586 2.25H5.25A3 3 0 0 0 2.25 5.25v1.5Z"/>
+                                            </svg>
+                                            <span>${this.escapeHtml(phone)}</span>
+                                        </a>
+                                    `).join('')}
+                                    ${person.linkedin ? `
+                                        <a href="${normalizeWebUrl(person.linkedin)}" target="_blank" rel="noopener noreferrer" class="person-contact-row">
+                                            <img src="icons/linkedin-icon.svg" alt="" class="person-contact-icon-img" />
+                                            <span>LinkedIn Profile</span>
+                                        </a>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            peopleHtml = `<p class="empty-state">No people added yet.</p>`;
+        }
 
         const activitiesHtml = activities.length
             ? `
@@ -4323,28 +4984,28 @@ AdSell.ai`,
                         const icon = (() => {
                             const type = (a.type || '').toLowerCase();
                             if (type.includes('email')) return `
-                                <svg xmlns="http://www.w3.org/2000/svg" class="prospect-activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21.75 6.75v10.5A2.25 2.25 0 0 1 19.5 19.5h-15A2.25 2.25 0 0 1 2.25 17.25V6.75A2.25 2.25 0 0 1 4.5 4.5h15A2.25 2.25 0 0 1 21.75 6.75Z" />
-                                    <path d="M5.25 6.75 12 12l6.75-5.25" />
+                                <svg class="prospect-activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21.75 6.75v10.5A2.25 2.25 0 0 1 19.5 19.5h-15A2.25 2.25 0 0 1 2.25 17.25V6.75A2.25 2.25 0 0 1 4.5 4.5h15A2.25 2.25 0 0 1 21.75 6.75Z"/>
+                                    <path d="M5.25 6.75 12 12l6.75-5.25"/>
                                 </svg>`;
                             if (type.includes('phone') || type.includes('call')) return `
-                                <svg xmlns="http://www.w3.org/2000/svg" class="prospect-activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M2.25 6.75c0 8.284 6.716 15 15 15h1.5a2.25 2.25 0 0 0 2.25-2.25v-1.086c0-.516-.351-.966-.852-1.091l-3.423-.856a1.125 1.125 0 0 0-1.173.417l-.97 1.293a1.125 1.125 0 0 1-1.21.38 12.035 12.035 0 0 1-7.143-7.143 1.125 1.125 0 0 1 .38-1.21l1.293-.97a1.125 1.125 0 0 0 .417-1.173L7.677 3.102A1.125 1.125 0 0 0 6.586 2.25H5.25A3 3 0 0 0 2.25 5.25v1.5Z" />
+                                <svg class="prospect-activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2.25 6.75c0 8.284 6.716 15 15 15h1.5a2.25 2.25 0 0 0 2.25-2.25v-1.086c0-.516-.351-.966-.852-1.091l-3.423-.856a1.125 1.125 0 0 0-1.173.417l-.97 1.293a1.125 1.125 0 0 1-1.21.38 12.035 12.035 0 0 1-7.143-7.143 1.125 1.125 0 0 1 .38-1.21l1.293-.97a1.125 1.125 0 0 0 .417-1.173L7.677 3.102A1.125 1.125 0 0 0 6.586 2.25H5.25A3 3 0 0 0 2.25 5.25v1.5Z"/>
                                 </svg>`;
                             return `
-                                <svg xmlns="http://www.w3.org/2000/svg" class="prospect-activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M5.25 5.25h13.5v13.5H5.25z" />
+                                <svg class="prospect-activity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M16.862 3.487a2.25 2.25 0 0 1 3.182 3.182L8.999 17.714 5.25 18.75l1.036-3.75 10.576-11.513Z"/>
                                 </svg>`;
                         })();
                         return `
                             <div class="prospect-activity-item">
-                                <div class="prospect-activity-icon">
+                                <div class="prospect-activity-icon-wrap">
                                     ${icon}
                                 </div>
                                 <div class="prospect-activity-main">
-                                    <div class="text-body-strong">${a.type || 'Activity'}</div>
+                                    <div class="prospect-activity-title">${this.escapeHtml(a.type || 'Activity')}</div>
                                     <div class="prospect-activity-meta">${this.formatDate(a.date)}</div>
-                                    <div class="text-body">${this.truncateText(a.notes || '', 140)}</div>
+                                    ${a.notes ? `<div class="prospect-activity-notes">${this.escapeHtml(this.truncateText(a.notes, 140))}</div>` : ''}
                                 </div>
                             </div>
                         `;
@@ -4355,89 +5016,76 @@ AdSell.ai`,
 
         const tasksHtml = (overdueTasks.length || todayTasks.length || upcomingTasks.length)
             ? `
-                ${renderTaskGroup('Overdue', overdueTasks)}
-                ${renderTaskGroup('Today', todayTasks)}
-                ${renderTaskGroup('Upcoming', upcomingTasks)}
+                ${renderTaskGroup('Overdue', overdueTasks, 'task-group-overdue')}
+                ${renderTaskGroup('Today', todayTasks, 'task-group-today')}
+                ${renderTaskGroup('Upcoming', upcomingTasks, 'task-group-upcoming')}
             `
-            : `<p class="empty-state"><span class="prospect-empty-title">No tasks yet.</span><br/><span class="prospect-empty-sub">Add a follow-up so you don’t lose this lead.</span></p>`;
+            : `<p class="empty-state"><span class="prospect-empty-title">No tasks yet.</span><br/><span class="prospect-empty-sub">Add a follow-up so you don't lose this lead.</span></p>`;
 
         container.innerHTML = `
             <!-- Header card -->
             <article class="card prospect-card prospect-profile-header-card">
                 <div class="prospect-header-top">
-                    <button
-                        type="button"
-                        class="prospect-back-link"
-                        data-role="back-to-contacts"
-                    >
+                    <button type="button" class="prospect-back-link" data-role="back-to-contacts">
                         ← Contacts
                     </button>
-                    <button
-                        type="button"
-                        class="icon-button"
-                        data-role="edit-prospect"
-                        aria-label="Edit prospect"
-                    >
-                        <svg
-                            class="icon-16"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path d="M16.862 3.487a2.25 2.25 0 0 1 3.182 3.182L8.999 17.714 5.25 18.75l1.036-3.75 10.576-11.513Z" />
-                            <path d="M19.5 10.5v9.75A1.75 1.75 0 0 1 17.75 22H4.75A1.75 1.75 0 0 1 3 20.25V7.25A1.75 1.75 0 0 1 4.75 5.5h9.75" />
+                    <button type="button" class="icon-button" data-role="edit-prospect" aria-label="Edit prospect">
+                        <svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16.862 3.487a2.25 2.25 0 0 1 3.182 3.182L8.999 17.714 5.25 18.75l1.036-3.75 10.576-11.513Z"/>
+                            <path d="M19.5 10.5v9.75A1.75 1.75 0 0 1 17.75 22H4.75A1.75 1.75 0 0 1 3 20.25V7.25A1.75 1.75 0 0 1 4.75 5.5h9.75"/>
                         </svg>
                     </button>
                 </div>
                 <div class="overline-label">PROSPECT</div>
-                <h2 class="heading-h2 prospect-title">${primaryName}</h2>
-                ${secondaryLine ? `<p class="prospect-subtitle">${secondaryLine}</p>` : ''}
-                ${metaLine ? `<div class="prospect-meta">${metaLine}</div>` : ''}
+                <h2 class="heading-h2 prospect-title">${this.escapeHtml(primaryName)}</h2>
+                ${secondaryLine ? `<p class="prospect-subtitle">${this.escapeHtml(secondaryLine)}</p>` : ''}
                 <div class="prospect-chips">
-                    ${contact.status ? `<span class="chip chip-status">${contact.status}</span>` : ''}
-                    ${contact.category ? `<span class="chip chip-category">${contact.category}</span>` : ''}
+                    ${contact.status ? `<span class="chip chip-status">${this.escapeHtml(contact.status)}</span>` : ''}
+                    ${contact.category ? `<span class="chip chip-category">${this.escapeHtml(contact.category)}</span>` : ''}
                 </div>
             </article>
 
             <!-- Channels card -->
             <article class="card prospect-card">
-                <div class="overline-label">CHANNELS</div>
+                <div class="prospect-section-header">
+                    <div class="overline-label">CHANNELS</div>
+                </div>
                 ${channelsHtml}
             </article>
 
-            <!-- Details card -->
+            <!-- Prospect Info card -->
             <article class="card prospect-card">
-                <div class="details-card-header">
-                    <div class="overline-label">DETAILS</div>
-                    <button
-                        type="button"
-                        class="btn btn-primary btn-sm"
-                        data-role="edit-prospect"
-                    >
-                        Edit
-                    </button>
+                <div class="prospect-section-header">
+                    <div class="overline-label">PROSPECT INFO</div>
                 </div>
-                
-                ${this.renderDetailsGroups(contact, {
-                    displayCompany,
-                    displayContact,
-                    displayTitle,
-                    primaryEmail,
-                    websiteHref,
-                    fullAddress
-                })}
+                ${prospectInfoHtml}
             </article>
 
-            <!-- AI & Prospect Intelligence card -->
+            <!-- Contact Information card -->
+            ${hasContactInfo ? `
+                <article class="card prospect-card">
+                    <div class="prospect-section-header">
+                        <div class="overline-label">CONTACT INFORMATION</div>
+                    </div>
+                    ${contactInfoHtml}
+                </article>
+            ` : ''}
+
+            <!-- People card -->
+            <article class="card prospect-card">
+                <div class="prospect-section-header">
+                    <div class="overline-label">PEOPLE</div>
+                    <button type="button" class="btn btn-sm btn-secondary" data-role="add-person">
+                        + Add Person
+                    </button>
+                </div>
+                ${peopleHtml}
+            </article>
+
+            <!-- AI Tools card -->
             <article class="card prospect-card ai-tools-card" id="prospect-enrichment-card">
                 <div class="prospect-section-header">
-                    <div>
-                        <div class="overline-label">AI TOOLS</div>
-                    </div>
+                    <div class="overline-label">AI TOOLS</div>
                 </div>
 
                 <!-- OpenAI Actions row -->
@@ -4449,13 +5097,7 @@ AdSell.ai`,
                         <span class="ai-subtitle-text">OpenAI Actions</span>
                     </div>
                     <div class="ai-actions-row">
-                        <button
-                            type="button"
-                            class="btn btn-ai btn-ai-secondary"
-                            id="btn-ai-company-research"
-                            data-action="ai-company-research"
-                            aria-label="Company Research"
-                        >
+                        <button type="button" class="btn btn-ai btn-ai-secondary" id="btn-ai-company-research" data-action="ai-company-research" aria-label="Company Research">
                             <span class="btn-icon">
                                 <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
                                     <path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l3.2 3.2a1 1 0 0 1-1.4 1.4l-3.2-3.2A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z" fill="currentColor"/>
@@ -4463,13 +5105,7 @@ AdSell.ai`,
                             </span>
                             <span class="btn-label">Company Research</span>
                         </button>
-                        <button
-                            type="button"
-                            class="btn btn-ai btn-ai-primary"
-                            id="btn-ai-outreach"
-                            data-action="ai-outreach"
-                            aria-label="Outreach"
-                        >
+                        <button type="button" class="btn btn-ai btn-ai-primary" id="btn-ai-outreach" data-action="ai-outreach" aria-label="Outreach">
                             <span class="btn-icon">
                                 <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
                                     <path d="M4 5.75A2.75 2.75 0 0 1 6.75 3h10.5A2.75 2.75 0 0 1 20 5.75v6.5A2.75 2.75 0 0 1 17.25 15H9.5l-2.7 2.7A1 1 0 0 1 5 17v-2.25A2.75 2.75 0 0 1 4 12.25v-6.5z" fill="currentColor"/>
@@ -4484,36 +5120,16 @@ AdSell.ai`,
                 <div class="ai-subsection ai-intel">
                     <div class="ai-intel-header">
                         <div class="ai-subtitle">Prospect Intelligence</div>
-                        <button
-                            type="button"
-                            class="ai-intel-refresh-btn"
-                            id="enrich-refresh-btn"
-                            title="Refresh intelligence"
-                            aria-label="Refresh prospect intelligence"
-                        >
+                        <button type="button" class="ai-intel-refresh-btn" id="enrich-refresh-btn" title="Refresh intelligence" aria-label="Refresh prospect intelligence">
                             <img src="icons/20-refresh.svg" alt="" class="ai-refresh-icon" aria-hidden="true" />
                         </button>
                     </div>
                     <div class="ai-intel-button-row">
-                        <button
-                            type="button"
-                            class="btn btn-intel btn-intel-primary"
-                            id="btn-enrich-perplexity"
-                            data-provider="perplexity"
-                            title="Use AI to complete missing fields and surface key contacts"
-                            aria-label="Prospect Insight"
-                        >
+                        <button type="button" class="btn btn-intel btn-intel-primary" id="btn-enrich-perplexity" data-provider="perplexity" title="Use AI to complete missing fields and surface key contacts" aria-label="Prospect Insight">
                             <img src="icons/white-perplexity-icon.svg" alt="" class="ai-intel-icon" aria-hidden="true" />
                             <span class="btn-label">Prospect Insight</span>
                         </button>
-                        <button
-                            type="button"
-                            class="btn btn-intel btn-intel-secondary"
-                            id="btn-enrich-grok"
-                            data-provider="grok"
-                            title="Use AI to deliver deeper organizational insight"
-                            aria-label="Full Insight"
-                        >
+                        <button type="button" class="btn btn-intel btn-intel-secondary" id="btn-enrich-grok" data-provider="grok" title="Use AI to deliver deeper organizational insight" aria-label="Full Insight">
                             <img src="icons/Grok-icon.svg" alt="" class="ai-intel-icon" aria-hidden="true" />
                             <span class="btn-label">Full Insight</span>
                         </button>
@@ -4530,14 +5146,8 @@ AdSell.ai`,
             <!-- Activity card -->
             <article class="card prospect-card">
                 <div class="prospect-section-header">
-                    <div>
-                        <div class="overline-label">ACTIVITY</div>
-                    </div>
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-role="log-activity"
-                    >
+                    <div class="overline-label">ACTIVITY</div>
+                    <button type="button" class="btn btn-secondary btn-sm" data-role="log-activity">
                         + Log Activity
                     </button>
                 </div>
@@ -4547,14 +5157,8 @@ AdSell.ai`,
             <!-- Tasks card -->
             <article class="card prospect-card">
                 <div class="prospect-section-header">
-                    <div>
-                        <div class="overline-label">TASKS</div>
-                    </div>
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-role="add-task"
-                    >
+                    <div class="overline-label">TASKS</div>
+                    <button type="button" class="btn btn-secondary btn-sm" data-role="add-task">
                         + Add Task
                     </button>
                 </div>
@@ -4592,6 +5196,9 @@ AdSell.ai`,
             });
         }
 
+        // Channel buttons with multi-select support
+        this.bindChannelButtons();
+
         // Activity / tasks actions
         const logActivityBtn = container.querySelector('[data-role="log-activity"]');
         if (logActivityBtn) {
@@ -4600,6 +5207,14 @@ AdSell.ai`,
         const addTaskBtn = container.querySelector('[data-role="add-task"]');
         if (addTaskBtn) {
             addTaskBtn.addEventListener('click', () => this.openTaskForContact(contact.id));
+        }
+
+        // Add Person button (open edit modal for now)
+        const addPersonBtn = container.querySelector('[data-role="add-person"]');
+        if (addPersonBtn) {
+            addPersonBtn.addEventListener('click', () => {
+                this.openContactSheet('edit', contact.id);
+            });
         }
 
         // AI & enrichment actions
