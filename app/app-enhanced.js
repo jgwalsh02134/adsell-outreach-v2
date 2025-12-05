@@ -579,6 +579,12 @@ class OutreachTracker {
         if (contactCancelBtn) {
             contactCancelBtn.addEventListener('click', () => this.closeContactModal());
         }
+        
+        // Close modal when clicking backdrop
+        const contactModalBackdrop = document.getElementById('contact-modal-backdrop');
+        if (contactModalBackdrop) {
+            contactModalBackdrop.addEventListener('click', () => this.closeContactModal());
+        }
 
         // Advanced toggle (new structure)
         const advToggle = document.getElementById('contact-advanced-toggle');
@@ -813,6 +819,16 @@ class OutreachTracker {
             this.tasks = [];
             this.projects = [];
         }
+        
+        // Normalize contacts to ensure array fields exist
+        (this.contacts || []).forEach(c => {
+            if (!Array.isArray(c.people)) c.people = [];
+            if (!Array.isArray(c.companyEmails)) c.companyEmails = [];
+            if (!Array.isArray(c.companyPhones)) c.companyPhones = [];
+            if (!Array.isArray(c.primaryEmails)) c.primaryEmails = [];
+            if (!Array.isArray(c.primaryPhones)) c.primaryPhones = [];
+        });
+        
         // Normalize projects collection to always be an array of Project objects
         if (!Array.isArray(this.projects)) {
             this.projects = [];
@@ -3205,8 +3221,8 @@ class OutreachTracker {
             // Safe value helper - ensures no undefined/null breaks serialization
             const safe = (v) => (v === undefined || v === null ? '' : v);
 
-            const contact = {
-                id: this.editingContactId || this.generateId(),
+        const contact = {
+            id: this.editingContactId || this.generateId(),
                 
                 // Organization info
                 vendorName: safe(formData.get('vendorName')),
@@ -3224,8 +3240,8 @@ class OutreachTracker {
                 // Org-level contact info
                 companyEmails: orgEmails,
                 companyPhones: orgPhones,
-                
-                // Business Info
+            
+            // Business Info
                 category: safe(formData.get('category')),
                 segment: safe(formData.get('segment')),
                 status: safe(formData.get('status')),
@@ -3239,31 +3255,31 @@ class OutreachTracker {
                 facebook: normalizeUrl(formData.get('facebook'), 'facebook.com'),
                 instagram: normalizeUrl(formData.get('instagram'), 'instagram.com'),
                 youtube: safe(formData.get('youtube')),
-                
-                // Address
+            
+            // Address
                 address: safe(formData.get('address')),
                 city: safe(formData.get('city')),
                 state: safe(formData.get('state')),
                 zipCode: safe(formData.get('zipCode')),
                 country: safe(formData.get('country')) || 'USA',
-                
-                // Deal Info
+            
+            // Deal Info
                 dealStage: safe(formData.get('dealStage')),
                 dealValue: safe(formData.get('dealValue')),
                 dealProbability: safe(formData.get('dealProbability')),
                 expectedCloseDate: safe(formData.get('expectedCloseDate')),
-                
-                // Decision Making
-                decisionMaker: formData.get('decisionMaker') === 'true',
+            
+            // Decision Making
+            decisionMaker: formData.get('decisionMaker') === 'true',
                 budget: safe(formData.get('budget')),
                 authority: safe(formData.get('authority')),
-                
-                // Notes & Tags
+            
+            // Notes & Tags
                 notes: safe(formData.get('notes')),
                 internalNotes: safe(formData.get('internalNotes')),
-                tags: selectedTags,
-                
-                // Tracking
+            tags: selectedTags,
+            
+            // Tracking
                 project: projectName,
                 leadSource: safe(formData.get('leadSource')) || 'Albany Ski Expo',
                 referredBy: safe(formData.get('referredBy')),

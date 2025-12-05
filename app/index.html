@@ -731,25 +731,26 @@
     </nav>
 
     <!-- Contact Sheet Modal (Add/Edit Prospect) -->
-    <div id="contact-modal" class="modal contact-sheet">
-        <div class="modal-content contact-modal-content">
-            <header class="modal-header contact-modal-header">
+    <div id="contact-modal" class="modal contact-sheet" aria-hidden="true">
+        <div class="modal-backdrop" id="contact-modal-backdrop"></div>
+        <div class="contact-modal-content">
+            <header class="contact-modal-header">
                 <h2 id="contact-modal-title">Edit Prospect</h2>
                 <button type="button" class="modal-close" id="contact-modal-close" aria-label="Close">&times;</button>
             </header>
 
             <form id="contact-form" class="contact-form">
-                <!-- 1. Organization -->
-                <section class="contact-section" id="section-organization">
-                    <div class="contact-section-header">Organization</div>
+                <!-- 1. Prospect Info -->
+                <section class="contact-section" id="section-prospect-info">
+                    <div class="contact-section-header">Prospect Info</div>
                     <div class="contact-form-grid">
                         <div class="form-group form-group-full">
-                            <label>Business / Organization Name *</label>
-                            <input type="text" name="vendorName" class="form-input" required>
+                            <label>Prospect Name *</label>
+                            <input type="text" name="vendorName" id="vendorName-input" class="form-input" required>
                         </div>
                         <div class="form-group">
                             <label>Website</label>
-                            <input type="url" name="website" class="form-input" placeholder="https://example.com">
+                            <input type="url" name="website" id="website-input" class="form-input" placeholder="https://example.com">
                         </div>
                         <div class="form-group">
                             <label for="project-select">Project / Campaign</label>
@@ -801,7 +802,7 @@
                         </div>
                         <div class="form-group">
                             <label>Status</label>
-                            <select name="status" class="form-input">
+                            <select name="status" id="status-select" class="form-input">
                                 <option value="Not Started">Not Started</option>
                                 <option value="In Progress">In Progress</option>
                                 <option value="Responded">Responded</option>
@@ -811,110 +812,116 @@
                     </div>
                 </section>
 
-                <!-- 2. Primary Contact -->
-                <section class="contact-section" id="section-primary-contact">
-                    <div class="contact-section-header">Primary Contact</div>
-                    <div class="contact-form-grid">
-                        <div class="form-group">
-                            <label>Name</label>
-                            <input type="text" name="contactName" class="form-input" placeholder="e.g., John Smith">
-                        </div>
-                        <div class="form-group">
-                            <label>Title / Role</label>
-                            <input type="text" name="title" class="form-input" placeholder="e.g., Marketing Director">
-                        </div>
-                    </div>
+                <!-- 2. Prospect Contact Info (Org-level) -->
+                <section class="contact-section" id="section-prospect-contact">
+                    <div class="contact-section-header">Prospect Contact Info</div>
+                    <p class="contact-section-subtext">General contact info for the organization (info@, main phone, socials).</p>
+                    
                     <div class="contact-subsection">
                         <div class="contact-subsection-label">Emails</div>
-                        <div id="primary-email-list"></div>
-                        <button type="button" class="btn btn-secondary btn-sm" id="primary-email-add-btn">+ Add email</button>
-                    </div>
-                    <div class="contact-subsection">
-                        <div class="contact-subsection-label">Phones</div>
-                        <div id="primary-phone-list"></div>
-                        <button type="button" class="btn btn-secondary btn-sm" id="primary-phone-add-btn">+ Add phone</button>
-                    </div>
-                </section>
-
-                <!-- 3. Other Contacts -->
-                <section class="contact-section" id="section-other-contacts">
-                    <div class="contact-section-header">Other Contacts (optional)</div>
-                    <p class="contact-section-subtext">Add other people at this organization (marketing, PR, partnerships, sales, etc.).</p>
-                    <div id="extra-contacts-list"></div>
-                    <button type="button" class="btn btn-secondary btn-sm" id="extra-contact-add-btn">+ Add Person</button>
-                </section>
-
-                <!-- 4. Organization Contact Info -->
-                <section class="contact-section" id="section-org-contact-info">
-                    <div class="contact-section-header">Organization Contact Info</div>
-                    <p class="contact-section-subtext">General contact info for the organization (info@, main phone, etc.).</p>
-                    <div class="contact-subsection">
-                        <div class="contact-subsection-label">Org Emails</div>
                         <div id="org-email-list"></div>
                         <button type="button" class="btn btn-secondary btn-sm" id="org-email-add-btn">+ Add email</button>
                     </div>
+                    
                     <div class="contact-subsection">
-                        <div class="contact-subsection-label">Org Phones</div>
+                        <div class="contact-subsection-label">Phones</div>
                         <div id="org-phone-list"></div>
                         <button type="button" class="btn btn-secondary btn-sm" id="org-phone-add-btn">+ Add phone</button>
                     </div>
-                </section>
-
-                <!-- 5. Social Links -->
-                <section class="contact-section" id="section-social">
-                    <div class="contact-section-header">Social Links</div>
-                    <div class="contact-form-grid">
-                        <div class="form-group">
-                            <label>LinkedIn</label>
-                            <input type="url" name="linkedin" class="form-input" placeholder="https://linkedin.com/company/...">
-                        </div>
-                        <div class="form-group">
-                            <label>Facebook</label>
-                            <input type="url" name="facebook" class="form-input" placeholder="https://facebook.com/...">
-                        </div>
-                        <div class="form-group">
-                            <label>Instagram</label>
-                            <input type="text" name="instagram" class="form-input" placeholder="@username or URL">
-                        </div>
-                        <div class="form-group">
-                            <label>X (Twitter)</label>
-                            <input type="text" name="twitter" class="form-input" placeholder="@username or URL">
-                        </div>
-                        <div class="form-group form-group-full">
-                            <label>YouTube</label>
-                            <input type="url" name="youtube" class="form-input" placeholder="https://youtube.com/@...">
+                    
+                    <div class="contact-subsection">
+                        <div class="contact-subsection-label">Social Links</div>
+                        <div class="contact-form-grid">
+                            <div class="form-group">
+                                <label>LinkedIn</label>
+                                <input type="url" name="linkedin" id="linkedin-input" class="form-input" placeholder="https://linkedin.com/company/...">
+                            </div>
+                            <div class="form-group">
+                                <label>Facebook</label>
+                                <input type="url" name="facebook" id="facebook-input" class="form-input" placeholder="https://facebook.com/...">
+                            </div>
+                            <div class="form-group">
+                                <label>Instagram</label>
+                                <input type="text" name="instagram" id="instagram-input" class="form-input" placeholder="@username or URL">
+                            </div>
+                            <div class="form-group">
+                                <label>X (Twitter)</label>
+                                <input type="text" name="twitter" id="twitter-input" class="form-input" placeholder="@username or URL">
+                            </div>
+                            <div class="form-group form-group-full">
+                                <label>YouTube</label>
+                                <input type="url" name="youtube" id="youtube-input" class="form-input" placeholder="https://youtube.com/@...">
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                <!-- 6. Address -->
+                <!-- 3. People at this Prospect -->
+                <section class="contact-section" id="section-people">
+                    <div class="contact-section-header">People at this Prospect</div>
+                    
+                    <div class="contact-subsection">
+                        <div class="contact-subsection-label">Primary Contact</div>
+                        <div class="contact-form-grid">
+                            <div class="form-group">
+                                <label>Name</label>
+                                <input type="text" name="contactName" id="primary-name-input" class="form-input" placeholder="e.g., John Smith">
+                            </div>
+                            <div class="form-group">
+                                <label>Title / Role</label>
+                                <input type="text" name="title" id="primary-title-input" class="form-input" placeholder="e.g., Marketing Director">
+                            </div>
+                        </div>
+                        
+                        <div class="contact-subsection" style="margin-left: 0;">
+                            <div class="contact-subsection-label">Primary Emails</div>
+                            <div id="primary-email-list"></div>
+                            <button type="button" class="btn btn-secondary btn-sm" id="primary-email-add-btn">+ Add email</button>
+                        </div>
+                        
+                        <div class="contact-subsection" style="margin-left: 0;">
+                            <div class="contact-subsection-label">Primary Phones</div>
+                            <div id="primary-phone-list"></div>
+                            <button type="button" class="btn btn-secondary btn-sm" id="primary-phone-add-btn">+ Add phone</button>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-subsection">
+                        <div class="contact-subsection-label">Other Contacts (optional)</div>
+                        <p class="contact-section-subtext" style="margin-top: 0;">Add other people at this prospect (marketing, PR, partnerships, sales, etc.).</p>
+                        <div id="extra-contacts-list"></div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="extra-contact-add-btn">+ Add Person</button>
+                    </div>
+                </section>
+
+                <!-- 4. Address -->
                 <section class="contact-section" id="section-address">
                     <div class="contact-section-header">Address</div>
                     <div class="contact-form-grid">
                         <div class="form-group form-group-full">
                             <label>Street Address</label>
-                            <input type="text" name="address" class="form-input" placeholder="123 Main St">
+                            <input type="text" name="address" id="address-input" class="form-input" placeholder="123 Main St">
                         </div>
                         <div class="form-group">
                             <label>City</label>
-                            <input type="text" name="city" class="form-input">
+                            <input type="text" name="city" id="city-input" class="form-input">
                         </div>
                         <div class="form-group">
                             <label>State</label>
-                            <input type="text" name="state" class="form-input" placeholder="NY">
+                            <input type="text" name="state" id="state-input" class="form-input" placeholder="NY">
                         </div>
                         <div class="form-group">
                             <label>ZIP Code</label>
-                            <input type="text" name="zipCode" class="form-input">
+                            <input type="text" name="zipCode" id="zip-input" class="form-input">
                         </div>
                         <div class="form-group">
                             <label>Country</label>
-                            <input type="text" name="country" class="form-input" placeholder="USA" value="USA">
+                            <input type="text" name="country" id="country-input" class="form-input" placeholder="USA" value="USA">
                         </div>
                     </div>
                 </section>
 
-                <!-- 7. Advanced (collapsible) -->
+                <!-- 5. Advanced (collapsible) -->
                 <section class="contact-section" id="section-advanced">
                     <button type="button" class="contact-advanced-toggle" id="contact-advanced-toggle" aria-expanded="false">
                         Show advanced fields
