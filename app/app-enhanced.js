@@ -4440,9 +4440,14 @@ AdSell.ai`,
                     </div>
                 </div>
 
-                <!-- AI Actions row -->
+                <!-- OpenAI Actions row -->
                 <div class="ai-subsection">
-                    <div class="ai-subtitle">AI Actions</div>
+                    <div class="ai-subtitle ai-openai-subtitle">
+                        <span class="ai-subtitle-icon">
+                            <img src="icons/head-chatgpt-icon.svg" alt="" class="ai-subtitle-icon-img" aria-hidden="true" />
+                        </span>
+                        <span class="ai-subtitle-text">OpenAI Actions</span>
+                    </div>
                     <div class="ai-actions-row">
                         <button
                             type="button"
@@ -4451,7 +4456,11 @@ AdSell.ai`,
                             data-action="ai-company-research"
                             aria-label="Company Research"
                         >
-                            <img src="icons/chatgpt-icon.svg" alt="" class="ai-action-icon" aria-hidden="true" />
+                            <span class="btn-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l3.2 3.2a1 1 0 0 1-1.4 1.4l-3.2-3.2A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z" fill="currentColor"/>
+                                </svg>
+                            </span>
                             <span class="btn-label">Company Research</span>
                         </button>
                         <button
@@ -4461,7 +4470,11 @@ AdSell.ai`,
                             data-action="ai-outreach"
                             aria-label="Outreach"
                         >
-                            <img src="icons/white-chatgpt-icon.svg" alt="" class="ai-action-icon" aria-hidden="true" />
+                            <span class="btn-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M4 5.75A2.75 2.75 0 0 1 6.75 3h10.5A2.75 2.75 0 0 1 20 5.75v6.5A2.75 2.75 0 0 1 17.25 15H9.5l-2.7 2.7A1 1 0 0 1 5 17v-2.25A2.75 2.75 0 0 1 4 12.25v-6.5z" fill="currentColor"/>
+                                </svg>
+                            </span>
                             <span class="btn-label">Outreach</span>
                         </button>
                     </div>
@@ -4488,10 +4501,10 @@ AdSell.ai`,
                             id="btn-enrich-perplexity"
                             data-provider="perplexity"
                             title="Use AI to complete missing fields and surface key contacts"
-                            aria-label="Complete Insight"
+                            aria-label="Prospect Insight"
                         >
                             <img src="icons/white-perplexity-icon.svg" alt="" class="ai-intel-icon" aria-hidden="true" />
-                            <span class="btn-label">Complete Insight</span>
+                            <span class="btn-label">Prospect Insight</span>
                         </button>
                         <button
                             type="button"

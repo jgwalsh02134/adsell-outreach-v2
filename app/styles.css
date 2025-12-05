@@ -4469,12 +4469,30 @@ form {
 
 /* AI subtitle labels */
 .ai-subtitle {
+  display: inline-flex;
+  align-items: center;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text-muted, #6B7280);
   margin-bottom: 8px;
+}
+
+/* OpenAI Actions header icon */
+.ai-openai-subtitle .ai-subtitle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+}
+
+.ai-openai-subtitle .ai-subtitle-icon-img {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 /* AI Actions row */
